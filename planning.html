@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Planning · School Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--plum:#462D5B;--plum-2:#6A4B85;--plum-soft:#EDE6F5;--sage:#5E8455;--sage-soft:#E6EFE2;--amber:#A86C12;--amber-soft:#FBF0DC;--red:#B4473A;--red-soft:#F8E4E1;--blue:#4E6FB8;--blue-soft:#E4EBF8;--bg:#F7F4FB;--card:#FFFFFF;--ink:#2E2140;--muted:#6F6680;--line:#E4DDEE;--empty:#ECE7F3;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--plum:#CDB9EA;--plum-2:#DCCCF2;--plum-soft:#352A45;--sage:#A7C59A;--sage-soft:#26331F;--amber:#E6B566;--amber-soft:#3A2E17;--red:#E8897C;--red-soft:#3D2220;--blue:#9DB4E8;--blue-soft:#1E2A40;--bg:#17131D;--card:#221C2B;--ink:#F1ECF7;--muted:#B2A8C2;--line:#382F45;--empty:#2C2536;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--plum-2);outline-offset:2px}
+h1,h2,h3,.btn,.brand{font-family:"Poppins","Nunito",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-weight:600;font-size:22px;color:var(--plum);text-decoration:none}
+header .who{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:14px;color:var(--muted);flex-wrap:wrap}
+main{max-width:1200px;margin:0 auto;padding:24px 20px 48px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px}
+.card h2{margin:0 0 8px;font-size:20px;color:var(--plum);font-weight:600}
+.btn{border:0;background:var(--plum);color:#fff;border-radius:999px;padding:10px 20px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--bg);color:var(--plum);border:1px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:13px}
+.note{color:var(--muted);font-size:14px}
+.msg{border-radius:12px;padding:10px 14px;margin-top:12px;font-weight:600;font-size:14px;background:var(--red-soft);color:var(--red)}
+.ptitle{margin:0 0 4px;font-weight:600;font-size:26px}
+.phead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.metric{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.metric span{display:block;font-size:13px;color:var(--muted);font-weight:700}
+.metric b{display:block;font-size:26px;color:var(--plum);font-family:Poppins,Nunito,sans-serif;font-weight:600;line-height:1.3}
+.tablewrap{overflow-x:auto}
+table.grid{border-collapse:separate;border-spacing:8px;min-width:100%}
+table.grid th{font-size:13px;color:var(--muted);text-align:left;font-weight:700;padding:4px}
+.cell{width:100%;min-width:150px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;cursor:pointer;display:block}
+.cell:hover{border-color:var(--plum-2)}
+.cell b{font-size:20px;font-family:Poppins,Nunito,sans-serif;font-weight:600;color:var(--plum)}
+.cell small{display:block;color:var(--muted);font-size:12.5px}
+.cell.none{cursor:default;color:var(--muted);background:var(--bg)}
+.cell.on{outline:3px solid var(--plum-2)}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--empty);margin:6px 0 4px}
+.bar i{display:block;height:100%}
+.bar .a{background:var(--sage)}.bar .t{background:var(--amber)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
+.obj{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.obj:last-child{border-bottom:0}
+.st{font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;justify-self:start}
+.st.n{background:var(--empty);color:var(--muted)}.st.p{background:var(--amber-soft);color:var(--amber)}.st.t{background:var(--blue-soft);color:var(--blue)}.st.a{background:var(--sage-soft);color:var(--sage)}
+.obj small{display:block;color:var(--muted);font-size:12.5px}
+.sec{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
+.sec b{display:block;font-size:16px;color:var(--ink)}
+@media (max-width:640px){.obj{grid-template-columns:1fr}.sec{text-align:left}}
+</style>
+</head>
+<body>
+<header><a class="brand" href="./" id="brand">School Hub</a><div class="who" id="who"></div></header>
+<main id="app"><p class="note">Loading…</p></main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+/* Keep this the same as in index.html */
+const PLATFORM = "School Hub";
+const SUPABASE_URL = "https://oivsizxgekpiltrmrmqh.supabase.co";
+const SUPABASE_KEY = "sb_publishable_5cHJA5XXHwRe-YyTeo-deA_-3xZS5DP";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const app = document.getElementById("app"), who = document.getElementById("who");
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const pct = (a, b) => b ? Math.round(100 * a / b) : 0;
+document.title = "Planning · " + PLATFORM;
+document.getElementById("brand").textContent = PLATFORM;
+
+const DEF_OS = [{ code: "s", kind: "secure" }, { code: "n", kind: "notyet" }, { code: "e", kind: "exceed" }];
+let C, classes = [], studs = [], TG = {}, ST = {}, school;
+let ui = { term: "all", pick: null, filter: "" };
+
+function fail(text){ app.innerHTML = `<div class="card"><div class="msg">${esc(text)}</div><p style="margin-top:14px"><a class="btn ghost" href="./">← Back to ${esc(PLATFORM)}</a></p></div>`; }
+
+async function fetchAll(table, cols){
+  const out = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await sb.from(table).select(cols).range(from, from + 999);
+    if (error) throw error; out.push(...data); if (data.length < 1000) break;
+  }
+  return out;
+}
+
+async function start(){
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { location.href = "./"; return; }
+  const { data: p } = await sb.from("profiles").select("*").eq("id", session.user.id).single();
+  if (!p) return fail("We couldn’t load your account. Please go back and sign in again.");
+  who.innerHTML = `<span>${esc(p.full_name || p.email)}</span><a class="btn ghost small" href="./">← ${esc(PLATFORM)}</a>`;
+  if (!p.school_id) return fail("Your account isn’t linked to a school yet.");
+  const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single();
+  school = s;
+  if (!school || school.status !== "approved" || !p.active) return fail("Your school or account isn’t active yet.");
+  if (!(school.modules || []).includes("planning")) return fail("Planning isn’t switched on for your school yet.");
+  if (!["school_lead", "coordinator"].includes(p.role)) return fail("The curriculum coverage map is for school leaders. Teachers will get their own view soon.");
+  app.innerHTML = `<p class="note">Checking every objective… this can take a few seconds.</p>`;
+  try { await load(); } catch (e) { return fail("The coverage map couldn’t load: " + (e.message || e)); }
+  render();
+}
+
+async function load(){
+  const s = await sb.from("school_setups").select("*").eq("school_id", school.id).order("updated_at", { ascending: false }).limit(1);
+  if (s.error) throw s.error;
+  if (!s.data.length) throw new Error("Finish the school setup in TwigNest first (grades, subjects and curriculum objectives).");
+  C = s.data[0].config;
+  const c = await sb.from("classes").select("*").eq("school_id", school.id).eq("year", s.data[0].year);
+  if (c.error) throw c.error; classes = c.data;
+  const cIds = new Set(classes.map(x => x.id));
+  studs = (await fetchAll("students", "id,class_id,archived")).filter(x => !x.archived && cIds.has(x.class_id));
+  const sIds = new Set(studs.map(x => x.id));
+  TG = {}; ST = {};
+  (await fetchAll("taught", "class_id,obj_id")).forEach(x => { if (cIds.has(x.class_id)) (TG[x.class_id] = TG[x.class_id] || new Set()).add(x.obj_id); });
+  (await fetchAll("objective_status", "student_id,obj_id,status")).forEach(x => { if (sIds.has(x.student_id)) (ST[x.obj_id] = ST[x.obj_id] || []).push([x.student_id, x.status]); });
+}
+
+const OS = () => (C.objScale && C.objScale.length ? C.objScale : DEF_OS);
+const isSecure = v => { const o = OS().find(x => x.code === v); return o ? ["secure", "exceed"].includes(o.kind) : false; };
+const terms = () => C.terms || [];
+const termIdx = () => ui.term === "all" ? terms().map((_, i) => i) : [Number(ui.term)];
+
+/* every objective for one grade and subject, in the chosen term(s) */
+function objectives(grade, subject){
+  const out = [];
+  subject.strands.forEach(st => st.cols.filter(c => c.type === "objectives").forEach(c => {
+    const per = (c.objectives || {})[grade.id] || [];
+    termIdx().forEach(ti => (per[ti] || []).forEach(o => out.push({ o, strand: st.name, term: terms()[ti] || "" })));
+  }));
+  return out;
+}
+/* how one objective stands across the classes of a grade */
+function statusOf(o, gradeClasses){
+  const taughtIn = gradeClasses.filter(cl => (TG[cl.id] || new Set()).has(o.id));
+  const marks = (ST[o.id] || []).filter(([sid]) => studs.some(s => s.id === sid && gradeClasses.some(cl => cl.id === s.class_id)));
+  const secure = marks.filter(([, v]) => isSecure(v)).length;
+  const kind = marks.length ? "a" : taughtIn.length === gradeClasses.length && gradeClasses.length ? "t" : taughtIn.length ? "p" : "n";
+  return { taughtIn, marks: marks.length, secure, kind };
+}
+function cellData(grade, subject){
+  const gc = classes.filter(cl => cl.grade_id === grade.id), list = objectives(grade, subject);
+  let pairs = 0, taughtPairs = 0, assessed = 0;
+  list.forEach(({ o }) => { const s = statusOf(o, gc); pairs += gc.length; taughtPairs += s.taughtIn.length; if (s.marks) assessed++; });
+  return { total: list.length, classes: gc.length, taught: pct(taughtPairs, pairs), assessed: pct(assessed, list.length), assessedN: assessed };
+}
+
+function render(){
+  const grades = C.grades || [], subjects = C.subjects || [];
+  let total = 0, assessed = 0, notTaught = 0;
+  grades.forEach(g => subjects.forEach(sj => { const gc = classes.filter(cl => cl.grade_id === g.id);
+    objectives(g, sj).forEach(({ o }) => { total++; const s = statusOf(o, gc); if (s.marks) assessed++; if (!s.taughtIn.length) notTaught++; }); }));
+  let overallPairs = 0, overallTaught = 0;
+  grades.forEach(g => subjects.forEach(sj => { const gc = classes.filter(cl => cl.grade_id === g.id);
+    objectives(g, sj).forEach(({ o }) => { overallPairs += gc.length; overallTaught += statusOf(o, gc).taughtIn.length; }); }));
+  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Curriculum coverage</h1><p class="note" style="margin:0">${esc(school.name)} · from the objectives and class sheets in TwigNest</p></div>
+      <label class="row note">Term <select id="term"><option value="all">Whole year</option>${terms().map((t, i) => `<option value="${i}" ${String(i) === ui.term ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></label></div>
+    <div class="metrics">
+      <div class="metric"><span>Objectives to cover</span><b>${total}</b></div>
+      <div class="metric"><span>Taught</span><b>${pct(overallTaught, overallPairs)}%</b></div>
+      <div class="metric"><span>Assessed</span><b>${pct(assessed, total)}%</b></div>
+      <div class="metric"><span>Not taught in any class yet</span><b>${notTaught}</b></div></div>
+    <div class="card"><h2>Coverage by grade and subject</h2>
+      <p class="note">Each box shows how much of that grade’s curriculum has been taught across its classes. Click a box to see every objective.</p>
+      ${grades.length && subjects.length ? `<div class="tablewrap"><table class="grid"><tr><th>Grade</th>${subjects.map(sj => `<th>${esc(sj.name)}</th>`).join("")}</tr>
+        ${grades.map(g => `<tr><th>${esc(g.name)}</th>${subjects.map(sj => { const d = cellData(g, sj);
+          if (!d.total) return `<td><div class="cell none"><small>No objectives yet</small></div></td>`;
+          if (!d.classes) return `<td><div class="cell none"><small>${d.total} objectives · no classes yet</small></div></td>`;
+          const on = ui.pick && ui.pick[0] === g.id && ui.pick[1] === sj.name;
+          return `<td><button type="button" class="cell ${on ? "on" : ""}" data-g="${esc(g.id)}" data-s="${esc(sj.name)}"><b>${d.taught}%</b>
+            <div class="bar"><i class="a" style="width:${Math.min(d.assessed, d.taught)}%"></i><i class="t" style="width:${Math.max(0, d.taught - d.assessed)}%"></i></div>
+            <small>${d.total} objectives · ${d.assessedN} assessed</small></button></td>`; }).join("")}</tr>`).join("")}</table></div>
+        <div class="legend"><span><i style="background:var(--sage)"></i>Assessed</span><span><i style="background:var(--amber)"></i>Taught</span><span><i style="background:var(--empty)"></i>Not taught yet</span></div>`
+        : `<p class="note">Add grades, subjects and curriculum objectives in TwigNest’s Setup to see coverage here.</p>`}</div>
+    <div id="detail"></div>`;
+  document.getElementById("term").onchange = e => { ui.term = e.target.value; render(); };
+  app.querySelectorAll(".cell[data-g]").forEach(b => b.onclick = () => { ui.pick = [b.dataset.g, b.dataset.s]; ui.filter = ""; render(); });
+  if (ui.pick) detail();
+}
+
+function detail(){
+  const g = C.grades.find(x => x.id === ui.pick[0]), sj = C.subjects.find(x => x.name === ui.pick[1]);
+  if (!g || !sj) return;
+  const gc = classes.filter(cl => cl.grade_id === g.id);
+  const rows = objectives(g, sj).map(x => Object.assign(x, statusOf(x.o, gc)));
+  const LABEL = { n: "Not taught yet", p: "Taught in some classes", t: "Taught", a: "Assessed" };
+  const n = k => rows.filter(r => r.kind === k).length;
+  const shown = rows.filter(r => !ui.filter || r.kind === ui.filter);
+  const strands = [...new Set(shown.map(r => r.strand))];
+  const box = document.getElementById("detail");
+  box.innerHTML = `<div class="card"><div class="phead" style="margin-bottom:6px"><div><h2 style="margin:0">${esc(g.name)} · ${esc(sj.name)}</h2>
+      <p class="note" style="margin:0">${gc.length} class${gc.length === 1 ? "" : "es"}: ${esc(gc.map(c => c.name).join(", "))}</p></div>
+      <div class="row"><button type="button" class="btn ghost small" id="csv">Download CSV</button><button type="button" class="btn ghost small" id="close">Close</button></div></div>
+    <div class="chips">${[["", "All " + rows.length], ["n", "Not taught yet " + n("n")], ["p", "Some classes " + n("p")], ["t", "Taught " + n("t")], ["a", "Assessed " + n("a")]]
+      .map(([k, l]) => `<button type="button" class="chip" data-f="${k}" aria-pressed="${ui.filter === k}">${l}</button>`).join("")}</div>
+    ${strands.map(st => `<h3 class="strand">${esc(st)}</h3>${shown.filter(r => r.strand === st).map(r => `<div class="obj"><span class="st ${r.kind}">${LABEL[r.kind]}</span>
+        <div>${esc(r.o.text)}<small>${esc(r.term)}${gc.length > 1 ? ` · taught in ${r.taughtIn.length} of ${gc.length} classes${r.taughtIn.length && r.taughtIn.length < gc.length ? " (" + esc(r.taughtIn.map(c => c.name).join(", ")) + ")" : ""}` : ""}</small></div>
+        <div class="sec">${r.marks ? `<b>${pct(r.secure, r.marks)}%</b>secure (${r.marks} marked)` : ""}</div></div>`).join("")}`).join("") || `<p class="note">No objectives in this group.</p>`}</div>`;
+  box.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { ui.filter = b.dataset.f; detail(); });
+  document.getElementById("close").onclick = () => { ui.pick = null; render(); };
+  document.getElementById("csv").onclick = () => {
+    const t = [["Strand", "Term", "Objective", "Status", "Classes taught", "Students marked", "Secure %"]]
+      .concat(rows.map(r => [r.strand, r.term, r.o.text, LABEL[r.kind], `${r.taughtIn.length} of ${gc.length}`, r.marks, r.marks ? pct(r.secure, r.marks) : ""]))
+      .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + t], { type: "text/csv" }));
+    a.download = `coverage-${g.name}-${sj.name}.csv`.replace(/\s+/g, "-").toLowerCase(); document.body.appendChild(a); a.click(); a.remove();
+  };
+  box.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+start();
+</script>
+</body>
+</html>
