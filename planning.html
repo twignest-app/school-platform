@@ -69,8 +69,8 @@ h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
 <script>
 /* Keep this the same as in index.html */
 const PLATFORM = "School Hub";
-const SUPABASE_URL = "https://oivsizxgekpiltrmrmqh.supabase.co";
-const SUPABASE_KEY = "sb_publishable_5cHJA5XXHwRe-YyTeo-deA_-3xZS5DP";
+const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const app = document.getElementById("app"), who = document.getElementById("who");
@@ -103,7 +103,7 @@ async function start(){
   if (!p.school_id) return fail("Your account isn’t linked to a school yet.");
   const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single();
   school = s;
-  if (!school || school.status !== "approved" || !p.active) return fail("Your school or account isn’t active yet.");
+  if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
   if (!(school.modules || []).includes("planning")) return fail("Planning isn’t switched on for your school yet.");
   if (!["school_lead", "coordinator"].includes(p.role)) return fail("The curriculum coverage map is for school leaders. Teachers will get their own view soon.");
   app.innerHTML = `<p class="note">Checking every objective… this can take a few seconds.</p>`;

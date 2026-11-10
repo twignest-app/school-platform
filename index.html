@@ -42,7 +42,7 @@ input[type=text],input[type=email],input[type=password]{width:100%;border:1px so
 .tile p{margin:0 0 10px;color:var(--muted);font-size:14px;flex:1}
 .tile.soon{opacity:.75}
 .badge{display:inline-block;font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;align-self:flex-start}
-.b-pending{background:var(--amber-soft);color:var(--amber)}.b-approved{background:var(--sage-soft);color:var(--sage)}.b-suspended{background:var(--red-soft);color:var(--red)}
+.b-pending{background:var(--amber-soft);color:var(--amber)}.b-active{background:var(--sage-soft);color:var(--sage)}.b-suspended{background:var(--red-soft);color:var(--red)}
 .tablewrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%}
 th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:top}
@@ -67,8 +67,8 @@ body.auth header{display:none}
 /* Change this one line when the platform has its name */
 const PLATFORM = "School Hub";
 
-const SUPABASE_URL = "https://oivsizxgekpiltrmrmqh.supabase.co";
-const SUPABASE_KEY = "sb_publishable_5cHJA5XXHwRe-YyTeo-deA_-3xZS5DP";
+const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* The modules on the platform. "url" is set once a module is ready to open. */
@@ -85,7 +85,7 @@ const ROLES = { admin: "Admin", school_lead: "School leader", coordinator: "Coor
 const app = document.getElementById("app"), who = document.getElementById("who");
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const here = location.origin + location.pathname;
-let authTab = "landing", recovering = false;
+let authTab = "landing", recovering = false, adminTab = "schools";
 document.title = PLATFORM;
 document.getElementById("brand").textContent = PLATFORM;
 document.getElementById("brand").onclick = e => { e.preventDefault(); render(); };
@@ -180,15 +180,15 @@ function chooseView(p){
         <form id="regF"><label for="sn">School name</label><input id="sn" type="text" required>
         <label for="sc">Country</label><input id="sc" type="text" value="United Arab Emirates" required>
         <button class="btn full" id="regB" type="submit">Register school</button></form><div id="regM"></div></div>
-      <div class="card"><h2>Join my school</h2><p class="note">For teachers. Ask your school leader for your school’s 6-character code.</p>
-        <form id="joinF"><label for="jc">School code</label><input id="jc" type="text" maxlength="6" style="text-transform:uppercase;letter-spacing:.15em" required>
+      <div class="card"><h2>Join my school</h2><p class="note">For teachers. Ask your school leader for your school’s 8-character code.</p>
+        <form id="joinF"><label for="jc">School code</label><input id="jc" type="text" maxlength="8" style="text-transform:uppercase;letter-spacing:.15em" required>
         <button class="btn full" id="joinB" type="submit">Join school</button></form><div id="joinM"></div></div>
     </div>`;
   document.getElementById("regF").onsubmit = e => { e.preventDefault(); busy(document.getElementById("regB"), async () => {
-    const { error } = await sb.rpc("register_school", { p_name: document.getElementById("sn").value, p_country: document.getElementById("sc").value });
+    const { error } = await sb.rpc("hub_register_school", { p_name: document.getElementById("sn").value, p_country: document.getElementById("sc").value });
     if (error) return show(document.getElementById("regM"), friendly(error), "err"); render(); }); };
   document.getElementById("joinF").onsubmit = e => { e.preventDefault(); busy(document.getElementById("joinB"), async () => {
-    const { error } = await sb.rpc("join_school", { p_code: document.getElementById("jc").value });
+    const { error } = await sb.rpc("hub_join_school", { p_code: document.getElementById("jc").value });
     if (error) return show(document.getElementById("joinM"), friendly(error), "err"); render(); }); };
 }
 
@@ -226,7 +226,7 @@ async function adminView(){
       <td>${esc(l ? (l.full_name || "") : "")}<br><span class="note">${esc(l ? l.email : "")}</span></td>
       <td>${esc(s.join_code)}</td>
       <td><span class="badge b-${esc(s.status)}">${esc(s.status[0].toUpperCase() + s.status.slice(1))}</span>
-        <div class="row" style="margin-top:8px">${s.status !== "approved" ? `<button class="btn small" data-s="${s.id}" data-st="approved">Approve</button>` : ""}
+        <div class="row" style="margin-top:8px">${s.status !== "active" ? `<button class="btn small" data-s="${s.id}" data-st="active">Approve</button>` : ""}
         ${s.status !== "suspended" ? `<button class="btn ghost small" data-s="${s.id}" data-st="suspended">Suspend</button>` : ""}</div></td>
       <td><div class="mods">${MODULES.map(m => `<label><input type="checkbox" data-school="${s.id}" value="${m.id}" ${on.includes(m.id) ? "checked" : ""}>${esc(m.name)}</label>`).join("")}</div>
         <span class="note" id="mm-${s.id}"></span></td></tr>`; }).join("")}</table>`;
@@ -251,7 +251,15 @@ async function render(){
   const { data: p, error } = await sb.from("profiles").select("*").eq("id", session.user.id).single();
   if (error || !p) { app.innerHTML = `<div class="card"><div class="msg err">We couldn’t load your account. Please sign out and try again.</div></div>`; return; }
   header(p);
-  if (p.platform_admin) return adminView();
+  if (p.platform_admin) {
+    if (p.school_id) {
+      const nav = document.createElement("span"); nav.className = "row";
+      nav.innerHTML = `<button class="btn ${adminTab === "school" ? "" : "ghost"} small" data-at="school">My school</button><button class="btn ${adminTab === "schools" ? "" : "ghost"} small" data-at="schools">All schools</button>`;
+      who.prepend(nav);
+      nav.querySelectorAll("[data-at]").forEach(b => b.onclick = () => { adminTab = b.dataset.at; render(); });
+    }
+    if (!p.school_id || adminTab === "schools") return adminView();
+  }
   if (!p.school_id) return chooseView(p);
   const { data: school } = await sb.from("schools").select("*").eq("id", p.school_id).single();
   if (!school) return waitView("Almost there", "We couldn’t find your school. Please get in touch with us.");
