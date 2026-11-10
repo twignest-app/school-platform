@@ -144,7 +144,17 @@ section.band{padding:clamp(64px,9vw,110px) 0}
 .nest .top.brand .kind{color:#6B5A86}.nest.t .top.brand .kind{color:#7A6A8F}
 .nest .top.brand .tag{color:#3A2350}
 .nest .brandlogo{display:block;height:46px;width:auto;margin:2px 0 4px}
-.nest .shot{display:block;width:100%;height:auto;border-radius:16px;margin-top:4px}
+.hubviz{position:relative;aspect-ratio:4/3;border-radius:18px;background:linear-gradient(135deg,#EAF3FC,#F6F3F8 55%,#FBEDE2);border:1px solid #E1E9F3;box-shadow:var(--shadow);overflow:hidden;color:#2A3550}
+.hubviz .orbits{position:absolute;inset:4% 2%;width:96%;height:92%}
+.hubviz .sat{position:absolute;transform:translate(-50%,-50%);background:#fff;border-radius:999px;padding:4px 10px;font-size:10.5px;font-weight:700;box-shadow:0 4px 12px -6px rgba(42,53,80,.35);white-space:nowrap;z-index:1}
+.hubcard{position:absolute;left:50%;top:52%;width:56%;transform:translate(-50%,-48%) rotate(-3deg);background:#fff;border-radius:14px;padding:10px 10px 12px;box-shadow:0 18px 30px -16px rgba(42,53,80,.45);z-index:2}
+.hc-head{display:flex;justify-content:space-between;gap:6px;font-size:9.5px;letter-spacing:.04em;margin-bottom:8px}
+.hc-head em{font-style:normal;color:#4E86B8;font-weight:700}
+.hc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.hc-grid div{border-radius:7px;padding:4px 6px;font-size:11px;font-weight:700}
+.hc-grid small{display:block;font-size:9px;font-weight:500;color:#5D6782}
+.hubbird{position:absolute;right:9%;top:20%;width:15%;height:auto;z-index:3;filter:drop-shadow(0 6px 6px rgba(42,53,80,.18))}.nest .shot{display:block;
+width:100%;height:auto;border-radius:16px;margin-top:4px}
 @media (max-width:900px){.nests{grid-template-columns:1fr}}
 
 .connect{background:radial-gradient(45% 55% at 50% 55%,var(--blue-soft),transparent 75%)}
@@ -410,8 +420,24 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
       <article class="nest h reveal">
         <div class="top"><div class="ico" style="color:var(--blue-2)"><svg><use href="#i-grid"/></svg></div>
           <p class="kind">THE EVERYDAY HUB</p><h3 class="serif">Nestopia School Hub</h3><p class="tag">Everything School. Effortlessly Connected.</p>
-          <div class="mini"><b>Your school today</b><div class="trio"><div><small>Attendance</small><b style="color:var(--blue-2)">96%</b></div><div style="background:var(--amber-soft)"><small>Classes</small><b style="color:var(--amber)">42</b></div><div><small>Events</small><b>03</b></div></div>
-            <div class="cap">Students · Planning · Calendar</div></div></div>
+          <div class="hubviz" aria-label="Your school today, live: attendance 96%, 42 classes, 3 events, 1,240 students, 5 plans and 28 staff, connected to parents, assessments, students, attendance, planning, staff and calendar">
+            <svg class="orbits" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true">
+              <ellipse cx="200" cy="150" rx="178" ry="118" fill="none" stroke="#8FBFE3" stroke-width="1.6" stroke-dasharray="5 6"/>
+              <ellipse cx="200" cy="150" rx="118" ry="132" fill="none" stroke="#F0B98C" stroke-width="1.4" transform="rotate(-18 200 150)"/>
+              <ellipse cx="200" cy="150" rx="150" ry="70" fill="none" stroke="#8FBFE3" stroke-width="1.2" stroke-dasharray="3 6" transform="rotate(14 200 150)"/>
+            </svg>
+            <span class="sat" style="left:50%;top:5%">Assessments</span>
+            <span class="sat" style="left:52%;top:13%">Parents</span>
+            <span class="sat" style="left:15%;top:30%">Attendance</span>
+            <span class="sat" style="left:86%;top:36%">Students</span>
+            <span class="sat" style="left:13%;top:83%">Planning</span>
+            <span class="sat" style="left:50%;top:94%">Staff</span>
+            <span class="sat" style="left:88%;top:83%">Calendar</span>
+            <div class="hubcard"><div class="hc-head"><b>YOUR SCHOOL TODAY</b><em>● LIVE VIEW</em></div>
+              <div class="hc-grid"><div style="background:#E6EFF9"><small>Attendance</small>96%</div><div style="background:#FBE9DC"><small>Classes</small>42</div><div style="background:#EEF4FB"><small>Events</small>03</div>
+                <div style="background:#E6EFF9"><small>Students</small>1,240</div><div style="background:#FBE9DC"><small>Plans</small>05</div><div style="background:#EEF4FB"><small>Staff</small>28</div></div></div>
+            <svg class="hubbird" viewBox="0 0 120 112" aria-hidden="true"><use href="#bird"/></svg>
+          </div></div>
         <div class="txt"><p>Bring attendance, curriculum planning, classes, student profiles, assessments, staff, calendars, parent communication and administration into one welcoming home.</p>
           <a href="#" data-auth="signin">Explore School Hub <svg width="14" height="14" aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
       </article>
