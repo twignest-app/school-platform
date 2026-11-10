@@ -220,7 +220,7 @@ section.band{padding:clamp(64px,9vw,110px) 0}
 .cta p{margin:16px 0 30px;font-size:17px}
 .cta .acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
 .cta .btn{background:#33405A;color:#fff}.cta .btn.light{background:#fff;color:#33405A;border-color:#fff}
-.cta svg.nestbird{width:520px;max-width:96%;height:auto;margin:0 auto 22px;display:block;filter:drop-shadow(0 20px 18px rgba(42,53,80,.18))}
+.cta svg.nestbird{width:560px;max-width:100%;height:auto;margin:0 auto 22px;display:block;filter:drop-shadow(0 20px 18px rgba(42,53,80,.18))}
 
 footer.site{background:#33405A;color:#DCE4F2;padding:56px 0 calc(40px + env(safe-area-inset-bottom,0px))}
 footer.site .wrap{display:flex;justify-content:space-between;gap:40px;flex-wrap:wrap}
@@ -503,33 +503,32 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
 </section>
 
 <section class="cta">
-  <div class="wrap reveal">
-    <svg class="nestbird" viewBox="0 -10 560 370" aria-hidden="true">
+  <div class="wrap">
+    <svg class="nestbird" viewBox="0 20 600 325" aria-hidden="true">
       <defs>
-        <radialGradient id="ctaGlow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset=".55" stop-color="#fff" stop-opacity=".2"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
-        <linearGradient id="nestSide" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#D9AE7D"/><stop offset="1" stop-color="#B98A58"/></linearGradient>
-        <clipPath id="nestClip"><path d="M145 180h270v58c0 18-60 30-135 30s-135-12-135-30z"/></clipPath>
+        <radialGradient id="ctaGlow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff" stop-opacity=".8"/><stop offset=".5" stop-color="#fff" stop-opacity=".25"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+        <linearGradient id="nestSide" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#D9AE7D"/><stop offset="1" stop-color="#C29462"/></linearGradient>
+        <clipPath id="nestClip"><path d="M165 185h270v58c0 16-60 26-135 26s-135-10-135-26z"/></clipPath>
       </defs>
-      <circle cx="280" cy="185" r="150" fill="url(#ctaGlow)"/>
-      <g transform="rotate(-24 300 170)" fill="none" stroke="#fff">
-        <ellipse cx="300" cy="170" rx="140" ry="172" stroke-opacity=".3" stroke-width="24"/>
-        <ellipse cx="300" cy="170" rx="134" ry="166" stroke-opacity=".8" stroke-width="2"/>
-      </g>
+      <ellipse cx="300" cy="185" rx="230" ry="120" fill="url(#ctaGlow)"/>
+      <ellipse cx="300" cy="190" rx="250" ry="122" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="26"/>
+      <ellipse cx="300" cy="190" rx="226" ry="104" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="1.6"/>
       <g fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="3 7" stroke-linecap="round" opacity=".9">
-        <path d="M30 200C60 140 120 110 200 135"/><path d="M30 200c10 40 20 70 4 98"/>
-        <path d="M528 110c-40 60-90 120-150 132"/><path d="M528 110c-6 60 2 110 0 140M470 70c40 0 60 20 58 40"/>
-        <path d="M340 110c30-50 90-60 130-40"/>
+        <path d="M62 140c20 40 30 70 36 92M62 140c60-30 130-34 190-18"/>
+        <path d="M352 210c40 30 120 34 170-30s50-80 70-100"/>
+        <path d="M380 140c30-50 100-60 150-30"/>
       </g>
-      <g fill="#fff"><circle cx="30" cy="200" r="5.5"/><circle cx="34" cy="298" r="5.5"/><circle cx="528" cy="110" r="5.5"/><circle cx="528" cy="250" r="5.5"/></g>
-      <path d="M455 50l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#fff"/>
-      <g fill="#fff"><path d="M70 150v-22l12-3v19" stroke="#fff" stroke-width="2.4" fill="none"/><ellipse cx="66" cy="151" rx="5" ry="4"/><ellipse cx="78" cy="145" rx="5" ry="4"/><path d="M418 246v-20" stroke="#fff" stroke-width="2.4"/><path d="M418 226q8 3 9 10" stroke="#fff" stroke-width="2.4" fill="none"/><ellipse cx="414" cy="247" rx="5" ry="4"/></g>
-      <ellipse cx="280" cy="262" rx="150" ry="22" fill="#fff" opacity=".45"/>
-      <path d="M145 180h270v58c0 18-60 30-135 30s-135-12-135-30z" fill="url(#nestSide)"/>
-      <g clip-path="url(#nestClip)" stroke="#A97D4E" stroke-width="7" opacity=".55">
-        <path d="M120 220l70-40M150 245l90-65M190 262l110-82M240 270l120-90M290 272l130-95M340 272l110-82M390 268l60-45"/>
+      <g fill="#fff"><circle cx="62" cy="140" r="5"/><circle cx="98" cy="232" r="5"/><circle cx="530" cy="110" r="5"/><circle cx="502" cy="223" r="5"/></g>
+      <path d="M478 104l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#fff"/>
+      <g fill="#fff" opacity=".9"><path d="M110 128v-20l11-3v17" stroke="#fff" stroke-width="2.2" fill="none"/><ellipse cx="106" cy="129" rx="4.5" ry="3.6"/><ellipse cx="117" cy="123" rx="4.5" ry="3.6"/>
+        <path d="M466 262v-18l10-3v15" stroke="#fff" stroke-width="2.2" fill="none"/><ellipse cx="462" cy="263" rx="4.5" ry="3.6"/><ellipse cx="472" cy="257" rx="4.5" ry="3.6"/></g>
+      <ellipse cx="300" cy="262" rx="150" ry="20" fill="#fff" opacity=".5"/>
+      <path d="M165 185h270v58c0 16-60 26-135 26s-135-10-135-26z" fill="url(#nestSide)"/>
+      <g clip-path="url(#nestClip)" stroke="#A97D4E" stroke-width="7" opacity=".5">
+        <path d="M140 225l80-48M170 250l100-70M210 266l120-88M260 272l130-92M310 274l130-92M360 272l100-72M410 268l50-35"/>
       </g>
-      <ellipse cx="280" cy="180" rx="135" ry="15" fill="#C9A06F"/>
-      <use href="#bird" x="200" y="36" width="160" height="150"/>
+      <ellipse cx="300" cy="185" rx="135" ry="14" fill="#C9A06F"/>
+      <use href="#bird" x="228" y="42" width="150" height="142"/>
     </svg>
     <p class="eyebrow">LET’S BUILD WHAT’S NEXT</p>
     <h2 class="serif">Your Next Chapter Starts Here.</h2>
@@ -619,8 +618,9 @@ function landingView(){
   /* the gentle reveal as sections come into view */
   const els = root.querySelectorAll(".reveal");
   if ("IntersectionObserver" in window && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    const io = new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting) { x.target.classList.add("in"); io.unobserve(x.target); } }), { threshold: .12 });
+    const io = new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting) { x.target.classList.add("in"); io.unobserve(x.target); } }), { threshold: 0, rootMargin: "0px 0px -8% 0px" });
     els.forEach(el => io.observe(el));
+    setTimeout(() => els.forEach(el => el.classList.add("in")), 2500);
   } else els.forEach(el => el.classList.add("in"));
   /* request a demo */
   const dlg = document.getElementById("demoDlg"), f = document.getElementById("demoForm"), msg = document.getElementById("demoMsg");
