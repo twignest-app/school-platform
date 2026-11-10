@@ -243,6 +243,36 @@ footer.site h4{margin:0 0 12px;color:#fff;font-size:14.5px}
 footer.site .cols a,footer.site .cols button{display:block;color:#DCE4F2;text-decoration:none;margin:8px 0;font-size:15px;background:none;border:0;padding:0;cursor:pointer;text-align:left}
 footer.site .cols a:hover,footer.site .cols button:hover{color:#fff}
 
+/* ---------- movement (switched off automatically when a device asks for reduced motion) ---------- */
+@keyframes bob{0%,100%{translate:0 0}50%{translate:0 -9px}}
+@keyframes bobSmall{0%,100%{translate:0 0}50%{translate:0 -5px}}
+@keyframes spin{to{rotate:360deg}}
+@keyframes dash{to{stroke-dashoffset:-60}}
+@keyframes dashRev{to{stroke-dashoffset:60}}
+@keyframes draw{from{stroke-dashoffset:var(--len,900)}to{stroke-dashoffset:0}}
+@keyframes twinkle{0%,100%{opacity:1;scale:1}50%{opacity:.35;scale:.7}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.65}}
+@keyframes noteUp{0%,100%{translate:0 0;opacity:.9}50%{translate:0 -6px;opacity:.5}}
+.stage .bird{animation:bob 4s ease-in-out infinite}
+.stage .note{animation:noteUp 3s ease-in-out infinite}
+.stage .ring{animation:spin 80s linear infinite}
+.float{animation:bobSmall 5s ease-in-out infinite}.f2{animation-delay:-1.6s}.f3{animation-delay:-3.2s}
+path.draw{stroke-dasharray:var(--len,900);animation:draw 2.4s ease-out both}
+path.draw.d2{animation-delay:.4s}
+.flowline{animation:dash 3s linear infinite}.flowline.rev{animation-name:dashRev;animation-duration:5s}
+.core svg{animation:bob 4.5s ease-in-out infinite}
+.node{animation:bobSmall 6s ease-in-out infinite}.node.t{animation-delay:-2s}.node.h{animation-delay:-4s}
+.hubviz .sat{animation:bobSmall 4.5s ease-in-out infinite}
+.hubbird{animation:bob 3.8s ease-in-out infinite}
+.hubcard{animation:bobSmall 6s ease-in-out infinite}
+.nest{transition:translate .3s ease,box-shadow .3s ease}
+.nest:hover{translate:0 -6px;box-shadow:0 26px 50px -30px rgba(42,53,80,.4)}
+.bob-svg{animation:bob 3.6s ease-in-out infinite;transform-box:fill-box}
+.twinkle{animation:twinkle 2.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.cta .flow{animation:dash 4s linear infinite}
+.cta .notes{animation:noteUp 3.4s ease-in-out infinite}
+.pulse{animation:pulse 4s ease-in-out infinite}
+.spin-dash{animation:dash 6s linear infinite}
 /* gentle reveal, only when JavaScript is running */
 .js .reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}
 .js .reveal.in{opacity:1;transform:none}
@@ -381,7 +411,7 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
           <h3>Your school, in sync.</h3>
           <div class="stats"><div class="stat"><small>Attendance</small><b>96%</b></div><div class="stat"><small>Students</small><b>1,240</b></div><div class="stat"><small>This week</small><b>8</b></div></div>
           <div class="chart"><small>Learning at a glance</small>
-            <svg viewBox="0 0 360 110"><path d="M0 70H360M0 40H360" stroke="var(--line)"/><path d="M4 92C40 88 50 52 86 50s40 40 70 40 40-34 80-36 60 2 88-10 20-14 32-20" fill="none" stroke="#6AA9E0" stroke-width="4" stroke-linecap="round"/><path d="M4 98c40-6 60-22 100-18s50-8 90-10 70 6 100-4 40-14 62-16" fill="none" stroke="#A8DCC3" stroke-width="4" stroke-linecap="round"/></svg></div>
+            <svg viewBox="0 0 360 110"><path d="M0 70H360M0 40H360" stroke="var(--line)"/><path class="draw" d="M4 92C40 88 50 52 86 50s40 40 70 40 40-34 80-36 60 2 88-10 20-14 32-20" fill="none" stroke="#6AA9E0" stroke-width="4" stroke-linecap="round"/><path class="draw d2" d="M4 98c40-6 60-22 100-18s50-8 90-10 70 6 100-4 40-14 62-16" fill="none" stroke="#A8DCC3" stroke-width="4" stroke-linecap="round"/></svg></div>
           <div class="chips"><span style="background:var(--green-soft);color:var(--green)">GrowNest ↗</span><span style="background:var(--lav-soft);color:var(--lav)">TwigNest ↗</span><span style="background:var(--blue-soft);color:var(--blue-2)">School Hub ↗</span></div>
         </div>
       </div>
@@ -422,17 +452,17 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
           <p class="kind">THE EVERYDAY HUB</p><h3 class="serif">Nestopia School Hub</h3><p class="tag">Everything School. Effortlessly Connected.</p>
           <div class="hubviz" aria-label="Your school today, live: attendance 96%, 42 classes, 3 events, 1,240 students, 5 plans and 28 staff, connected to parents, assessments, students, attendance, planning, staff and calendar">
             <svg class="orbits" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true">
-              <ellipse cx="200" cy="150" rx="178" ry="118" fill="none" stroke="#8FBFE3" stroke-width="1.6" stroke-dasharray="5 6"/>
+              <ellipse class="flowline" cx="200" cy="150" rx="178" ry="118" fill="none" stroke="#8FBFE3" stroke-width="1.6" stroke-dasharray="5 6"/>
               <ellipse cx="200" cy="150" rx="118" ry="132" fill="none" stroke="#F0B98C" stroke-width="1.4" transform="rotate(-18 200 150)"/>
-              <ellipse cx="200" cy="150" rx="150" ry="70" fill="none" stroke="#8FBFE3" stroke-width="1.2" stroke-dasharray="3 6" transform="rotate(14 200 150)"/>
+              <ellipse cx="200" cy="150" rx="150" ry="70" fill="none" stroke="#8FBFE3" stroke-width="1.2" stroke-dasharray="3 6" transform="rotate(14 200 150)" class="flowline rev"/>
             </svg>
-            <span class="sat" style="left:50%;top:5%">Assessments</span>
-            <span class="sat" style="left:52%;top:13%">Parents</span>
-            <span class="sat" style="left:15%;top:30%">Attendance</span>
-            <span class="sat" style="left:86%;top:36%">Students</span>
-            <span class="sat" style="left:13%;top:83%">Planning</span>
-            <span class="sat" style="left:50%;top:94%">Staff</span>
-            <span class="sat" style="left:88%;top:83%">Calendar</span>
+            <span class="sat" style="animation-delay:-0.7s;left:50%;top:5%">Assessments</span>
+            <span class="sat" style="animation-delay:-1.4s;left:52%;top:13%">Parents</span>
+            <span class="sat" style="animation-delay:-2.1s;left:15%;top:30%">Attendance</span>
+            <span class="sat" style="animation-delay:-2.8s;left:86%;top:36%">Students</span>
+            <span class="sat" style="animation-delay:-3.5s;left:13%;top:83%">Planning</span>
+            <span class="sat" style="animation-delay:-4.2s;left:50%;top:94%">Staff</span>
+            <span class="sat" style="animation-delay:-4.9s;left:88%;top:83%">Calendar</span>
             <div class="hubcard"><div class="hc-head"><b>YOUR SCHOOL TODAY</b><em>● LIVE VIEW</em></div>
               <div class="hc-grid"><div style="background:#E6EFF9"><small>Attendance</small>96%</div><div style="background:#FBE9DC"><small>Classes</small>42</div><div style="background:#EEF4FB"><small>Events</small>03</div>
                 <div style="background:#E6EFF9"><small>Students</small>1,240</div><div style="background:#FBE9DC"><small>Plans</small>05</div><div style="background:#EEF4FB"><small>Staff</small>28</div></div></div>
@@ -452,9 +482,9 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
       <p>Each space has its own purpose. Together, they create a more connected school day.</p></div>
     <div class="web reveal">
       <svg class="lines" viewBox="0 0 860 470" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M175 85C260 95 330 140 375 190" stroke="#8FBFE3" stroke-width="2.5" stroke-dasharray="7 8" fill="none"/>
-        <path d="M685 85C600 95 530 140 485 190" stroke="#8FBFE3" stroke-width="2.5" stroke-dasharray="7 8" fill="none"/>
-        <path d="M430 300V360" stroke="#8FBFE3" stroke-width="2.5" stroke-dasharray="6 7" fill="none"/>
+        <path d="M175 85C260 95 330 140 375 190" stroke="#8FBFE3" stroke-width="2.5" stroke-dasharray="7 8" fill="none" class="flowline"/>
+        <path d="M685 85C600 95 530 140 485 190" stroke="#8FBFE3" stroke-width="2.5" stroke-dasharray="7 8" fill="none" class="flowline"/>
+        <path d="M430 300V360" stroke="#8FBFE3" stroke-width="2.5" stroke-dasharray="6 7" fill="none" class="flowline"/>
         <path d="M120 120C190 260 280 360 360 400M740 120C670 260 580 360 500 400" stroke="var(--line)" stroke-width="2" fill="none"/>
       </svg>
       <div class="core"><svg viewBox="0 0 120 112" aria-hidden="true"><use href="#bird"/></svg><b>Nestopia</b><small>One connected home</small></div>
@@ -488,7 +518,7 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
           </div>
           <div class="two">
             <div class="box"><h4>Student progress <small>Sample overview</small></h4>
-              <svg viewBox="0 0 480 170"><path d="M0 60H480M0 105H480M0 150H480" stroke="var(--line)"/><path d="M10 140c30-10 50-6 80-14s50-40 90-34 40-2 70-24 50-20 80-10 30-24 60-28 20 14 60-14" fill="none" stroke="#6AA9E0" stroke-width="5" stroke-linecap="round"/><path d="M10 156c40-14 70-10 100-14s40-16 80-12 40-14 80-12 50-6 80-18 30 6 50-10 30 4 46-14" fill="none" stroke="#A8DCC3" stroke-width="5" stroke-linecap="round"/></svg>
+              <svg viewBox="0 0 480 170"><path d="M0 60H480M0 105H480M0 150H480" stroke="var(--line)"/><path class="draw" d="M10 140c30-10 50-6 80-14s50-40 90-34 40-2 70-24 50-20 80-10 30-24 60-28 20 14 60-14" fill="none" stroke="#6AA9E0" stroke-width="5" stroke-linecap="round"/><path class="draw d2" d="M10 156c40-14 70-10 100-14s40-16 80-12 40-14 80-12 50-6 80-18 30 6 50-10 30 4 46-14" fill="none" stroke="#A8DCC3" stroke-width="5" stroke-linecap="round"/></svg>
               <div class="legend"><span><i style="background:#6AA9E0"></i>Attainment</span><span><i style="background:#A8DCC3"></i>Engagement</span></div></div>
             <div style="display:grid;gap:10px;align-content:start">
               <div class="box"><h4>Upcoming school events</h4><ul><li>📅 Friday · Community day</li><li>📅 Next week · Planning review</li></ul></div>
@@ -536,17 +566,17 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
         <linearGradient id="nestSide" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#D9AE7D"/><stop offset="1" stop-color="#C29462"/></linearGradient>
         <clipPath id="nestClip"><path d="M165 185h270v58c0 16-60 26-135 26s-135-10-135-26z"/></clipPath>
       </defs>
-      <ellipse cx="300" cy="185" rx="230" ry="120" fill="url(#ctaGlow)"/>
+      <ellipse class="pulse" cx="300" cy="185" rx="230" ry="120" fill="url(#ctaGlow)"/>
       <ellipse cx="300" cy="190" rx="250" ry="122" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="26"/>
-      <ellipse cx="300" cy="190" rx="226" ry="104" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="1.6"/>
-      <g fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="3 7" stroke-linecap="round" opacity=".9">
+      <ellipse class="spin-dash" cx="300" cy="190" rx="226" ry="104" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="1.6" stroke-dasharray="60 14"/>
+      <g class="flow" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="3 7" stroke-linecap="round" opacity=".9">
         <path d="M62 140c20 40 30 70 36 92M62 140c60-30 130-34 190-18"/>
         <path d="M352 210c40 30 120 34 170-30s50-80 70-100"/>
         <path d="M380 140c30-50 100-60 150-30"/>
       </g>
       <g fill="#fff"><circle cx="62" cy="140" r="5"/><circle cx="98" cy="232" r="5"/><circle cx="530" cy="110" r="5"/><circle cx="502" cy="223" r="5"/></g>
-      <path d="M478 104l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#fff"/>
-      <g fill="#fff" opacity=".9"><path d="M110 128v-20l11-3v17" stroke="#fff" stroke-width="2.2" fill="none"/><ellipse cx="106" cy="129" rx="4.5" ry="3.6"/><ellipse cx="117" cy="123" rx="4.5" ry="3.6"/>
+      <path class="twinkle" d="M478 104l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#fff"/>
+      <g class="notes" fill="#fff" opacity=".9"><path d="M110 128v-20l11-3v17" stroke="#fff" stroke-width="2.2" fill="none"/><ellipse cx="106" cy="129" rx="4.5" ry="3.6"/><ellipse cx="117" cy="123" rx="4.5" ry="3.6"/>
         <path d="M466 262v-18l10-3v15" stroke="#fff" stroke-width="2.2" fill="none"/><ellipse cx="462" cy="263" rx="4.5" ry="3.6"/><ellipse cx="472" cy="257" rx="4.5" ry="3.6"/></g>
       <ellipse cx="300" cy="262" rx="150" ry="20" fill="#fff" opacity=".5"/>
       <path d="M165 185h270v58c0 16-60 26-135 26s-135-10-135-26z" fill="url(#nestSide)"/>
@@ -554,7 +584,7 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
         <path d="M140 225l80-48M170 250l100-70M210 266l120-88M260 272l130-92M310 274l130-92M360 272l100-72M410 268l50-35"/>
       </g>
       <ellipse cx="300" cy="185" rx="135" ry="14" fill="#C9A06F"/>
-      <use href="#bird" x="228" y="42" width="150" height="142"/>
+      <use class="bob-svg" href="#bird" x="228" y="42" width="150" height="142"/>
     </svg>
     <p class="eyebrow">LET’S BUILD WHAT’S NEXT</p>
     <h2 class="serif">Your Next Chapter Starts Here.</h2>
