@@ -220,7 +220,7 @@ section.band{padding:clamp(64px,9vw,110px) 0}
 .cta p{margin:16px 0 30px;font-size:17px}
 .cta .acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
 .cta .btn{background:#33405A;color:#fff}.cta .btn.light{background:#fff;color:#33405A;border-color:#fff}
-.cta svg.nestbird{width:240px;max-width:70%;height:auto;margin:0 auto 22px;display:block;filter:drop-shadow(0 20px 18px rgba(42,53,80,.18))}
+.cta svg.nestbird{width:520px;max-width:96%;height:auto;margin:0 auto 22px;display:block;filter:drop-shadow(0 20px 18px rgba(42,53,80,.18))}
 
 footer.site{background:#33405A;color:#DCE4F2;padding:56px 0 calc(40px + env(safe-area-inset-bottom,0px))}
 footer.site .wrap{display:flex;justify-content:space-between;gap:40px;flex-wrap:wrap}
@@ -228,6 +228,7 @@ footer.site .logo{color:#fff}
 footer.site p{margin:16px 0 0;font-size:15px}
 footer.site small{color:#AEBBD3}
 footer.site .cols{display:flex;gap:56px}
+footer.site .legal{display:block;margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,.15)}
 footer.site h4{margin:0 0 12px;color:#fff;font-size:14.5px}
 footer.site .cols a,footer.site .cols button{display:block;color:#DCE4F2;text-decoration:none;margin:8px 0;font-size:15px;background:none;border:0;padding:0;cursor:pointer;text-align:left}
 footer.site .cols a:hover,footer.site .cols button:hover{color:#fff}
@@ -503,15 +504,37 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
 
 <section class="cta">
   <div class="wrap reveal">
-    <svg class="nestbird" viewBox="0 0 240 170" aria-hidden="true">
-      <ellipse cx="120" cy="128" rx="110" ry="30" fill="#8B5E3C"/><ellipse cx="120" cy="118" rx="110" ry="26" fill="#C99A68"/>
-      <path d="M30 112c40 10 140 10 180 0M24 122c50 14 142 14 192 0M40 104l26 32M80 100l26 36M120 98l26 38M160 100l24 34" stroke="#A97A4D" stroke-width="5" stroke-linecap="round" fill="none" opacity=".7"/>
-      <use href="#bird" x="66" y="6" width="120" height="112"/>
+    <svg class="nestbird" viewBox="0 -10 560 370" aria-hidden="true">
+      <defs>
+        <radialGradient id="ctaGlow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset=".55" stop-color="#fff" stop-opacity=".2"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+        <linearGradient id="nestSide" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#D9AE7D"/><stop offset="1" stop-color="#B98A58"/></linearGradient>
+        <clipPath id="nestClip"><path d="M145 180h270v58c0 18-60 30-135 30s-135-12-135-30z"/></clipPath>
+      </defs>
+      <circle cx="280" cy="185" r="150" fill="url(#ctaGlow)"/>
+      <g transform="rotate(-24 300 170)" fill="none" stroke="#fff">
+        <ellipse cx="300" cy="170" rx="140" ry="172" stroke-opacity=".3" stroke-width="24"/>
+        <ellipse cx="300" cy="170" rx="134" ry="166" stroke-opacity=".8" stroke-width="2"/>
+      </g>
+      <g fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="3 7" stroke-linecap="round" opacity=".9">
+        <path d="M30 200C60 140 120 110 200 135"/><path d="M30 200c10 40 20 70 4 98"/>
+        <path d="M528 110c-40 60-90 120-150 132"/><path d="M528 110c-6 60 2 110 0 140M470 70c40 0 60 20 58 40"/>
+        <path d="M340 110c30-50 90-60 130-40"/>
+      </g>
+      <g fill="#fff"><circle cx="30" cy="200" r="5.5"/><circle cx="34" cy="298" r="5.5"/><circle cx="528" cy="110" r="5.5"/><circle cx="528" cy="250" r="5.5"/></g>
+      <path d="M455 50l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#fff"/>
+      <g fill="#fff"><path d="M70 150v-22l12-3v19" stroke="#fff" stroke-width="2.4" fill="none"/><ellipse cx="66" cy="151" rx="5" ry="4"/><ellipse cx="78" cy="145" rx="5" ry="4"/><path d="M418 246v-20" stroke="#fff" stroke-width="2.4"/><path d="M418 226q8 3 9 10" stroke="#fff" stroke-width="2.4" fill="none"/><ellipse cx="414" cy="247" rx="5" ry="4"/></g>
+      <ellipse cx="280" cy="262" rx="150" ry="22" fill="#fff" opacity=".45"/>
+      <path d="M145 180h270v58c0 18-60 30-135 30s-135-12-135-30z" fill="url(#nestSide)"/>
+      <g clip-path="url(#nestClip)" stroke="#A97D4E" stroke-width="7" opacity=".55">
+        <path d="M120 220l70-40M150 245l90-65M190 262l110-82M240 270l120-90M290 272l130-95M340 272l110-82M390 268l60-45"/>
+      </g>
+      <ellipse cx="280" cy="180" rx="135" ry="15" fill="#C9A06F"/>
+      <use href="#bird" x="200" y="36" width="160" height="150"/>
     </svg>
     <p class="eyebrow">LET’S BUILD WHAT’S NEXT</p>
     <h2 class="serif">Your Next Chapter Starts Here.</h2>
     <p>Discover what becomes possible when your entire school works together.</p>
-    <div class="acts"><button class="btn" type="button" data-auth="signup">Register your school <svg aria-hidden="true"><use href="#i-right"/></svg></button>
+    <div class="acts"><a class="btn" href="#ecosystem">Explore Nestopia <svg aria-hidden="true"><use href="#i-right"/></svg></a>
       <button class="btn light" type="button" data-demo>Request a Demo <svg aria-hidden="true"><use href="#i-arrow"/></svg></button></div>
   </div>
 </section>
@@ -525,6 +548,7 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
       <div><h4>Connect</h4><button type="button" data-demo>Contact</button><button type="button" data-demo>Request a Demo</button><a href="https://thinknestonline.com/">ThinkNest</a></div>
     </div>
   </div>
+  <div class="wrap legal"><small>© <span id="yr">2026</span> Nestopia · A ThinkNest solution</small></div>
 </footer>
 
 <dialog class="demo" id="demoDlg" aria-labelledby="demoTitle">
@@ -609,6 +633,7 @@ function landingView(){
       if (error) return show(msg, "Your request couldn’t be sent: " + friendly(error), "err");
       f.reset(); show(msg, "Thank you. Your request has been sent, and we’ll be in touch soon.", "ok");
     }); };
+  const yr = document.getElementById("yr"); if (yr) yr.textContent = new Date().getFullYear();
   if (location.hash && location.hash.length > 1) { const t = document.getElementById(location.hash.slice(1)); if (t) setTimeout(() => t.scrollIntoView(), 50); }
 }
 
