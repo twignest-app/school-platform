@@ -177,16 +177,22 @@
     return h;
   }
   function objPreview() {
-    const p = OBJ, ok = p.rows.filter(r => !r.problem), bad = p.rows.filter(r => r.problem);
+    const p = OBJ, ok = p.rows.filter(r => !r.problem), make = p.rows.filter(r => r.need), bad = p.rows.filter(r => r.problem && !r.need);
+    const needs = {}; make.forEach(r => { const k = r.need.sb + (nz(r.need.sb) === nz(r.need.st) ? "" : " › " + r.need.st); needs[k] = (needs[k] || 0) + 1; });
+    const total = ok.length + (p.create === false ? 0 : make.length);
     const groups = {}; ok.forEach(r => { const k = `${r.grade.name} › ${r.col.sb.name}${r.col.sb.name !== r.col.st.name ? ": " + r.col.st.name : ""} › ${C.terms[r.term]}`; groups[k] = (groups[k] || 0) + 1; });
-    return `<div class="card"><h2>Check before importing</h2><p class="note">From <b>${esc(p.file)}</b>: ${ok.length} objective${ok.length === 1 ? "" : "s"} ready${bad.length ? `, ${bad.length} row${bad.length === 1 ? "" : "s"} skipped` : ""}.</p>
+    return `<div class="card"><h2>Check before importing</h2><p class="note">From <b>${esc(p.file)}</b>: ${total} objective${total === 1 ? "" : "s"} ready${bad.length ? `, ${bad.length} row${bad.length === 1 ? "" : "s"} skipped` : ""}.</p>
       <div class="tablewrap"><table><tr><th>Grade, subject and term</th><th>Objectives</th></tr>${Object.entries(groups).map(([k, n]) => `<tr><td>${esc(k)}</td><td>${n}</td></tr>`).join("")}</table></div>
+      ${make.length ? `<div class="colcard" style="margin:12px 0 0"><h3 style="margin-top:0">New subjects and strands in your file</h3>
+        <p class="note">These aren’t in your setup yet. TwigNest can add them, each with an objectives column, so your curriculum fits exactly.</p>
+        <div class="tablewrap"><table><tr><th>Subject and strand</th><th>Objectives</th></tr>${Object.entries(needs).map(([k, n]) => `<tr><td>${esc(k)}</td><td>${n}</td></tr>`).join("")}</table></div>
+        <label class="check" style="margin:8px 0 0"><input type="checkbox" id="objCreate" ${p.create === false ? "" : "checked"}> Add these subjects and strands to my setup</label></div>` : ""}
       ${bad.length ? `<details style="margin-top:10px"><summary class="note"><b>Rows that will be skipped</b></summary><div class="tablewrap"><table><tr><th>Row</th><th>Objective</th><th>Problem</th></tr>${bad.slice(0, 40).map(r => `<tr><td>${r.row}</td><td>${esc(r.text)}</td><td>${esc(r.problem)}</td></tr>`).join("")}</table></div></details>` : ""}
       <label class="note" style="display:block;margin-top:12px"><b>How should these be added?</b></label>
       <label class="check" style="margin:6px 0"><input type="radio" name="objMode" value="replace" checked> Replace the objectives for the grades, strands and terms in this file</label>
       <label class="check" style="margin:6px 0"><input type="radio" name="objMode" value="add"> Add them to the objectives already there</label>
       <p class="note">Objectives with the same wording keep any data teachers have already recorded.</p>
-      <div class="row"><button class="btn" data-act="obj-import" ${ok.length ? "" : "disabled"}>Import ${ok.length} objective${ok.length === 1 ? "" : "s"}</button><button class="btn ghost" data-act="obj-cancel">Cancel</button></div></div>`;
+      <div class="row"><button class="btn" data-act="obj-import" ${total ? "" : "disabled"}>Import ${total} objective${total === 1 ? "" : "s"}</button><button class="btn ghost" data-act="obj-cancel">Cancel</button></div></div>`;
   }
   async function readObjFile(f) {
     await loadXLSX(); const wb = XLSX.read(await f.arrayBuffer()), ws = wb.Sheets[wb.SheetNames[0]], rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: false });
@@ -205,11 +211,24 @@
       if (!row.grade) row.problem = gI < 0 ? "No Grade column" : `Grade “${r[gI]}” isn’t in your setup`;
       else if (!row.col) row.problem = `No objectives column for “${[r[sI], r[stI]].filter(Boolean).join(" › ") || "this subject"}”`;
       else if (!(ti >= 0 && ti < C.terms.length)) row.problem = `Term “${tv}” isn’t in your setup`;
+      if (row.grade && !row.col && ti >= 0 && ti < C.terms.length && String(r[sI] ?? "").trim()) {
+        const sbName = String(r[sI]).trim(), stName = String(stI >= 0 ? r[stI] ?? "" : "").trim() || sbName;
+        row.need = { sb: sbName, st: stName };
+      }
       out.push(row);
     });
     OBJ = { file: f.name, rows: out };
   }
   function applyObj(mode) {
+    if (OBJ.create !== false) OBJ.rows.filter(r => r.need).forEach(r => {
+      let sb = C.subjects.find(x => nz(x.name) === nz(r.need.sb));
+      if (!sb) { sb = { id: uid("sb"), name: r.need.sb, strands: [] }; C.subjects.push(sb); }
+      let st = sb.strands.find(x => nz(x.name) === nz(r.need.st));
+      if (!st) { st = { id: uid("st"), name: r.need.st, cols: [] }; sb.strands.push(st); }
+      let c = st.cols.find(x => x.type === "objectives");
+      if (!c) { c = col(`${r.need.st} objectives`, "objectives"); st.cols.push(c); }
+      r.col = { sb, st, c }; r.problem = null; r.need = null;
+    });
     const ok = OBJ.rows.filter(r => !r.problem), keys = new Set(ok.map(r => `${r.col.c.id}|${r.grade.id}|${r.term}`));
     keys.forEach(k => { const [cid, gid, ti] = k.split("|"), c = objCols().find(x => x.c.id === cid).c, per = c.objectives[gid] = c.objectives[gid] || []; while (per.length < C.terms.length) per.push([]);
       const old = per[+ti] || [], incoming = ok.filter(r => `${r.col.c.id}|${r.grade.id}|${r.term}` === k), taken = new Set();
@@ -343,6 +362,7 @@
   function onChange(e) {
     const t = e.target; if (!ctx.el.contains(t)) return;
     let structural = false;
+    if (t.id === "objCreate") { if (OBJ) { OBJ.create = t.checked; render(); } return; }
     if (t.id === "objFile") { const f = t.files[0]; if (!f) return; readObjFile(f).then(render).catch(err => { const m = document.getElementById("objMsg"); if (m) m.innerHTML = `<div class="msg err">${esc(err.message || err)}</div>`; }); t.value = ""; return; }
     if (t.dataset.pickStrand) { ui.strand = t.value; render(); return; }
     if (t.dataset.gradePick) { ui.grade = t.value; render(); return; }
