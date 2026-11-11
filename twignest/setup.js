@@ -270,7 +270,8 @@
   function ensureBaselines() {
     let changed = false;
     C.subjects.forEach(sb => sb.strands.forEach(st => {
-      if (st.cols.some(x => x.type === "objectives") && !st.cols.some(x => x.baseline)) { st.cols.unshift(col("Baseline teacher assessment", "list", { baseline: true })); changed = true; }
+      if (!st.cols.some(x => x.baseline)) { st.cols.unshift(col("Baseline teacher assessment", "list", { baseline: true })); changed = true; }
+      if (!st.cols.some(x => !x.baseline && x.type !== "comment")) { st.cols.push(col(`${st.name} objectives`, "objectives")); changed = true; }
     }));
     return changed;
   }
@@ -366,6 +367,7 @@
         <div class="tablewrap"><table><tr><th>Level</th>${BANDS.map(b => `<th>${b}</th>`).join("")}</tr>
         ${C.scale.map((lv, i) => `<tr><td><b>${esc(lv)}</b></td>${BANDS.map((b, j) => `<td style="min-width:230px"><textarea dir="rtl" lang="ar" aria-label="Arabic, level ${esc(lv)}, ${b}" data-bankar="${i}|${j}" style="min-height:100px;font-size:15px">${esc(((C.reports.bankAr || BANK_AR)[i] || [])[j] || "")}</textarea></td>`).join("")}</tr>`).join("")}</table></div></div>` : ""}`;
     if (ui.step === 8) h += `<div class="card"><h2>Check and finish</h2>
+      ${v.block.some(b => /baseline column|column recorded each term/.test(b[0])) ? `<div class="colcard" style="margin:0 0 12px"><p class="note" style="margin-top:0">Some strands are missing a baseline or a column recorded each term. TwigNest can add a <b>Baseline teacher assessment</b> and an <b>objectives</b> column to each of them for you. You can rename or change them later in step 5.</p><button class="btn small" data-act="auto-cols">Add the missing columns</button></div>` : ""}
       ${v.block.length ? `<h3>To fix before teachers can use it</h3>` + v.block.map(([t, s, sid]) => `<div class="issue">${esc(t)} <button class="btn ghost small" data-step="${s}" ${sid ? `data-fix="${sid}"` : ""}>Fix</button></div>`).join("") : `<p class="ok">Everything needed is set up.</p>`}
       ${v.warn.length ? `<h3>Still to add</h3><p class="note">These don’t stop you finishing, and you can add them any time.</p>` + v.warn.map(([t, s, sid]) => `<div class="issue">${esc(t)} <button class="btn ghost small" data-step="${s}" ${sid ? `data-fix="${sid}"` : ""}>Add</button></div>`).join("") : ""}
       <div class="row" style="margin-top:14px"><button class="btn" data-act="go-live" ${v.block.length ? "disabled" : ""}>${row?.status === "live" ? "Ready for teachers ✓" : "Mark as ready for teachers"}</button></div></div>`;
@@ -396,6 +398,7 @@
         const ws = XLSX.utils.aoa_to_sheet(rows); ws["!cols"] = [{ wch: 12 }, { wch: 14 }, { wch: 22 }, { wch: 10 }, { wch: 60 }, { wch: 60 }]; const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Objectives");
         XLSX.writeFile(wb, a === "obj-template" ? "TwigNest objectives template.xlsx" : "TwigNest objectives.xlsx"); }).catch(err => alert(err.message)); return; }
     if (a === "obj-cancel") { OBJ = null; return render(); }
+    if (a === "auto-cols") { ensureBaselines(); save(true); render(); return; }
     if (a === "lib-open") {
       fetch(LIBRARY[0].file, { cache: "no-store" }).then(r => { if (!r.ok) throw new Error("Couldn’t load the curriculum (" + r.status + ")."); return r.json(); })
         .then(j => { LIB = j; LIBUI = {}; OBJ = null; render(); })
