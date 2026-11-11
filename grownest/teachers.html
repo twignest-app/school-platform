@@ -1,0 +1,162 @@
+<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#4A2C5E"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="GrowNest"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=20261108s"><title>Teachers · GrowNest</title><style>
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:18px 0}
+.toolbar input,.toolbar select{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;min-height:44px}
+.toolbar input{flex:1;min-width:200px}
+.chip{display:inline-block;background:var(--mist);color:var(--plum);padding:2px 10px;border-radius:99px;font-size:.8rem;margin:2px 4px 2px 0}
+.chip.sage{background:#E5F0E3;color:#3F6B3B}
+.tlist .row{display:flex;gap:14px;align-items:center;padding:14px 4px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tlist .who{flex:1;min-width:220px}.tlist .who b{display:block}
+.tlist .left{opacity:.6}
+.badge-left{font-size:.75rem;background:#F1E4E4;color:#8A3B3B;padding:2px 8px;border-radius:99px;margin-left:6px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;margin:16px 0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+@media (max-width:640px){.two{grid-template-columns:1fr}}
+.hint{font-size:.82rem;color:var(--muted);font-weight:400}
+</style><script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"><script>(function(){try{if((localStorage.getItem("gn_lang")||"en")==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl";}}catch(e){}})();</script><script src="i18n-app.js?v=20261108s"></script><link rel="stylesheet" href="rtl-app.css?v=20261108s"></head><body>
+<header class="top"><div class="wrap"><a href="index.html"><img src="logo-header.png" alt="GrowNest"></a><a class="btn ghost small" href="app.html">Dashboard</a></div></header>
+<main class="wrap" style="padding:28px 20px 60px">
+ <h1>Teachers</h1><p class="muted" id="schoolLine">Loading…</p>
+ <div id="msg" class="msg hide" role="status"></div>
+ <div class="toolbar">
+  <input id="search" type="search" placeholder="Search by name, email, subject or class">
+  <select id="filter"><option value="active">Current teachers</option><option value="left">Left the school</option><option value="all">All</option></select>
+  <button class="btn primary" id="addBtn">Add teacher</button>
+  <button class="btn ghost" id="importBtn">Import from Excel</button>
+  <button class="btn ghost" id="exportBtn">Download as Excel</button>
+ </div>
+
+ <section id="formPanel" class="panel hide">
+  <h2 id="formTitle">Add a teacher</h2>
+  <form id="tForm" novalidate>
+   <div class="two">
+    <label class="f">Full name<input id="tName" autocomplete="off"></label>
+    <label class="f">Email (for feedback)<input id="tEmail" type="email" inputmode="email" autocomplete="off"></label>
+    <label class="f">Teacher type<select id="tType"><option value="class_teacher">Class teacher (teaches several subjects to their own class)</option><option value="subject_teacher">Subject teacher / specialist</option></select></label>
+    <label class="f" id="homeWrap">Their own class (homeroom)<input id="tHome" placeholder="e.g. Grade 3A" autocomplete="off"></label>
+    <label class="f">Subjects they teach <span class="hint">separate with commas, e.g. English, Maths</span><input id="tSubjects" list="subjectList" autocomplete="off"></label>
+    <label class="f">Classes they teach <span class="hint">e.g. Grade 3A, Grade 3B</span><input id="tClasses" autocomplete="off"></label>
+    <label class="f">Started at the school (optional)<input id="tJoined" type="date"></label>
+    <label class="f">Feedback language<select id="tLang"><option value="en">English</option><option value="ar">العربية (Arabic)</option></select><span class="hint">Emails and Word forms sent to this teacher use this language.</span></label>
+   </div>
+   <div id="formMsg" class="msg hide" role="status"></div>
+   <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn primary" id="saveBtn">Save teacher</button>
+    <button type="button" class="btn ghost" id="cancelBtn">Cancel</button>
+    <button type="button" class="btn ghost hide" id="leftBtn" style="margin-left:auto"></button>
+   </div>
+  </form>
+  <datalist id="subjectList"><option>Unit of Inquiry</option><option>English</option><option>Maths</option><option>Science</option><option>Arabic</option><option>Islamic Education</option><option>Social Studies</option><option>Moral Education</option><option>Art</option><option>Music</option><option>PE</option><option>Computing</option><option>French</option><option>Homeroom</option></datalist>
+ </section>
+
+ <section id="importPanel" class="panel hide">
+  <h2>Import teachers from Excel</h2>
+  <p>Use a spreadsheet with these columns: <b>Name</b>, <b>Email</b>, <b>Type</b> (Class teacher or Subject teacher), <b>Homeroom</b> (class teachers only), <b>Subjects</b>, <b>Classes</b>. Separate several subjects or classes with commas.</p>
+  <p><a href="#" id="templateLink">Download the template</a>, fill it in, then choose the file below. Teachers whose email is already in GrowNest are skipped.</p>
+  <label class="f">Excel or CSV file<input id="fileIn" type="file" accept=".xlsx,.xls,.csv"></label>
+  <div id="importMsg" class="msg hide" role="status"></div>
+  <div id="preview"></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+   <button class="btn primary hide" id="doImport">Add these teachers</button>
+   <button type="button" class="btn ghost" id="closeImport">Close</button>
+  </div>
+ </section>
+
+ <div class="card" style="padding:8px 20px"><div class="tlist" id="list"></div></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261108s"></script>
+<script>
+let ctx=null, teachers=[], editing=null, pending=[];
+const split=s=>String(s||"").split(/[,;\n]/).map(x=>x.trim()).filter(Boolean);
+const validEmail=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+async function init(){
+ ctx=await requireStaff(); if(!ctx)return;
+ $("schoolLine").textContent=ctx.school.name;
+ await load();
+}
+async function load(){
+ const {data,error}=await sb.from("teachers").select("*").eq("school_id",ctx.school.id).order("full_name");
+ if(error)return showMsg($("msg"),friendly(error),"err");
+ teachers=data; render();
+}
+function render(){
+ const q=$("search").value.trim().toLowerCase(), f=$("filter").value;
+ const rows=teachers.filter(t=>(f==="all"||t.status===f)&&(!q||[t.full_name,t.email,...t.subjects,...t.classes].join(" ").toLowerCase().includes(q)));
+ const active=teachers.filter(t=>t.status==="active").length;
+ $("schoolLine").textContent=ctx.school.name+" · "+active+" current teacher"+(active===1?"":"s");
+ $("list").innerHTML=rows.length?rows.map(t=>`<div class="row ${t.status==="left"?"left":""}"><div class="who"><b><a href="teacher.html?id=${t.id}" style="text-decoration:none">${esc(t.full_name)}</a>${t.status==="left"?'<span class="badge-left">Left</span>':""}</b><span class="muted">${esc(t.email)} · ${t.teacher_type==="class_teacher"?"Class teacher"+(t.homeroom?" of "+esc(t.homeroom):""):"Subject teacher"}</span><div>${t.subjects.map(s=>`<span class="chip">${esc(s)}</span>`).join("")}${t.classes.map(c=>`<span class="chip sage">${esc(c)}</span>`).join("")}${t.feedback_lang==="ar"?'<span class="chip" style="background:#FFF1D6;color:#7A5200">Arabic feedback</span>':""}</div></div><a class="btn primary small" href="teacher.html?id=${t.id}">Record</a> <button class="btn ghost small" data-edit="${t.id}">Edit</button></div>`).join("")
+  :`<p class="muted" style="padding:16px 0">${teachers.length?"No teachers match your search.":"No teachers yet. Tap “Add teacher” or import your staff list from Excel."}</p>`;
+}
+function openForm(t){
+ editing=t||null; $("importPanel").classList.add("hide"); $("formPanel").classList.remove("hide"); $("formMsg").classList.add("hide");
+ $("formTitle").textContent=t?"Edit teacher":"Add a teacher";
+ $("tName").value=t?t.full_name:""; $("tEmail").value=t?t.email:""; $("tSubjects").value=t?t.subjects.join(", "):""; $("tClasses").value=t?t.classes.join(", "):""; $("tJoined").value=t&&t.joined_on?t.joined_on:"";$("tType").value=t?t.teacher_type:"class_teacher";$("tHome").value=t?(t.homeroom||""):"";$("tLang").value=t&&t.feedback_lang==="ar"?"ar":"en";typeUI();
+ const lb=$("leftBtn"); lb.classList.toggle("hide",!t);
+ if(t) lb.textContent=t.status==="left"?"Mark as returned":"Mark as left the school";
+ $("formPanel").scrollIntoView({behavior:"smooth",block:"start"}); $("tName").focus();
+}
+function typeUI(){$("homeWrap").classList.toggle("hide",$("tType").value!=="class_teacher");}
+$("tType").onchange=typeUI;
+$("addBtn").onclick=()=>openForm(null);
+$("cancelBtn").onclick=()=>{$("formPanel").classList.add("hide");editing=null;};
+$("list").addEventListener("click",e=>{const id=e.target.dataset.edit;if(id)openForm(teachers.find(t=>t.id===id));});
+$("search").oninput=render; $("filter").onchange=render;
+$("tForm").addEventListener("submit",async e=>{e.preventDefault();const m=$("formMsg");
+ const type=$("tType").value,home=type==="class_teacher"?$("tHome").value.trim():"";
+ let classes=split($("tClasses").value);if(home&&!classes.includes(home))classes=[home,...classes];
+ const rec={full_name:$("tName").value.trim(),email:$("tEmail").value.trim().toLowerCase(),teacher_type:type,homeroom:home||null,subjects:split($("tSubjects").value),classes,joined_on:$("tJoined").value||null,feedback_lang:$("tLang").value};
+ if(!rec.full_name)return showMsg(m,"Please enter the teacher’s name.","err");
+ if(!validEmail(rec.email))return showMsg(m,"Please enter a valid email address.","err");
+ if(teachers.some(t=>t.email.toLowerCase()===rec.email&&(!editing||t.id!==editing.id)))return showMsg(m,"Another teacher already has this email.","err");
+ $("saveBtn").disabled=true;
+ const res=editing?await sb.from("teachers").update(rec).eq("id",editing.id):await sb.from("teachers").insert({...rec,school_id:ctx.school.id});
+ $("saveBtn").disabled=false;
+ if(res.error)return showMsg(m,friendly(res.error),"err");
+ $("formPanel").classList.add("hide"); showMsg($("msg"),(editing?"Saved changes for ":"Added ")+rec.full_name+".","ok"); editing=null; load();
+});
+$("leftBtn").onclick=async()=>{if(!editing)return;const leaving=editing.status!=="left";
+ if(leaving&&!confirm(editing.full_name+" will be moved to “Left the school”. Their record and history are kept. Continue?"))return;
+ const today=new Date().toISOString().slice(0,10);
+ const {error}=await sb.from("teachers").update(leaving?{status:"left",left_on:today}:{status:"active",left_on:null}).eq("id",editing.id);
+ if(error)return showMsg($("formMsg"),friendly(error),"err");
+ $("formPanel").classList.add("hide"); showMsg($("msg"),editing.full_name+(leaving?" is now archived as having left the school.":" is back as a current teacher."),"ok"); editing=null; load();};
+
+// ---- import ----
+$("importBtn").onclick=()=>{$("formPanel").classList.add("hide");$("importPanel").classList.remove("hide");$("importPanel").scrollIntoView({behavior:"smooth"});};
+$("closeImport").onclick=()=>{$("importPanel").classList.add("hide");pending=[];$("preview").innerHTML="";$("doImport").classList.add("hide");$("fileIn").value="";$("importMsg").classList.add("hide");};
+function saveXlsx(rows,sheet,file){const ws=XLSX.utils.aoa_to_sheet(rows);ws["!cols"]=rows[0].map((h,i)=>({wch:Math.min(45,Math.max(12,...rows.map(r=>String(r[i]??"").length+2)))}));
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,sheet);XLSX.writeFile(wb,file);}
+$("exportBtn").onclick=()=>{if(!window.XLSX)return showMsg($("msg"),"The Excel maker didn’t load. Check your connection and refresh.","err");
+ if(!teachers.length)return showMsg($("msg"),"There are no teachers to download yet.","info");
+ const rows=[["Name","Email","Type","Homeroom","Subjects","Classes","Feedback language","Status","Started","Left on"],...teachers.map(t=>[t.full_name,t.email,t.teacher_type==="class_teacher"?"Class teacher":"Subject teacher",t.homeroom||"",t.subjects.join(", "),t.classes.join(", "),t.feedback_lang==="ar"?"Arabic":"English",t.status==="left"?"Left":"Current",t.joined_on||"",t.left_on||""])];
+ saveXlsx(rows,"Teachers",("GrowNest teachers - "+ctx.school.name+" - "+new Date().toISOString().slice(0,10)+".xlsx").replace(/[\\/:*?"<>|]/g,""));
+ showMsg($("msg"),"Downloaded "+teachers.length+" teacher"+(teachers.length===1?"":"s")+". The file opens in Excel or Numbers.","ok");};
+$("templateLink").onclick=e=>{e.preventDefault();if(window.XLSX){saveXlsx([["Name","Email","Type","Homeroom","Subjects","Classes","Feedback language"],["Sara Ahmed","sara.ahmed@school.ae","Class teacher","Grade 3A","Unit of Inquiry, English, Maths, Science","Grade 3A","English"],["Omar Khalid","omar.khalid@school.ae","Subject teacher","","Arabic","Grade 3A, Grade 3B, Grade 4A","Arabic"]],"Teachers","GrowNest teachers template.xlsx");return;}
+ const csv="\uFEFFName,Email,Type,Homeroom,Subjects,Classes\r\nSara Ahmed,sara.ahmed@school.ae,Class teacher,Grade 3A,\"Unit of Inquiry, English, Maths, Science\",Grade 3A\r\nOmar Khalid,omar.khalid@school.ae,Subject teacher,,Arabic,\"Grade 3A, Grade 3B, Grade 4A\"\r\n";
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="GrowNest teachers template.csv";document.body.appendChild(a);a.click();a.remove();};
+$("fileIn").onchange=async e=>{const f=e.target.files[0];if(!f)return;const m=$("importMsg");
+ if(!window.XLSX)return showMsg(m,"The Excel reader didn’t load. Check your internet connection and try again.","err");
+ try{
+  const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});const ws=wb.Sheets[wb.SheetNames[0]];
+  const rows=XLSX.utils.sheet_to_json(ws,{defval:""});
+  const key=(r,names)=>{const k=Object.keys(r).find(k=>names.includes(k.trim().toLowerCase()));return k?String(r[k]).trim():"";};
+  const existing=new Set(teachers.map(t=>t.email.toLowerCase())), seen=new Set(); let skipped=0, bad=0;
+  pending=[];
+  rows.forEach(r=>{const name=key(r,["name","full name","teacher","teacher name"]),email=key(r,["email","email address","e-mail"]).toLowerCase();
+   if(!name&&!email)return; if(!name||!validEmail(email)){bad++;return;} if(existing.has(email)||seen.has(email)){skipped++;return;}
+   seen.add(email); const ty=/class/i.test(key(r,["type","teacher type","role"]))?"class_teacher":"subject_teacher"; const hm=ty==="class_teacher"?key(r,["homeroom","home room","own class"]):"";
+   let cl=split(key(r,["classes","class","grades","grade"]));if(hm&&!cl.includes(hm))cl=[hm,...cl];
+   pending.push({school_id:ctx.school.id,full_name:name,email,teacher_type:ty,homeroom:hm||null,subjects:split(key(r,["subjects","subject"])),classes:cl,feedback_lang:/arab|عرب/i.test(key(r,["feedback language","language","feedback"]))?"ar":"en"});});
+  $("preview").innerHTML=pending.length?"<table class='t'><tr><th>Name</th><th>Email</th><th>Type</th><th>Subjects</th><th>Classes</th></tr>"+pending.slice(0,50).map(t=>`<tr><td>${esc(t.full_name)}</td><td>${esc(t.email)}</td><td>${t.teacher_type==="class_teacher"?"Class teacher":"Subject teacher"}</td><td>${esc(t.subjects.join(", "))}</td><td>${esc(t.classes.join(", "))}</td></tr>`).join("")+"</table>"+(pending.length>50?`<p class="muted">…and ${pending.length-50} more</p>`:""):"";
+  $("doImport").classList.toggle("hide",!pending.length);
+  $("doImport").textContent="Add "+pending.length+" teacher"+(pending.length===1?"":"s");
+  showMsg(m,`Found ${pending.length} new teacher${pending.length===1?"":"s"}.`+(skipped?` ${skipped} already in GrowNest (skipped).`:"")+(bad?` ${bad} row${bad===1?"":"s"} missing a name or valid email (skipped).`:""),pending.length?"info":"err");
+ }catch(err){showMsg(m,"That file couldn’t be read. Please use the template as an Excel (.xlsx) or CSV file.","err");}
+};
+$("doImport").onclick=async()=>{if(!pending.length)return;$("doImport").disabled=true;
+ const {error}=await sb.from("teachers").insert(pending);$("doImport").disabled=false;
+ if(error)return showMsg($("importMsg"),friendly(error),"err");
+ const n=pending.length;$("closeImport").click();showMsg($("msg"),"Added "+n+" teacher"+(n===1?"":"s")+".","ok");load();};
+const hb=document.querySelector("header.top .btn");
+const box=document.createElement("div");box.style.cssText="display:flex;gap:8px";hb.replaceWith(box);box.append(hb);const so=document.createElement("a");so.className="btn ghost small";so.href="#";so.textContent="Sign out";so.onclick=e=>{e.preventDefault();signOut();};box.append(so);
+init();</script>
+</body></html>

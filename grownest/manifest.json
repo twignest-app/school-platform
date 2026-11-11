@@ -1,0 +1,29 @@
+{
+ "name": "GrowNest",
+ "short_name": "GrowNest",
+ "description": "Lesson observations, learning walks and appraisals for UAE schools.",
+ "start_url": "app.html",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "any",
+ "background_color": "#F8F4FC",
+ "theme_color": "#4A2C5E",
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}

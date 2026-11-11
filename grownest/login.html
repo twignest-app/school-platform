@@ -1,0 +1,23 @@
+<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#4A2C5E"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="GrowNest"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=20261108s"><title>Sign in · GrowNest</title><meta name="title-ar" content="تسجيل الدخول · GrowNest"><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"><script>(function(){try{var l=localStorage.getItem("gn_lang")||"en";document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";}catch(e){}})();</script><script src="i18n.js?v=20261108s" defer></script><style>[dir="rtl"] .msg{text-align:right}</style></head><body>
+
+<header class="top"><div class="wrap"><a href="index.html"><img src="logo-header.png" alt="GrowNest"></a><div style="display:flex;gap:6px;align-items:center"><button type="button" class="langsw">العربية</button><a class="btn ghost small" href="register.html"><span class="t-en">Register</span><span class="t-ar">التسجيل</span></a></div></div></header><main class="wrap"><div class="card narrow">
+ <h1><span class="t-en">Sign in</span><span class="t-ar">تسجيل الدخول</span></h1><p class="muted"><span class="t-en">For observers and school leaders.</span><span class="t-ar">للملاحظين وقادة المدرسة.</span></p>
+ <form id="form" novalidate>
+  <label class="f"><span class="t-en">Email</span><span class="t-ar">البريد الإلكتروني</span><input id="email" type="email" autocomplete="email" inputmode="email" dir="ltr"></label>
+  <label class="f"><span class="t-en">Password</span><span class="t-ar">كلمة المرور</span><input id="password" type="password" autocomplete="current-password" dir="ltr"></label>
+  <div id="msg" class="msg hide" role="status"></div>
+  <button class="btn primary" id="submit" style="width:100%"><span class="t-en">Sign in</span><span class="t-ar">تسجيل الدخول</span></button>
+ </form>
+ <p style="margin-top:16px"><a href="#" id="forgot"><span class="t-en">Forgot your password?</span><span class="t-ar">نسيت كلمة المرور؟</span></a></p>
+</div></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261108s"></script>
+<script>
+sb.auth.getSession().then(({data})=>{if(data.session)location.href="app.html";});
+$("form").addEventListener("submit",async e=>{e.preventDefault();const m=$("msg");$("submit").disabled=true;
+ const {error}=await sb.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
+ $("submit").disabled=false;if(error)return showMsg(m,friendly(error),"err");location.href="app.html";});
+$("forgot").addEventListener("click",async e=>{e.preventDefault();const m=$("msg");const email=$("email").value.trim();
+ if(!email)return showMsg(m,t("Type your email above first, then tap “Forgot your password?” again.","اكتب بريدك الإلكتروني أعلاه أولًا، ثم اضغط على «نسيت كلمة المرور؟» مرة أخرى."),"info");
+ const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:SITE+"reset.html"});
+ showMsg(m,error?friendly(error):t("If that email has an account, we’ve sent a link to reset your password.","إذا كان لهذا البريد حساب، فقد أرسلنا رابطًا لإعادة تعيين كلمة المرور."),error?"err":"ok");});</script>
+</body></html>

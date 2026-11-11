@@ -1,0 +1,38 @@
+<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#4A2C5E"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="GrowNest"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=20261108s"><title>Appraisals · GrowNest</title><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"><script>(function(){try{if((localStorage.getItem("gn_lang")||"en")==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl";}}catch(e){}})();</script><script src="i18n-app.js?v=20261108s"></script><link rel="stylesheet" href="rtl-app.css?v=20261108s"></head><body>
+<header class="top"><div class="wrap"><a href="index.html"><img src="logo-header.png" alt="GrowNest"></a><a class="btn ghost small" href="app.html">Dashboard</a></div></header>
+<main class="wrap" style="padding:28px 20px 60px">
+ <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+  <div><h1 style="margin:0">Appraisals</h1><p class="muted" id="sub">Loading…</p></div>
+  <button class="btn primary" id="newBtn">New appraisal</button>
+ </div>
+ <div id="msg" class="msg hide" role="status"></div>
+ <section id="newPanel" class="card hide" style="margin:16px 0">
+  <h2>New appraisal</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 14px">
+   <label class="f">Teacher<select id="aTeacher"><option value="">Choose a teacher…</option></select></label>
+   <label class="f">Academic year<select id="aYear"></select></label>
+   <label class="f">Period<select id="aPeriod"><option>Term 1</option><option>Term 2</option><option>Term 3</option><option>Annual</option></select></label>
+   <label class="f">Meeting date<input id="aDate" type="date"></label>
+  </div>
+  <div style="display:flex;gap:10px"><button class="btn primary" id="createBtn">Start appraisal</button><button class="btn ghost" type="button" id="cancelBtn">Cancel</button></div>
+ </section>
+ <div class="card" style="padding:6px 18px;margin-top:16px"><div id="list"></div></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261108s"></script>
+<script>
+let ctx=null;
+async function init(){ctx=await requireStaff();if(!ctx)return;headerButtons([["app.html","Dashboard"],["teachers.html","Teachers"]]);
+ const [a,t]=await Promise.all([sb.from("observations").select("id,observed_on,academic_year,period_label,overall_level,status,teacher_response,teachers(full_name)").eq("school_id",ctx.school.id).eq("type","appraisal").order("observed_on",{ascending:false}),
+  sb.from("teachers").select("id,full_name").eq("school_id",ctx.school.id).eq("status","active").order("full_name")]);
+ if(a.error)return showMsg($("msg"),friendly(a.error),"err");
+ $("aTeacher").innerHTML+= (t.data||[]).map(x=>`<option value="${x.id}">${esc(x.full_name)}</option>`).join("");
+ const y=new Date().getFullYear(),cur=academicYear();$("aYear").innerHTML=[`${y-2}–${y-1}`,`${y-1}–${y}`,`${y}–${y+1}`].map(v=>`<option ${v===cur?"selected":""}>${v}</option>`).join("");
+ $("sub").textContent=ctx.school.name+" · "+a.data.length+" appraisal"+(a.data.length===1?"":"s");
+ $("list").innerHTML=a.data.length?a.data.map(o=>`<a href="appraise.html?id=${o.id}" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit"><div style="flex:1;min-width:220px"><b>${esc(o.teachers?.full_name||"")}</b><br><span class="muted">${esc([o.period_label,o.academic_year].filter(Boolean).join(" "))} · ${esc(fmtDate(o.observed_on))}</span></div>${o.overall_level?levelChip(o.overall_level):""} <span class="lchip">${o.status==="sent"?"Sent":"Draft"}</span></a>`).join(""):`<p class="muted" style="padding:16px 0">No appraisals yet. Tap “New appraisal” to start.</p>`;}
+$("newBtn").onclick=()=>{$("newPanel").classList.remove("hide");$("aDate").value=new Date().toISOString().slice(0,10);};
+$("cancelBtn").onclick=()=>$("newPanel").classList.add("hide");
+$("createBtn").onclick=async()=>{const tid=$("aTeacher").value;if(!tid)return showMsg($("msg"),"Choose the teacher to appraise.","err");
+ const {data,error}=await sb.from("observations").insert({school_id:ctx.school.id,teacher_id:tid,observer_id:ctx.user.id,type:"appraisal",observed_on:$("aDate").value,academic_year:$("aYear").value,period_label:$("aPeriod").value}).select().single();
+ if(error)return showMsg($("msg"),friendly(error),"err");location.href="appraise.html?id="+data.id;};
+init();</script>
+</body></html>

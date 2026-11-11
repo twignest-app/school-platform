@@ -1,0 +1,36 @@
+<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#4A2C5E"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="GrowNest"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=20261108s"><title>Observation criteria · GrowNest</title><style>
+main.cr{padding:24px 20px 60px}
+.ctabs{display:flex;gap:6px;background:var(--mist);padding:5px;border-radius:12px;margin:14px 0;flex-wrap:wrap}
+.ctabs button{flex:1;border:0;background:transparent;padding:10px;border-radius:9px;font:inherit;font-weight:600;color:var(--plum);cursor:pointer;min-width:150px}
+.ctabs button[aria-selected="true"]{background:#fff;box-shadow:0 1px 3px rgba(74,44,94,.15)}
+.cgrid{display:grid;grid-template-columns:280px minmax(0,1fr);gap:18px;align-items:start}
+#side{display:flex;flex-direction:column;gap:6px;position:sticky;top:12px}
+#side button{font:inherit;font-size:.9rem;text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;cursor:pointer}
+#side button[aria-selected="true"]{border-color:var(--plum);background:#F4EEF9}
+.card textarea,.card input:not([type=checkbox]){font:inherit;font-weight:400;width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+.lvls{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:10px 0 14px}
+.lvls button,.lvls span{font:inherit;border:2px solid transparent;border-radius:10px;padding:8px 4px;cursor:pointer;text-align:center;opacity:.55}
+.lvls button b,.lvls span b{display:block;font-size:1.1rem}.lvls button span{font-size:.72rem;font-weight:600;opacity:1;padding:0;border:0}
+.lvls button[aria-pressed="true"]{opacity:1;border-color:#151A2E;box-shadow:0 3px 0 #151A2E}
+.lvls.small span{cursor:default;padding:6px}
+.kinds{display:grid;grid-template-columns:1fr 1fr;gap:16px}.kinds h3,.kinds h4{margin:0 0 8px;font-size:.95rem;color:var(--muted)}
+.srow{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start}.srow textarea{flex:1;font-size:.9rem}
+.sbtns{display:flex;flex-direction:column;gap:4px}.sbtns button{font:inherit;font-size:.78rem;border:1px solid var(--line);background:var(--mist);color:var(--plum);border-radius:8px;padding:4px 8px;cursor:pointer}
+.sbtns button.rm{color:var(--danger);background:#fff}.sbtns button[disabled]{opacity:.35;cursor:default}
+.pv{border:1px dashed var(--lilac);border-radius:14px;padding:16px;background:var(--bg)}
+.ckp{display:flex;gap:8px;font-size:.88rem;padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;background:#fff}.ckp i{width:16px;height:16px;border:2px solid var(--line);border-radius:4px;flex:none;margin-top:2px}
+@media (max-width:860px){.cgrid{grid-template-columns:1fr}#side{position:static;flex-direction:row;flex-wrap:wrap}#side button{flex:1 1 140px}.kinds{grid-template-columns:1fr}}
+</style><script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"><script>(function(){try{if((localStorage.getItem("gn_lang")||"en")==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl";}}catch(e){}})();</script><script src="i18n-app.js?v=20261108s"></script><link rel="stylesheet" href="rtl-app.css?v=20261108s"></head><body>
+<header class="top"><div class="wrap"><a href="index.html"><img src="logo-header.png" alt="GrowNest"></a><a class="btn ghost small" href="app.html">Dashboard</a></div></header>
+<main class="wrap cr" id="main">
+ <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center">
+  <div><h1 style="margin:0">Observation criteria</h1><p class="muted" style="margin:4px 0 0">GrowNest owner only. Changes apply to every school straight away.</p></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost small" id="dlDocx">Download (Word)</button><button class="btn ghost small" id="dlXlsx">Download (Excel)</button></div>
+ </div>
+ <div id="msg" class="msg hide" role="status"></div>
+ <div class="ctabs"><button type="button" data-tab="lesson" aria-selected="true">Lesson indicators</button><button type="button" data-tab="appraisal">Appraisal areas</button><button type="button" data-tab="also">“Also seen” options</button></div>
+ <div class="cgrid"><div id="side"></div><div id="panel"></div></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261108s"></script>
+<script>const s=document.createElement('script');s.src='criteria.js?v=20261108s';document.body.append(s);</script>
+</body></html>

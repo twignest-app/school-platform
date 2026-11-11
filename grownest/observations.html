@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#4A2C5E"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="GrowNest"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=20261108s"><title>Formal observations · GrowNest</title><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"><script>(function(){try{if((localStorage.getItem("gn_lang")||"en")==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl";}}catch(e){}})();</script><script src="i18n-app.js?v=20261108s"></script><link rel="stylesheet" href="rtl-app.css?v=20261108s"></head><body>
+<header class="top"><div class="wrap"><a href="index.html"><img src="logo-header.png" alt="GrowNest"></a><a class="btn ghost small" href="app.html">Dashboard</a></div></header>
+<main class="wrap" style="padding:28px 20px 60px">
+ <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+  <div><h1 style="margin:0">Formal observations</h1><p class="muted" id="sub">Loading…</p></div>
+  <a class="btn primary" href="observe.html">New formal observation</a>
+ </div>
+ <div id="msg" class="msg hide" role="status"></div>
+ <div style="display:flex;flex-wrap:wrap;gap:10px;margin:16px 0">
+  <input id="search" type="search" placeholder="Search by teacher, subject or class" style="flex:1;min-width:200px;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;min-height:44px">
+  <select id="status" style="font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;min-height:44px"><option value="">All</option><option value="draft">Drafts</option><option value="sent">Sent</option></select>
+ </div>
+ <div class="card" style="padding:6px 18px"><div id="list"></div></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261108s"></script>
+<script>
+let ctx=null, rows=[];
+async function init(){ctx=await requireStaff();if(!ctx)return;headerButtons([["app.html","Dashboard"],["teachers.html","Teachers"]]);
+ const {data,error}=await sb.from("observations").select("id,observed_on,grade_class,subject,status,overall_level,teacher_response,teachers(full_name),staff(full_name)").eq("school_id",ctx.school.id).eq("type","formal_observation").order("observed_on",{ascending:false});
+ if(error)return showMsg($("msg"),friendly(error),"err");rows=data;render();}
+function render(){const q=$("search").value.trim().toLowerCase(),st=$("status").value;
+ const r=rows.filter(o=>(!st||o.status===st)&&(!q||[o.teachers?.full_name,o.subject,o.grade_class].join(" ").toLowerCase().includes(q)));
+ $("sub").textContent=ctx.school.name+" · "+rows.length+" observation"+(rows.length===1?"":"s");
+ const resp=o=>o.teacher_response==="meeting_requested"?'<span class="lchip" style="background:#FCE9C8;color:#6B4500">Meeting requested</span>':o.teacher_response==="no_meeting"?'<span class="lchip" style="background:#E5F0E3;color:#3F6B3B">No meeting needed</span>':(o.status==="sent"?'<span class="lchip">Awaiting reply</span>':'<span class="lchip">Draft</span>');
+ $("list").innerHTML=r.length?r.map(o=>`<a href="observe.html?id=${o.id}" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit"><div style="flex:1;min-width:220px"><b>${esc(o.teachers?.full_name||"")}</b><br><span class="muted">${esc(fmtDate(o.observed_on))} · ${esc([o.grade_class,o.subject].filter(Boolean).join(" · "))}${o.staff?" · observed by "+esc(o.staff.full_name):""}</span></div>${o.overall_level?levelChip(o.overall_level):""} ${resp(o)}</a>`).join("")
+  :`<p class="muted" style="padding:16px 0">${rows.length?"No observations match.":"No formal observations yet. Tap “New formal observation” to start."}</p>`;}
+$("search").oninput=render;$("status").onchange=render;init();</script>
+</body></html>

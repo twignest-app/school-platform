@@ -1,0 +1,43 @@
+<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#4A2C5E"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="GrowNest"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=20261108s"><title>SEF evidence · GrowNest</title><style>
+main.sef{padding:24px 20px 60px}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0}
+.tools select{font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.stabs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:16px 0}
+.stabs button{font:inherit;text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:10px 12px;cursor:pointer;display:flex;gap:10px;align-items:flex-start}
+.stabs b{display:inline-flex;min-width:28px;height:28px;border-radius:50%;background:var(--mist);color:var(--plum);align-items:center;justify-content:center}
+.stabs span{font-size:.8rem;line-height:1.25;color:var(--ink)}
+.stabs button[aria-selected="true"]{border-color:var(--plum);background:#F4EEF9}.stabs button[aria-selected="true"] b{background:var(--plum);color:#fff}
+.jt{width:100%;border-collapse:collapse;margin-top:8px}.jt th,.jt td{padding:8px;border-bottom:1px solid var(--line);text-align:left;font-size:.9rem}
+.jt select{font:inherit;font-size:.85rem;padding:6px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.indc{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px;margin:16px 0}
+.indh{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}.indh h3{margin:0}
+.els{font-size:.82rem;display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0 12px}
+.ptabs{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}
+.ptabs button{font:inherit;font-size:.88rem;border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:6px 14px;cursor:pointer}
+.ptabs button[aria-selected="true"]{background:var(--plum);border-color:var(--plum);color:#fff}
+.st{width:100%;border-collapse:collapse;font-size:.88rem}.st th,.st td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}.st th{font-size:.78rem;color:var(--muted)}
+.dist{display:flex;height:6px;border-radius:99px;overflow:hidden;margin-top:4px;min-width:80px;background:var(--mist)}
+.sefta{font:inherit;font-weight:400;width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;line-height:1.5}
+.wc{float:right;font-weight:600;color:var(--muted)}.wc.over{color:var(--danger)}
+.row2{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.gap{background:#FFF7E6;border-radius:10px;padding:10px 12px;font-size:.88rem;margin-top:12px}
+@media (max-width:900px){.stabs{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:520px){.stabs{grid-template-columns:repeat(2,1fr)}.indc{padding:14px}}
+</style><script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"><script>(function(){try{if((localStorage.getItem("gn_lang")||"en")==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl";}}catch(e){}})();</script><script src="i18n-app.js?v=20261108s"></script><link rel="stylesheet" href="rtl-app.css?v=20261108s"></head><body>
+<header class="top"><div class="wrap"><a href="index.html"><img src="logo-header.png" alt="GrowNest"></a><a class="btn ghost small" href="app.html">Dashboard</a></div></header>
+<main class="wrap sef">
+ <h1>SEF evidence</h1>
+ <p class="muted">Evidence from lesson observations and learning walks, organised like the self-evaluation form. Teachers’ names are never included. The school’s judgements remain leaders’ decisions.</p>
+ <div id="msg" class="msg hide" role="status"></div>
+ <div class="tools"><label class="muted" for="year">Academic year</label><select id="year"></select>
+  <select id="period"><option>Term 1</option><option>Term 2</option><option>Term 3</option><option>Whole year</option></select>
+  <span class="muted" id="status" style="flex:1"></span><button class="btn primary small" id="exportAll">Download full SEF evidence (Word)</button></div>
+ <div class="stabs" id="tabs"></div>
+ <section class="card"><h2 id="stdTitle"></h2><p class="muted" id="stdNote" style="margin-top:-6px"></p>
+  <div style="overflow-x:auto"><table class="jt" id="judgeTable"></table></div>
+  <p class="muted" style="font-size:.82rem;margin:8px 0 0">Choose the school’s judgement for each indicator once you have reviewed all the evidence, including assessment data.</p></section>
+ <div id="inds"></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261108s"></script>
+<script>const s=document.createElement('script');s.src='sef.js?v=20261108s';document.body.append(s);</script>
+</body></html>

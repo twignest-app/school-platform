@@ -1,0 +1,126 @@
+<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#4A2C5E"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="GrowNest"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=20261108s"><title>GrowNest</title><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"><script>(function(){try{if((localStorage.getItem("gn_lang")||"en")==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl";}}catch(e){}})();</script><script src="i18n-app.js?v=20261108s"></script><link rel="stylesheet" href="rtl-app.css?v=20261108s"></head><body>
+<header class="top"><div class="wrap"><a href="index.html"><img src="logo-header.png" alt="GrowNest"></a><a class="btn ghost small" href="#">Sign out</a></div></header>
+<main class="wrap" style="padding:28px 20px 60px">
+ <div id="loading" class="msg info">Loading GrowNest…</div>
+ <div id="msg" class="msg hide" role="status"></div>
+ <section id="waiting" class="card narrow hide"></section>
+ <section id="dash" class="hide">
+  <h1 id="hello"></h1><p class="muted" id="schoolLine"></p>
+  <div id="startBox" class="card hide" style="margin-top:18px;border-color:var(--sage)"></div>
+  <div class="grid" style="margin:22px 0">
+   <a class="tile" href="teachers.html" style="text-decoration:none;color:inherit;border-color:var(--lilac)"><h3>Teachers</h3><p class="muted">Add teachers with their subjects, classes and email.</p><span class="soon" style="background:var(--plum);color:#fff">Open</span></a>
+   <a class="tile" href="walks.html" style="text-decoration:none;color:inherit;border-color:var(--lilac)"><h3>Learning walks</h3><p class="muted">Short visits focused on chosen MOE indicators.</p><span class="soon" style="background:var(--plum);color:#fff">Open</span></a>
+   <a class="tile" href="observations.html" style="text-decoration:none;color:inherit;border-color:var(--lilac)"><h3>Formal observations</h3><p class="muted">Full lessons on the six-point MOE scale.</p><span class="soon" style="background:var(--plum);color:#fff">Open</span></a>
+   <a class="tile" id="tileSef" href="sef.html" style="text-decoration:none;color:inherit;border-color:var(--sage)"><h3>SEF evidence</h3><p class="muted">Self-evaluation evidence for all six performance standards, built from your observations.</p><span class="soon" style="background:var(--sage);color:#fff">Open</span></a>
+   <a class="tile" id="tileStaff" href="staff.html" style="text-decoration:none;color:inherit"><h3>Staff</h3><p class="muted">Roles, access and your school code.</p><span class="soon">Open</span></a>
+   <a class="tile" id="tileSettings" href="settings.html" style="text-decoration:none;color:inherit"><h3>School settings</h3><p class="muted">Your school’s phases, used to group SEF evidence.</p><span class="soon">Open</span></a>
+   <a class="tile" href="appraisals.html" style="text-decoration:none;color:inherit;border-color:var(--lilac)"><h3>Appraisals</h3><p class="muted">Termly or yearly reviews built from the teacher’s record.</p><span class="soon" style="background:var(--plum);color:#fff">Open</span></a>
+  </div>
+  <section id="meetBox" class="card hide" style="margin-bottom:20px">
+   <h2>Meeting requests</h2><p class="muted">Teachers who asked to meet about their feedback.</p><div id="meetList"></div>
+  </section>
+  <section id="adminBox" class="card hide" style="margin-bottom:20px">
+   <h2>School admin</h2>
+   <p>Share this school code with your observers so they can join your school:</p><p><span class="code" id="joinCode"></span></p>
+   <h3 style="margin-top:20px">Observers waiting for approval</h3><div id="pendingStaff"></div>
+  </section>
+  <section id="platformBox" class="card hide">
+   <h2>GrowNest owner</h2><p><a class="btn ghost small" href="criteria.html">Observation criteria</a></p><h3>Schools waiting for approval</h3><div id="pendingSchools"></div>
+   <h3 style="margin-top:24px">Demo requests</h3><div id="demoReqs"></div>
+  </section>
+ </section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261108s"></script>
+<script>
+async function load(){
+ const {data:{session}}=await sb.auth.getSession();
+ if(!session){location.href="login.html";return;}
+ const user=session.user;
+ let {data:staff,error}=await sb.from("staff").select("*, schools(*)").eq("id",user.id).maybeSingle();
+ if(error)return fail(error);
+ if(!staff){ // first visit after confirming email: finish setup from sign-up details
+  const md=user.user_metadata||{};
+  const r= md.mode==="join"
+   ? await sb.rpc("join_school",{p_code:md.join_code,p_full_name:md.full_name||"",p_job_title:md.job_title||""})
+   : await sb.rpc("register_school",{p_school_name:md.school_name||"My school",p_emirate:md.emirate||"",p_full_name:md.full_name||"",p_job_title:md.job_title||""});
+  if(r.error)return fail(r.error);
+  ({data:staff,error}=await sb.from("staff").select("*, schools(*)").eq("id",user.id).maybeSingle());
+  if(error||!staff)return fail(error||"Setup did not finish. Please try again.");
+ }
+ const {data:isOwner}=await sb.rpc("is_platform_admin");
+ $("loading").classList.add("hide");
+ const school=staff.schools;
+ if(!isOwner&&!staff.active){return wait("Waiting for approval","Your request to join "+esc(school?.name||"your school")+" has been sent. Your school admin will approve you soon.");}
+ if(!isOwner&&school&&school.status!=="active"){return wait("Thank you for registering!","GrowNest is reviewing "+esc(school.name)+". You’ll be able to start as soon as your school is approved.");}
+ $("dash").classList.remove("hide");
+ $("hello").textContent="Welcome, "+(staff.full_name||"").split(" ")[0];
+ $("schoolLine").textContent=(school?.name||"")+(staff.job_title?" · "+staff.job_title:"");
+ const lead=["school_admin","leader"].includes(staff.role);
+ if(!lead){$("tileSef").classList.add("hide");$("tileSettings").classList.add("hide");}
+ if(staff.role!=="school_admin")$("tileStaff").classList.add("hide");
+ if(staff.role==="school_admin"&&staff.active){$("adminBox").classList.remove("hide");$("joinCode").textContent=school.join_code;loadPendingStaff(staff.school_id);}
+ if(isOwner){$("platformBox").classList.remove("hide");loadPendingSchools();loadDemos();}
+ if(staff.active&&school&&school.status==="active")loadMeetings(staff.school_id);
+ if(lead&&staff.active&&school&&school.status==="active")loadStart(staff,school);
+}
+async function loadStart(staff,school){
+ const key="gn_start_done_"+school.id;try{if(localStorage.getItem(key))return;}catch(_){}
+ const cnt=async q=>{const r=await q;return r.count||0;};
+ const [nt,np,ns,no]=await Promise.all([cnt(sb.from("teachers").select("id",{count:"exact",head:true}).eq("school_id",school.id)),cnt(sb.from("school_phases").select("id",{count:"exact",head:true}).eq("school_id",school.id)),
+  cnt(sb.from("staff").select("id",{count:"exact",head:true}).eq("school_id",school.id)),cnt(sb.from("observations").select("id",{count:"exact",head:true}).eq("school_id",school.id))]);
+ const admin=staff.role==="school_admin";
+ const steps=[[nt>0,"Add your teachers","Add them one by one or import the Excel template, with each teacher’s email and feedback language.","teachers.html","Open Teachers"],
+  [np>0,"Set your school’s phases","So observation evidence is grouped by phase, as in your SEF.","settings.html","Open School settings"],
+  [!!school.logo_path,"Add your school logo","It appears on Word forms and emails to teachers.","settings.html",admin?"Upload logo":"Ask your school admin"],
+  [ns>1,"Invite your observers and leaders","Share your school code. You approve each person before they can sign in.",admin?"staff.html":"app.html",admin?"Open Staff":"Ask your school admin"],
+  [no>0,"Do your first observation or learning walk","Try it on an iPad in a real lesson, then send the feedback to the teacher.","walks.html","Start a learning walk"]];
+ const done=steps.filter(s=>s[0]).length;if(done===steps.length){try{localStorage.setItem(key,"1");}catch(_){}return;}
+ $("startBox").innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><h2 style="margin:0">Getting started</h2><span class="muted" style="font-size:.9rem">${done} of ${steps.length} done</span></div>
+  <div style="height:8px;background:var(--mist);border-radius:99px;margin:12px 0 6px;overflow:hidden"><div style="height:100%;width:${Math.round(done/steps.length*100)}%;background:var(--sage)"></div></div>
+  ${steps.map(([ok,t,d,h,btn])=>`<div style="display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)"><span style="flex:none;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;${ok?"background:var(--sage);color:#fff":"border:2px solid var(--line);color:transparent"}">✓</span><div style="flex:1"><b style="${ok?"color:var(--muted);text-decoration:line-through":""}">${t}</b><div class="muted" style="font-size:.88rem">${d}</div></div>${ok?"":`<a class="btn ghost small" href="${h}">${btn}</a>`}</div>`).join("")}
+  <p style="margin:12px 0 0"><button class="btn ghost small" id="hideStart">Hide this list</button></p>`;
+ $("startBox").classList.remove("hide");$("hideStart").onclick=()=>{try{localStorage.setItem(key,"1");}catch(_){}$("startBox").classList.add("hide");};
+}
+async function loadMeetings(sid){
+ const {data,error}=await sb.from("observations").select("id,observed_on,subject,responded_at,teachers(full_name),staff(full_name)").eq("school_id",sid).eq("teacher_response","meeting_requested").eq("meeting_done",false).order("responded_at");
+ if(error||!data||!data.length)return;
+ $("meetBox").classList.remove("hide");
+ $("meetList").innerHTML="<table class='t'>"+data.map(o=>"<tr><td><b>"+esc(o.teachers?.full_name||"")+"</b><br><span class='muted'>"+esc(o.subject||"Appraisal")+" · "+esc(fmtDate(o.observed_on))+(o.staff?" by "+esc(o.staff.full_name):"")+"</span></td><td style='text-align:right;white-space:nowrap'><a class='btn ghost small' href='observe.html?id="+o.id+"'>Open</a> <button class='btn sage small' data-meet='"+o.id+"'>Meeting done</button></td></tr>").join("")+"</table>";
+}
+function wait(title,text){$("loading").classList.add("hide");const w=$("waiting");w.innerHTML="<h2>"+title+"</h2><p>"+text+"</p><button class='btn ghost' id='out'>Sign out</button>";w.classList.remove("hide");$("out").onclick=signOut;}
+function fail(e){$("loading").classList.add("hide");showMsg($("msg"),friendly(e),"err");}
+async function loadPendingStaff(sid){
+ const {data,error}=await sb.from("staff").select("id,full_name,job_title,email").eq("school_id",sid).eq("active",false).order("created_at");
+ if(error)return fail(error);
+ $("pendingStaff").innerHTML=data.length?"<table class='t'>"+data.map(s=>"<tr><td><b>"+esc(s.full_name)+"</b><br><span class='muted'>"+esc(s.job_title||"")+" · "+esc(s.email||"")+"</span></td><td style='text-align:right'><button class='btn sage small' data-staff='"+s.id+"'>Approve</button></td></tr>").join("")+"</table>":"<p class='muted'>No one is waiting.</p>";
+}
+async function loadDemos(){
+ const {data,error}=await sb.from("demo_requests").select("*").order("created_at",{ascending:false}).limit(50);
+ if(error){$("demoReqs").innerHTML="<p class='muted'>Demo requests will appear here once Step 8 is set up.</p>";return;}
+ const ST={new:"New",contacted:"Contacted",demo_booked:"Demo booked",closed:"Closed"};
+ const F=(l,v)=>v?"<div style='display:flex;gap:10px;padding:3px 0'><span class='muted' style='min-width:150px'>"+l+"</span><span>"+v+"</span></div>":"";
+ const wa=p=>{const d=String(p||"").replace(/[^0-9]/g,"");return d?"https://wa.me/"+(d.startsWith("0")?"971"+d.slice(1):d):"";};
+ $("demoReqs").innerHTML=data.length?data.map(r=>"<div style='border:1px solid var(--line);border-radius:14px;padding:16px;margin:10px 0;background:#fff'>"
+  +"<div style='display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start'><div><b style='font-size:1.05rem;color:var(--plum)'>"+esc(r.school_name)+"</b><div class='muted' style='font-size:.85rem'>Received "+new Date(r.created_at).toLocaleDateString(gnLocale(),{day:"numeric",month:"long",year:"numeric"})+"</div></div>"
+  +"<label style='font-size:.85rem;font-weight:600'>Status <select data-demo='"+r.id+"' style='font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line);margin-inline-start:6px'>"+Object.entries(ST).map(([k,v])=>"<option value='"+k+"' "+(r.status===k?"selected":"")+">"+v+"</option>").join("")+"</select></label></div>"
+  +"<div style='margin-top:10px;font-size:.93rem'>"+F("Name",esc(r.full_name))+F("Role",esc(r.role))+F("Emirate",esc(r.emirate))+F("Teachers",esc(r.school_size))+F("Email",esc(r.email))+F("Phone / WhatsApp",esc(r.phone))
+  +F("Prefers",esc(r.contact_pref))+F("Best time",esc(r.preferred_time))+F("Interested in",esc((r.interests||[]).join(", ")))+F("Message",r.message?"“"+esc(r.message)+"”":"")+"</div>"
+  +"<div style='display:flex;gap:8px;flex-wrap:wrap;margin-top:12px'><a class='btn primary small' href='mailto:"+encodeURIComponent(r.email)+"?subject="+encodeURIComponent("Your GrowNest demo")+"'>Reply by email</a>"
+  +(wa(r.phone)?"<a class='btn ghost small' target='_blank' rel='noopener' href='"+wa(r.phone)+"'>WhatsApp</a>":"")+(r.phone?"<a class='btn ghost small' href='tel:"+esc(r.phone)+"'>Call</a>":"")+"</div></div>").join(""):"<p class='muted'>No demo requests yet.</p>";
+}
+document.addEventListener("change",async e=>{const id=e.target.dataset.demo;if(!id)return;const {error}=await sb.from("demo_requests").update({status:e.target.value}).eq("id",id);if(error)fail(error);});
+async function loadPendingSchools(){
+ const {data,error}=await sb.from("schools").select("id,name,emirate,created_at,status").eq("status","pending").order("created_at");
+ if(error)return fail(error);
+ $("pendingSchools").innerHTML=data.length?"<table class='t'>"+data.map(s=>"<tr><td><b>"+esc(s.name)+"</b><br><span class='muted'>"+esc(s.emirate||"")+" · registered "+new Date(s.created_at).toLocaleDateString(gnLocale())+"</span></td><td style='text-align:right'><button class='btn sage small' data-school='"+s.id+"'>Approve</button></td></tr>").join("")+"</table>":"<p class='muted'>No schools are waiting.</p>";
+}
+document.addEventListener("click",async e=>{
+ const st=e.target.dataset.staff, sc=e.target.dataset.school, mt=e.target.dataset.meet;
+ if(mt){e.target.disabled=true;const {error}=await sb.from("observations").update({meeting_done:true}).eq("id",mt);if(error)return fail(error);e.target.closest("tr").remove();}
+ if(st){e.target.disabled=true;const {error}=await sb.from("staff").update({active:true}).eq("id",st);if(error)return fail(error);e.target.closest("tr").remove();}
+ if(sc){e.target.disabled=true;const {error}=await sb.from("schools").update({status:"active"}).eq("id",sc);if(error)return fail(error);e.target.closest("tr").remove();}
+});
+const hdrBtn=document.querySelector("header.top .btn");hdrBtn.textContent="Sign out";hdrBtn.href="#";hdrBtn.onclick=e=>{e.preventDefault();signOut();};
+if(window.gnAppLang){const sw=document.createElement("button");sw.type="button";sw.className="langsw notr";sw.textContent=gnLang()==="ar"?"English":"العربية";const box=document.createElement("div");box.style.cssText="display:flex;gap:6px;align-items:center";hdrBtn.replaceWith(box);box.append(sw,hdrBtn);}
+load();</script>
+</body></html>

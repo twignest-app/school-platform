@@ -1,0 +1,24 @@
+<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#4A2C5E"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="GrowNest"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=20261108s"><title>Your feedback · GrowNest</title><meta name="title-ar" content="التغذية الراجعة · GrowNest"><script>try{var _l=new URLSearchParams(location.search).get("l");if(_l==="ar"||_l==="en")localStorage.setItem("gn_lang",_l);}catch(e){}</script><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"><script>(function(){try{var l=localStorage.getItem("gn_lang")||"en";document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";}catch(e){}})();</script><script src="i18n.js?v=20261108s" defer></script><style>[dir="rtl"] .msg{text-align:right}</style></head><body>
+
+<header class="top"><div class="wrap"><a href="index.html"><img src="logo-header.png" alt="GrowNest"></a><div style="display:flex;gap:6px;align-items:center"><button type="button" class="langsw">العربية</button></div></div></header><main class="wrap"><div class="card narrow" id="box">
+ <h1><span class="t-en">Thank you for the feedback</span><span class="t-ar">شكرًا على التغذية الراجعة</span></h1>
+ <p class="muted"><span class="t-en">Please confirm your choice below.</span><span class="t-ar">يُرجى تأكيد اختيارك أدناه.</span></p>
+ <button class="choice" data-c="meeting_requested"><b><span class="t-en">I would like a meeting</span><span class="t-ar">أرغب في اجتماع</span></b><br><span class="muted"><span class="t-en">Thank you for the feedback. I would like a meeting to discuss it.</span><span class="t-ar">شكرًا على التغذية الراجعة، وأرغب في اجتماع لمناقشتها.</span></span></button>
+ <button class="choice" data-c="no_meeting"><b><span class="t-en">I don’t need a meeting</span><span class="t-ar">لا أحتاج إلى اجتماع</span></b><br><span class="muted"><span class="t-en">Thank you for the feedback. I don’t need a meeting.</span><span class="t-ar">شكرًا على التغذية الراجعة، ولا أحتاج إلى اجتماع.</span></span></button>
+ <div id="msg" class="msg hide" role="status"></div>
+ <button class="btn primary" id="confirm" style="width:100%;margin-top:8px" disabled><span class="t-en">Confirm</span><span class="t-ar">تأكيد</span></button>
+</div></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261108s"></script>
+<script>
+const q=new URLSearchParams(location.search);const token=q.get("t");let choice=q.get("c");
+const pick=c=>{choice=c;document.querySelectorAll(".choice").forEach(b=>b.setAttribute("aria-pressed",b.dataset.c===c));$("confirm").disabled=!c;};
+document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>pick(b.dataset.c));
+if(choice)pick(choice);
+if(!token){showMsg($("msg"),t("This link is incomplete. Please use the button in your feedback email.","هذا الرابط غير مكتمل. يُرجى استخدام الزر الموجود في رسالة التغذية الراجعة."),"err");$("confirm").disabled=true;}
+$("confirm").onclick=async()=>{$("confirm").disabled=true;
+ const {data,error}=await sb.rpc("record_teacher_response",{p_token:token,p_choice:choice});
+ if(error){$("confirm").disabled=false;return showMsg($("msg"),t("Sorry, this link isn’t valid any more. Please reply to the feedback email instead.","عذرًا، لم يعد هذا الرابط صالحًا. يُرجى الرد على رسالة التغذية الراجعة بدلًا من ذلك."),"err");}
+ sb.functions.invoke("grownest-mail",{body:{action:"response",token}}).catch(()=>{});
+ const txt=data.response==="meeting_requested"?t("Your observer will contact you to arrange a meeting.","سيتواصل معك الملاحظ لترتيب موعد الاجتماع."):t("Your response has been recorded.","تم تسجيل ردك.");
+ $("box").innerHTML="<h1>"+t("Thank you","شكرًا لك")+(data.teacher?"، ".replace("، ",document.documentElement.lang==="ar"?"، ":", ")+esc(data.teacher.split(" ")[0]):"")+"</h1><p>"+txt+"</p><p class='muted'>"+esc(data.school||"")+"</p>";};</script>
+</body></html>

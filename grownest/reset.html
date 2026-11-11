@@ -1,0 +1,38 @@
+<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#4A2C5E"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="GrowNest"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=20261108s"><title>New password · GrowNest</title><meta name="title-ar" content="كلمة مرور جديدة · GrowNest"><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"><script>(function(){try{var l=localStorage.getItem("gn_lang")||"en";document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";}catch(e){}})();</script><script src="i18n.js?v=20261108s" defer></script><style>[dir="rtl"] .msg{text-align:right}</style></head><body>
+
+<header class="top"><div class="wrap"><a href="index.html"><img src="logo-header.png" alt="GrowNest"></a><div style="display:flex;gap:6px;align-items:center"><button type="button" class="langsw">العربية</button></div></div></header><main class="wrap"><div class="card narrow">
+ <div id="checking" class="msg info"><span class="t-en">Checking your reset link…</span><span class="t-ar">جارٍ التحقق من رابط إعادة التعيين…</span></div>
+ <form id="form" class="hide" novalidate><h1><span class="t-en">Choose a new password</span><span class="t-ar">اختر كلمة مرور جديدة</span></h1>
+  <label class="f"><span class="t-en">New password (at least 8 characters)</span><span class="t-ar">كلمة المرور الجديدة (8 أحرف على الأقل)</span><input id="password" type="password" autocomplete="new-password" dir="ltr"></label>
+  <div id="msg" class="msg hide" role="status"></div><button class="btn primary" style="width:100%"><span class="t-en">Save password</span><span class="t-ar">حفظ كلمة المرور</span></button></form>
+ <div id="expired" class="hide"><h1><span class="t-en">This link has expired</span><span class="t-ar">انتهت صلاحية هذا الرابط</span></h1>
+  <p><span class="t-en">Password links can only be used once and expire after a short time. Some school email systems also open links automatically to check them for safety, which uses them up.</span><span class="t-ar">لا يمكن استخدام روابط كلمة المرور إلا مرة واحدة، وتنتهي صلاحيتها بعد وقت قصير. كما تفتح بعض أنظمة البريد في المدارس الروابط تلقائيًا للتحقق من أمانها، فتُستهلك بذلك.</span></p>
+  <p><span class="t-en">Enter your email to get a new link, then open it straight away.</span><span class="t-ar">أدخل بريدك الإلكتروني للحصول على رابط جديد، ثم افتحه فورًا.</span></p>
+  <label class="f"><span class="t-en">Email</span><span class="t-ar">البريد الإلكتروني</span><input id="email" type="email" inputmode="email" autocomplete="email" dir="ltr"></label>
+  <div id="msg2" class="msg hide" role="status"></div><button class="btn primary" id="resend" style="width:100%"><span class="t-en">Send a new link</span><span class="t-ar">إرسال رابط جديد</span></button>
+  <p style="margin-top:14px"><a href="login.html"><span class="t-en">Back to sign in</span><span class="t-ar">العودة إلى تسجيل الدخول</span></a></p></div>
+</div></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261108s"></script>
+<script>
+let ready=false;
+function showForm(){if(ready)return;ready=true;$("checking").classList.add("hide");$("expired").classList.add("hide");$("form").classList.remove("hide");$("password").focus();}
+function showExpired(){if(ready)return;$("checking").classList.add("hide");$("expired").classList.remove("hide");}
+sb.auth.onAuthStateChange((ev,session)=>{if(session&&(ev==="PASSWORD_RECOVERY"||ev==="SIGNED_IN"||ev==="INITIAL_SESSION"))showForm();});
+(async()=>{
+ const hash=new URLSearchParams(location.hash.slice(1)),query=new URLSearchParams(location.search);
+ if(hash.get("error")||query.get("error")){showExpired();return;}
+ const code=query.get("code");
+ if(code){const {error}=await sb.auth.exchangeCodeForSession(code);if(error){showExpired();return;}}
+ for(let i=0;i<20&&!ready;i++){const {data}=await sb.auth.getSession();if(data.session){showForm();return;}await new Promise(r=>setTimeout(r,250));}
+ showExpired();
+})();
+$("form").addEventListener("submit",async e=>{e.preventDefault();const m=$("msg");const p=$("password").value;
+ if(p.length<8)return showMsg(m,t("Please use at least 8 characters.","يُرجى استخدام 8 أحرف على الأقل."),"err");
+ const {error}=await sb.auth.updateUser({password:p});
+ if(error)return /session/i.test(error.message)?(ready=false,showExpired()):showMsg(m,friendly(error),"err");
+ showMsg(m,t("Password saved. Taking you to GrowNest…","تم حفظ كلمة المرور. جارٍ نقلك إلى GrowNest…"),"ok");setTimeout(()=>location.href="app.html",1200);});
+$("resend").onclick=async()=>{const m=$("msg2"),email=$("email").value.trim();if(!email)return showMsg(m,t("Please enter your email.","يُرجى إدخال بريدك الإلكتروني."),"err");
+ $("resend").disabled=true;const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:SITE+"reset.html"});$("resend").disabled=false;
+ showMsg(m,error?friendly(error):t("If that email has an account, a new link is on its way. Open it as soon as it arrives.","إذا كان لهذا البريد حساب، فإن رابطًا جديدًا في الطريق إليك. افتحه فور وصوله."),error?"err":"ok");};
+</script>
+</body></html>

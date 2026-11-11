@@ -1,0 +1,118 @@
+<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#4A2C5E"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="GrowNest"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=20261108s"><title>Teacher record · GrowNest</title><style>
+main.tr{padding:24px 20px 60px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
+.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
+.stat b{display:block;font-size:1.5rem;color:var(--plum);line-height:1.2}.stat span{font-size:.82rem;color:var(--muted)}
+.sec{margin-bottom:16px}
+.prof{width:100%;border-collapse:collapse}.prof td,.prof th{padding:8px;border-bottom:1px solid var(--line);font-size:.9rem;text-align:left;vertical-align:middle}
+.prof th{font-size:.78rem;color:var(--muted);font-weight:600}
+.bar{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--mist);min-width:90px}
+.tl a{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
+.type{font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:99px}
+.type.fo{background:var(--plum);color:#fff}.type.lw{background:#E5F0E3;color:#3F6B3B}.type.ap{background:#FCE9C8;color:#6B4500}
+.pat{list-style:none;padding-left:0}.pat li{margin-bottom:8px}.pat .n{display:inline-block;min-width:26px;font-weight:700;color:var(--plum)}
+.toolbar2{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.toolbar2 select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+</style><script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"><script>(function(){try{if((localStorage.getItem("gn_lang")||"en")==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl";}}catch(e){}})();</script><script src="i18n-app.js?v=20261108s"></script><link rel="stylesheet" href="rtl-app.css?v=20261108s"></head><body>
+<header class="top"><div class="wrap"><a href="index.html"><img src="logo-header.png" alt="GrowNest"></a><a class="btn ghost small" href="app.html">Dashboard</a></div></header>
+<main class="wrap tr">
+ <div class="toolbar2" style="justify-content:space-between">
+  <div><h1 id="tName" style="margin:0">Teacher record</h1><p class="muted" id="tLine" style="margin:4px 0"></p><div id="tChips"></div></div>
+  <div class="toolbar2"><label class="muted" for="year">Academic year</label><select id="year"></select><button class="btn primary small" id="docBtn">Download summary</button></div>
+ </div>
+ <div id="msg" class="msg hide" role="status"></div>
+ <div class="stats" id="stats"></div>
+ <section class="card sec"><h2>Growth over time</h2><p class="muted" style="margin-top:-6px">Overall judgement for each formal observation (6 = Outstanding, 1 = Very weak).</p><div id="chart"></div></section>
+ <section class="card sec"><h2>Indicator profile</h2><div style="overflow-x:auto"><table class="prof" id="prof"></table></div></section>
+ <div class="sec" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">
+  <section class="card"><h2>Recurring strengths</h2><ol class="pat" id="patS"></ol></section>
+  <section class="card"><h2>Recurring next steps</h2><ol class="pat" id="patD"></ol></section>
+ </div>
+ <section class="card sec"><h2>Timeline</h2><div class="tl" id="tl"></div></section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261108s"></script>
+<script>
+let ctx=null,T=null,obsAll=[],inds=[],judg={},sts=[];
+const tid=new URLSearchParams(location.search).get("id");
+const WS={seen:"Seen",partly_seen:"Partly seen",not_seen:"Not yet seen"};
+async function init(){ctx=await requireStaff();if(!ctx)return;headerButtons([["app.html","Dashboard"],["teachers.html","Teachers"]]);
+ if(!tid)return location.href="teachers.html";
+ const [t,o,i]=await Promise.all([sb.from("teachers").select("*").eq("id",tid).maybeSingle(),
+  sb.from("observations").select("id,type,observed_on,academic_year,period_label,subject,grade_class,overall_level,status,teacher_response,meeting_done,walk_group,lesson_stage,duration_minutes,staff(full_name)").eq("teacher_id",tid).order("observed_on",{ascending:true}),
+  sb.from("indicators").select("*").contains("used_in",["formal_observation"]).order("sort")]);
+ if(t.error||!t.data)return showMsg($("msg"),"This teacher could not be found.","err");
+ T=t.data;obsAll=o.data||[];inds=i.data||[];
+ const ids=obsAll.map(x=>x.id);
+ if(ids.length){const [j,st]=await Promise.all([sb.from("observation_judgements").select("*").in("observation_id",ids),sb.from("observation_statements").select("observation_id, statements(text,kind,indicator_code)").in("observation_id",ids)]);
+  (j.data||[]).forEach(r=>(judg[r.observation_id]=judg[r.observation_id]||[]).push(r));sts=(st.data||[]).filter(x=>x.statements);}
+ if(ctx.staff.role==="observer")showMsg($("msg"),"You’re seeing the observations and walks you carried out yourself. Leaders can see the full record.","info");
+ $("tName").textContent=T.full_name;
+ $("tLine").textContent=[T.email,T.teacher_type==="class_teacher"?"Class teacher"+(T.homeroom?" of "+T.homeroom:""):"Subject teacher",T.status==="left"?"Left the school"+(T.left_on?" on "+fmtDate(T.left_on):""):null].filter(Boolean).join(" · ");
+ $("tChips").innerHTML=T.subjects.map(x=>`<span class="lchip" style="margin:2px 4px 2px 0">${esc(x)}</span>`).join("")+T.classes.map(x=>`<span class="lchip" style="margin:2px 4px 2px 0;background:#E5F0E3;color:#3F6B3B">${esc(x)}</span>`).join("");
+ const years=[...new Set(obsAll.map(x=>x.academic_year).filter(Boolean))].sort().reverse();const cur=academicYear();if(!years.includes(cur))years.unshift(cur);
+ $("year").innerHTML='<option value="">All years</option>'+years.map(y=>`<option ${y===cur?"selected":""}>${esc(y)}</option>`).join("");
+ $("year").onchange=render;render();}
+function sel(){const y=$("year").value;return obsAll.filter(o=>!y||o.academic_year===y);}
+function render(){const list=sel(),fo=list.filter(o=>o.type==="formal_observation"),lw=list.filter(o=>o.type==="learning_walk");
+ const judged=fo.filter(o=>o.overall_level),avg=judged.length?judged.reduce((a,o)=>a+o.overall_level,0)/judged.length:0,last=judged[judged.length-1];
+ const mreq=list.filter(o=>o.teacher_response==="meeting_requested");
+ $("stats").innerHTML=[[fo.length,"Formal observations"],[lw.length,"Learning walk visits"],[last?lvl(last.overall_level).name:"–","Latest overall judgement"],[avg?avg.toFixed(1):"–","Average overall (1–6)"],[mreq.length+(mreq.length?" ("+mreq.filter(o=>o.meeting_done).length+" done)":""),"Meetings requested"]]
+  .map(([b,s])=>`<div class="stat"><b>${esc(String(b))}</b><span>${esc(s)}</span></div>`).join("");
+ chart(judged);profile(fo,lw);patterns(list);timeline(list);}
+function chart(pts){if(!pts.length){$("chart").innerHTML='<p class="muted">No judged formal observations in this period yet.</p>';return;}
+ const W=640,H=230,L=40,R=16,Tp=14,B=36,n=pts.length,x=i=>n===1?(L+W-R)/2:L+(W-L-R)*i/(n-1),y=v=>Tp+(H-Tp-B)*(6-v)/5;
+ let g='';for(let v=1;v<=6;v++){g+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="#E4DCEC"/><text x="${L-10}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="#6B5C7B">${v}</text>`;}
+ const path=pts.map((p,i)=>`${i?"L":"M"}${x(i)},${y(p.overall_level)}`).join(" ");
+ const dots=pts.map((p,i)=>{const Lv=lvl(p.overall_level);return `<circle cx="${x(i)}" cy="${y(p.overall_level)}" r="7" fill="#${Lv.bg.replace("#","")}" stroke="#4A2C5E" stroke-width="1.5"><title>${esc(fmtDate(p.observed_on))}: ${esc(Lv.name)}${p.subject?" ("+esc(p.subject)+")":""}</title></circle><text x="${x(i)}" y="${H-12}" text-anchor="middle" font-size="10" fill="#6B5C7B">${esc(new Date(p.observed_on).toLocaleDateString(gnLocale(),{day:"numeric",month:"short"}))}</text>`;}).join("");
+ $("chart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:760px;height:auto" role="img" aria-label="Overall judgements over time">${g}<path d="${path}" fill="none" stroke="#4A2C5E" stroke-width="2.5"/>${dots}</svg>`;}
+function profile(fo,lw){const foIds=new Set(fo.map(o=>o.id)),lwIds=new Set(lw.map(o=>o.id));
+ $("prof").innerHTML=`<tr><th>MOE indicator</th><th>Formal observations</th><th>Latest</th><th>Learning walks (seen / partly / not yet)</th></tr>`+inds.map(ind=>{
+  const fj=fo.map(o=>(judg[o.id]||[]).find(r=>r.indicator_code===ind.code&&r.level)).filter(Boolean);
+  const avg=fj.length?fj.reduce((a,r)=>a+r.level,0)/fj.length:0,latest=fj[fj.length-1];
+  const w={seen:0,partly_seen:0,not_seen:0};lw.forEach(o=>(judg[o.id]||[]).forEach(r=>{if(r.indicator_code===ind.code&&r.walk_status)w[r.walk_status]++;}));const wt=w.seen+w.partly_seen+w.not_seen;
+  const bar=wt?`<div class="bar" title="${w.seen} seen, ${w.partly_seen} partly, ${w.not_seen} not yet"><span style="width:${w.seen/wt*100}%;background:#8BBF86"></span><span style="width:${w.partly_seen/wt*100}%;background:#F6D892"></span><span style="width:${w.not_seen/wt*100}%;background:#F3B08A"></span></div><span class="muted" style="font-size:.78rem">${w.seen} / ${w.partly_seen} / ${w.not_seen}</span>`:'<span class="muted">–</span>';
+  return `<tr><td><b>${esc(ind.code)}</b> ${esc(ind.title)}</td><td>${fj.length?`<span class="muted">${fj.length}× · avg ${avg.toFixed(1)}</span>`:'<span class="muted">–</span>'}</td><td>${latest?levelChip(latest.level):'<span class="muted">–</span>'}</td><td>${bar}</td></tr>`;}).join("");}
+function patterns(list){const ids=new Set(list.map(o=>o.id));const c={strength:{},development:{}};
+ sts.filter(x=>ids.has(x.observation_id)).forEach(x=>{const k=x.statements.kind;c[k][x.statements.text]=(c[k][x.statements.text]||0)+1;});
+ const top=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,6);
+ const li=a=>a.length?a.map(([t,n])=>`<li><span class="n">${n}×</span> ${esc(t)}</li>`).join(""):'<li class="muted" style="list-style:none">Nothing ticked yet in this period.</li>';
+ $("patS").innerHTML=li(top(c.strength));$("patD").innerHTML=li(top(c.development));}
+function timeline(list){const r=[...list].reverse();
+ const resp=o=>o.teacher_response==="meeting_requested"?(o.meeting_done?'<span class="lchip" style="background:#E5F0E3;color:#3F6B3B">Meeting held</span>':'<span class="lchip" style="background:#FCE9C8;color:#6B4500">Meeting requested</span>'):o.teacher_response==="no_meeting"?'<span class="lchip">No meeting needed</span>':o.status==="sent"?'<span class="lchip">Sent</span>':'<span class="lchip">Draft</span>';
+ const walkSum=o=>{const c={seen:0,partly_seen:0,not_seen:0};(judg[o.id]||[]).forEach(j=>{if(j.walk_status)c[j.walk_status]++;});return `<span class="muted" style="font-size:.85rem">${c.seen} seen · ${c.partly_seen} partly · ${c.not_seen} not yet</span>`;};
+ const TY={learning_walk:["lw","Learning walk"],formal_observation:["fo","Formal observation"],appraisal:["ap","Appraisal"]};
+ $("tl").innerHTML=r.length?r.map(o=>`<a href="${o.type==="learning_walk"?"walk.html?id="+o.walk_group:o.type==="appraisal"?"appraise.html?id="+o.id:"observe.html?id="+o.id}"><span class="type ${TY[o.type][0]}">${TY[o.type][1]}</span><div style="flex:1;min-width:200px"><b>${esc(fmtDate(o.observed_on))}</b> · ${esc(o.type==="appraisal"?[o.period_label,o.academic_year].filter(Boolean).join(" "):[o.grade_class,o.subject].filter(Boolean).join(" · "))}<br><span class="muted" style="font-size:.85rem">${o.staff?"by "+esc(o.staff.full_name):""}${o.duration_minutes?" · "+o.duration_minutes+" min":""}</span></div>${o.type!=="learning_walk"&&o.overall_level?levelChip(o.overall_level):o.type==="learning_walk"?walkSum(o):""} ${resp(o)}</a>`).join(""):'<p class="muted">No observations or learning walks in this period yet.</p>';}
+// ---- Word summary ----
+$("docBtn").onclick=async()=>{if(!window.JSZip)return showMsg($("msg"),"The Word maker didn’t load. Check your connection and refresh.","err");
+ const list=sel(),fo=list.filter(o=>o.type==="formal_observation"),lw=list.filter(o=>o.type==="learning_walk");
+ const e=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+ const run=(t,o={})=>`<w:r><w:rPr>${o.b?"<w:b/>":""}<w:color w:val="${o.c||"222222"}"/><w:sz w:val="${o.sz||20}"/></w:rPr><w:t xml:space="preserve">${e(t)}</w:t></w:r>`;
+ const p=(r,o={})=>`<w:p><w:pPr><w:spacing w:before="${o.bf||0}" w:after="${o.af==null?60:o.af}"/>${o.ind?'<w:ind w:left="300" w:hanging="200"/>':""}</w:pPr>${r}</w:p>`;
+ const c=(w,x,f)=>`<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${f?`<w:shd w:val="clear" w:color="auto" w:fill="${f}"/>`:""}<w:tcMar><w:top w:w="50" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="50" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar></w:tcPr>${x||p("")}</w:tc>`;
+ const tb=(ws,rows)=>`<w:tbl><w:tblPr><w:tblW w:w="${ws.reduce((a,b)=>a+b,0)}" w:type="dxa"/><w:tblBorders>${["top","left","bottom","right","insideH","insideV"].map(s=>`<w:${s} w:val="single" w:sz="4" w:space="0" w:color="BFB3CC"/>`).join("")}</w:tblBorders><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${ws.map(w=>`<w:gridCol w:w="${w}"/>`).join("")}</w:tblGrid>${rows.map(r=>`<w:tr><w:trPr><w:cantSplit/></w:trPr>${r}</w:tr>`).join("")}</w:tbl>`;
+ const H=t=>p(run(t,{b:true,sz:24,c:"4A2C5E"}),{bf:200,af:80});
+ const LF={6:"4F8A4B",5:"8BBF86",4:"CFE6CA",3:"F6D892",2:"F3B08A",1:"E07C7C"};
+ const judged=fo.filter(o=>o.overall_level);const avg=judged.length?(judged.reduce((a,o)=>a+o.overall_level,0)/judged.length).toFixed(1):"–";
+ let b=p(run("Teacher Record Summary",{b:true,sz:34,c:"4A2C5E"}),{af:20})+p(run(ctx.school.name+" · "+($("year").value||"All years")+" · UAE MOE framework",{sz:18,c:"76658A"}),{af:160});
+ b+=tb([2400,8066],[["Teacher",T.full_name],["Email",T.email],["Role",T.teacher_type==="class_teacher"?"Class teacher"+(T.homeroom?" of "+T.homeroom:""):"Subject teacher"],["Subjects",T.subjects.join(", ")],["Classes",T.classes.join(", ")],
+  ["Formal observations",String(fo.length)+(judged.length?" (average overall "+avg+" of 6)":"")],["Learning walk visits",String(lw.length)],["Meetings requested",String(list.filter(o=>o.teacher_response==="meeting_requested").length)]].map(([k,v])=>c(2400,p(run(k,{b:true,sz:18})),"EFE8F5")+c(8066,p(run(v,{sz:18})))));
+ b+=H("Formal observations");
+ b+=fo.length?tb([1900,3600,2400,2566],[c(1900,p(run("Date",{b:true,sz:18,c:"FFFFFF"})),"4A2C5E")+c(3600,p(run("Class · subject",{b:true,sz:18,c:"FFFFFF"})),"4A2C5E")+c(2400,p(run("Observer",{b:true,sz:18,c:"FFFFFF"})),"4A2C5E")+c(2566,p(run("Overall",{b:true,sz:18,c:"FFFFFF"})),"4A2C5E"),
+  ...[...fo].reverse().map(o=>c(1900,p(run(fmtDate(o.observed_on),{sz:18})))+c(3600,p(run([o.grade_class,o.subject].filter(Boolean).join(" · "),{sz:18})))+c(2400,p(run(o.staff?o.staff.full_name:"",{sz:18})))+c(2566,p(run(o.overall_level?o.overall_level+" – "+lvl(o.overall_level).name:"–",{b:true,sz:18})),o.overall_level?LF[o.overall_level]:null))]):p(run("None in this period.",{sz:18}));
+ b+=H("Indicator profile (formal observations)");
+ b+=tb([6400,1700,2366],[c(6400,p(run("MOE indicator",{b:true,sz:18,c:"FFFFFF"})),"4A2C5E")+c(1700,p(run("Times judged",{b:true,sz:18,c:"FFFFFF"})),"4A2C5E")+c(2366,p(run("Average",{b:true,sz:18,c:"FFFFFF"})),"4A2C5E"),
+  ...inds.map(ind=>{const fj=fo.map(o=>(judg[o.id]||[]).find(r=>r.indicator_code===ind.code&&r.level)).filter(Boolean);const a=fj.length?fj.reduce((x,r)=>x+r.level,0)/fj.length:0;const n=Math.round(a);
+   return c(6400,p(run(ind.code+" "+ind.title,{sz:18})))+c(1700,p(run(String(fj.length),{sz:18})))+c(2366,p(run(a?a.toFixed(1)+" ("+lvl(n).name+")":"–",{sz:18})),a?LF[n]:null);})]);
+ const ids=new Set(list.map(o=>o.id));const cnt={strength:{},development:{}};sts.filter(x=>ids.has(x.observation_id)).forEach(x=>{cnt[x.statements.kind][x.statements.text]=(cnt[x.statements.kind][x.statements.text]||0)+1;});
+ const top=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,6);
+ b+=H("Recurring strengths")+(top(cnt.strength).map(([t,n])=>p(run("•  "+t+" ("+n+"×)",{sz:19}),{ind:1})).join("")||p(run("None recorded.",{sz:18})));
+ b+=H("Recurring next steps")+(top(cnt.development).map(([t,n])=>p(run("•  "+t+" ("+n+"×)",{sz:19}),{ind:1})).join("")||p(run("None recorded.",{sz:18})));
+ b+=H("Agreed targets for appraisal")+tb([10466],[c(10466,p("")+p("")+p("")+p(""))]);
+ const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${b}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="700" w:right="720" w:bottom="700" w:left="720" w:header="300" w:footer="300" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+ const z=new JSZip();z.file("[Content_Types].xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`);
+ z.file("_rels/.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`);
+ z.file("word/document.xml",doc);
+ const blob=await z.generateAsync({type:"blob",mimeType:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=("Teacher record - "+T.full_name+" - "+($("year").value||"all years")+".docx").replace(/[\/:*?"<>|]/g,"");document.body.appendChild(a);a.click();a.remove();};
+init();</script>
+</body></html>

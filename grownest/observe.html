@@ -1,0 +1,291 @@
+<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#4A2C5E"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="GrowNest"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=20261108s"><title>Formal observation · GrowNest</title><style>
+main.obs{padding:22px 20px 170px}
+.crit{display:grid;grid-template-columns:30px 1fr;background:#fff;border:1px solid var(--line);border-radius:16px;margin-bottom:14px;overflow:hidden}
+.spine{writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;font-weight:600;font-size:.7rem;letter-spacing:.06em;color:#fff;display:flex;align-items:center;justify-content:center;padding:8px 0}
+.crit-body{padding:16px 18px}
+.crit h3{margin:0 0 4px;font-size:1.05rem}
+.moe{font-size:.75rem;background:var(--mist);color:var(--plum);padding:2px 8px;border-radius:99px;margin-left:6px;white-space:nowrap}
+.look{color:var(--muted);font-size:.88rem;margin:0 0 12px}
+.levels{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.lv{border:2px solid transparent;border-radius:10px;padding:8px 4px;cursor:pointer;font:inherit;text-align:center;opacity:.55;min-height:56px}
+.lv b{display:block;font-size:1.15rem;line-height:1.1}.lv span{font-size:.72rem;font-weight:600}
+.lv[aria-pressed="true"]{opacity:1;border-color:var(--ink);box-shadow:0 3px 0 var(--ink)}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.checks h4{margin:0 0 6px;font-size:.82rem;color:var(--muted)}
+.ck{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;cursor:pointer;font-size:.9rem;background:var(--bg)}
+.ck input{width:20px;height:20px;flex:none;margin:2px 0 0;accent-color:var(--plum)}
+.ck.on{border-color:var(--plum);background:var(--mist)}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:12px}
+.ph{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg)}
+.ph img{width:100%;height:140px;object-fit:cover;display:block;background:var(--mist)}
+.ph .pb{padding:8px;display:flex;flex-direction:column;gap:6px}
+.ph input,.ph select{font:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#fff}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:3px solid var(--lilac);z-index:6;padding-bottom:env(safe-area-inset-bottom,0px)}
+.bar-in{max-width:1040px;margin:0 auto;padding:10px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.bar select{font:inherit;padding:8px;border:1px solid var(--line);border-radius:10px}
+.status{font-size:.8rem;color:var(--muted)}
+.det{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 14px}
+textarea.f{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;width:100%;min-height:80px}
+@media (max-width:640px){.checks{grid-template-columns:1fr}.lv span{display:none}.lv b{font-size:1.3rem}.crit{grid-template-columns:22px 1fr}.crit-body{padding:12px}.bar-in{padding:8px 12px}}
+</style><script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><script src="obsdoc.js?v=20261108s"></script><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"><script>(function(){try{if((localStorage.getItem("gn_lang")||"en")==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl";}}catch(e){}})();</script><script src="i18n-app.js?v=20261108s"></script><link rel="stylesheet" href="rtl-app.css?v=20261108s"></head><body>
+<header class="top"><div class="wrap"><a href="index.html"><img src="logo-header.png" alt="GrowNest"></a><a class="btn ghost small" href="app.html">Dashboard</a></div></header>
+<main class="wrap obs">
+ <h1>Formal observation</h1>
+ <div id="msg" class="msg hide" role="status"></div>
+ <section class="card" style="margin-bottom:16px">
+  <div class="det">
+   <label class="f">Teacher<select id="teacher"><option value="">Choose a teacher…</option></select></label>
+   <label class="f">Date<input id="date" type="date"></label>
+   <label class="f">Class / grade<input id="grade" list="classList"></label>
+   <label class="f">Subject observed<select id="subject"><option value="">Choose the lesson subject…</option></select></label>
+  </div>
+  <label class="f">Lesson topic or learning objective<input id="focus" placeholder="e.g. Maths – adding fractions with different denominators"></label>
+  <datalist id="classList"></datalist>
+  <p class="muted" id="startHint" style="margin:0">Choose the teacher to start. Everything saves automatically.</p>
+ </section>
+ <div id="form" class="hide">
+  <div id="criteria"></div>
+  <section class="card" style="margin-bottom:16px">
+   <h2>Extra comments</h2>
+   <div class="det">
+    <label class="f">What went well (optional)<textarea class="f" id="extraS"></textarea></label>
+    <label class="f">Areas for development (optional)<textarea class="f" id="extraD"></textarea></label>
+   </div>
+  </section>
+  <section class="card" style="margin-bottom:16px">
+   <h2>Also seen in this lesson <span class="muted" style="font-size:.85rem;font-weight:400">(optional)</span></h2>
+   <p class="muted" style="margin-top:-6px">Tap anything you saw. This adds evidence for SEF Standards 2, 4 and 5.</p>
+   <div id="alsoBox"></div>
+  </section>
+  <section class="card">
+   <h2>Photo evidence</h2>
+   <p class="muted">Take photos of students’ work, displays or activities. Link each one to an indicator and add a caption.</p>
+   <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button type="button" class="btn primary" id="camBtn">📷 Take photo</button>
+    <label class="btn ghost" for="photoIn">Upload photo</label>
+   </div>
+   <input id="photoIn" type="file" accept="image/*" multiple class="hide">
+   <input id="camIn" type="file" accept="image/*" capture="environment" class="hide">
+   <div id="camModal" class="hide" style="position:fixed;inset:0;background:rgba(20,10,30,.85);z-index:20;display:flex;align-items:center;justify-content:center;padding:16px">
+    <div style="background:#fff;border-radius:18px;padding:14px;max-width:720px;width:100%">
+     <video id="camVideo" playsinline autoplay muted style="width:100%;border-radius:12px;background:#000;max-height:70vh"></video>
+     <div style="display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap">
+      <button type="button" class="btn primary" id="snapBtn">Capture</button>
+      <button type="button" class="btn ghost" id="flipBtn">Switch camera</button>
+      <button type="button" class="btn ghost" id="camClose">Close</button>
+     </div>
+    </div>
+   </div>
+   <div class="photos" id="photos"></div>
+  </section>
+  <p style="margin-top:20px"><button class="btn ghost small" id="delBtn" style="color:var(--danger)">Delete this draft</button></p>
+ </div>
+</main>
+<div class="bar hide" id="bar"><div class="bar-in">
+ <span>Overall</span><span id="ovChip" class="lchip">Not judged</span>
+ <select id="ovSel" aria-label="Overall judgement"></select>
+ <span class="status" id="saveSt" style="flex:1"></span>
+ <button class="btn ghost small" id="wordBtn">Word form</button>
+ <button class="btn primary small" id="sendBtn">Send to teacher</button>
+ <a class="btn ghost small" href="observations.html">Done</a>
+</div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261108s"></script>
+<script>
+let ctx=null, obs=null, teachers=[], inds=[], stmts=[], judg={}, ticked=new Set(), evidence=[];
+const AREA_COL={"Students’ achievement":"#6F9E6B","Personal development":"#9C84C4","Teaching and assessment":"#4A2C5E"};const AREA_LBL={"Students’ achievement":"Achievement","Personal development":"Personal","Teaching and assessment":"Teaching"};
+const qid=new URLSearchParams(location.search).get("id");
+let chain=Promise.resolve();
+function save(fn){$("saveSt").textContent="Saving…";chain=chain.then(fn).then(r=>{if(r&&r.error)throw r.error;$("saveSt").textContent="All changes saved";}).catch(e=>{console.error(e);$("saveSt").textContent="Not saved – check your connection";});return chain;}
+async function init(){
+ ctx=await requireStaff();if(!ctx)return;headerButtons([["app.html","Dashboard"],["observations.html","Observations"]]);
+ const [t,i,s]=await Promise.all([
+  sb.from("teachers").select("*").eq("school_id",ctx.school.id).eq("status","active").order("full_name"),
+  sb.from("indicators").select("*").contains("used_in",["formal_observation"]).order("sort"),
+  sb.from("statements").select("*").order("sort")]);
+ if(t.error)return showMsg($("msg"),"Teachers couldn’t load: "+friendly(t.error),"err");
+ teachers=t.data||[];inds=i.data||[];stmts=s.data||[];
+ if(i.error||s.error)showMsg($("msg"),"The MOE criteria couldn’t load: "+friendly(i.error||s.error),"err");
+ if(!teachers.length)showMsg($("msg"),"No current teachers found for "+ctx.school.name+". Add teachers on the Teachers page first.","info");
+ $("teacher").innerHTML='<option value="">Choose a teacher…</option>'+teachers.map(x=>`<option value="${x.id}">${esc(x.full_name)}</option>`).join("");
+ $("date").value=new Date().toISOString().slice(0,10);
+ $("ovSel").innerHTML='<option value="">Use suggested</option>'+LEVELS.map(l=>`<option value="${l.n}">${l.n} – ${l.name}</option>`).join("");
+ if(qid)await loadObs(qid);
+}
+window.addEventListener("error",e=>showMsg($("msg"),"Something went wrong loading this page ("+e.message+"). Please refresh.","err"));
+async function loadObs(id){
+ const {data,error}=await sb.from("observations").select("*, teachers(*)").eq("id",id).maybeSingle();
+ if(error||!data)return showMsg($("msg"),error?friendly(error):"This observation could not be found.","err");
+ obs=data;
+ if(!teachers.some(t=>t.id===obs.teacher_id)&&obs.teachers)teachers.push(obs.teachers);
+ $("teacher").innerHTML='<option value="">Choose a teacher…</option>'+teachers.map(x=>`<option value="${x.id}">${esc(x.full_name)}</option>`).join("");
+ $("teacher").value=obs.teacher_id;$("teacher").disabled=true;
+ $("date").value=obs.observed_on;$("grade").value=obs.grade_class||"";$("subject").value=obs.subject||"";$("focus").value=obs.focus||"";
+ $("extraS").value=obs.extra_strengths||"";$("extraD").value=obs.extra_development||"";$("ovSel").value=obs.overall_level?String(obs.overall_level):"";
+ const [j,st,ev]=await Promise.all([sb.from("observation_judgements").select("*").eq("observation_id",id),sb.from("observation_statements").select("statement_id").eq("observation_id",id),sb.from("evidence").select("*").eq("observation_id",id).order("created_at")]);
+ judg={};(j.data||[]).forEach(r=>judg[r.indicator_code]=r.level);
+ ticked=new Set((st.data||[]).map(r=>r.statement_id));evidence=ev.data||[];
+ fillLists();showForm();
+ if(obs.status==="sent")showMsg($("msg"),"This observation has been sent to the teacher. Any changes you make are saved to the record.","info");
+}
+function fillLists(){const t=teachers.find(x=>x.id===$("teacher").value);const cur=obs?obs.subject:$("subject").value;
+ $("classList").innerHTML=(t?t.classes:[]).map(c=>`<option value="${esc(c)}">`).join("");
+ const mine=t?t.subjects:[], others=SUBJECTS.filter(x=>!mine.includes(x));
+ if(cur&&!mine.includes(cur)&&!others.includes(cur))others.push(cur);
+ $("subject").innerHTML='<option value="">Choose the lesson subject…</option>'+(mine.length?`<optgroup label="Subjects this teacher teaches">${mine.map(x=>`<option>${esc(x)}</option>`).join("")}</optgroup>`:"")+`<optgroup label="${mine.length?"Other subjects":"Subjects"}">${others.map(x=>`<option>${esc(x)}</option>`).join("")}</optgroup>`+OTHER_OPT;
+ if(cur)$("subject").value=cur;}
+function renderAlso(){$("alsoBox").innerHTML=alsoSeenHtml(obs.also_seen||[],"");}
+$("alsoBox").addEventListener("click",e=>{const b=e.target.closest(".alsob");if(!b||!obs)return;const c=b.dataset.also;const a=new Set(obs.also_seen||[]);
+ a.has(c)?a.delete(c):a.add(c);obs.also_seen=[...a];b.setAttribute("aria-pressed",a.has(c));save(()=>sb.from("observations").update({also_seen:obs.also_seen}).eq("id",obs.id));});
+function showForm(){$("form").classList.remove("hide");$("bar").classList.remove("hide");$("startHint").classList.add("hide");renderCriteria();renderOverall();renderPhotos();renderAlso();}
+$("teacher").onchange=async()=>{const tid=$("teacher").value;if(!tid||obs)return;fillLists();
+ const t=teachers.find(x=>x.id===tid);if(t.homeroom)$("grade").value=t.homeroom;else if(t.classes.length===1)$("grade").value=t.classes[0];if(t.subjects.length===1)$("subject").value=t.subjects[0];
+ const {data,error}=await sb.from("observations").insert({school_id:ctx.school.id,teacher_id:tid,observer_id:ctx.user.id,type:"formal_observation",observed_on:$("date").value,academic_year:academicYear($("date").value),grade_class:$("grade").value,subject:$("subject").value,focus:$("focus").value}).select().single();
+ if(error)return showMsg($("msg"),friendly(error),"err");
+ obs=data;history.replaceState(null,"","observe.html?id="+obs.id);$("teacher").disabled=true;showForm();};
+let ft=null;
+function fieldsChanged(){if(!obs)return;clearTimeout(ft);$("saveSt").textContent="Saving…";ft=setTimeout(()=>save(()=>sb.from("observations").update({observed_on:$("date").value,academic_year:academicYear($("date").value),grade_class:$("grade").value,subject:$("subject").value,focus:$("focus").value,extra_strengths:$("extraS").value,extra_development:$("extraD").value}).eq("id",obs.id)),700);}
+["date","grade","focus","extraS","extraD"].forEach(k=>$(k).addEventListener("input",fieldsChanged));watchOther($("subject"));$("subject").addEventListener("change",fieldsChanged);
+function renderCriteria(){
+ $("criteria").innerHTML=inds.map(ind=>{const n=judg[ind.code]||0;const L=lvl(n);
+  const list=(kind,title)=>{const ss=stmts.filter(s=>s.indicator_code===ind.code&&s.level===n&&s.kind===kind&&(s.active!==false||ticked.has(s.id)));
+   return `<div><h4>${title}</h4>${ss.map(s=>{const on=ticked.has(s.id);return `<label class="ck ${on?"on":""}"><input type="checkbox" data-st="${s.id}" ${on?"checked":""}><span>${esc(s.text)}</span></label>`;}).join("")}</div>`;};
+  return `<article class="crit"><div class="spine" style="background:${AREA_COL[ind.area]||"#4A2C5E"}">${esc(AREA_LBL[ind.area]||ind.area)}</div><div class="crit-body">
+   <h3>${esc(ind.title)}<span class="moe">MOE ${esc(ind.moe_ref)}</span></h3><p class="look">${esc(ind.look_fors||"")}</p>
+   <div class="levels" role="group" aria-label="${esc(ind.title)}">${LEVELS.map(l=>`<button type="button" class="lv" data-ind="${ind.code}" data-n="${l.n}" aria-pressed="${n===l.n}" aria-label="${l.n} ${l.name}" style="background:${l.bg};color:${l.fg}"><b>${l.n}</b><span>${l.name}</span></button>`).join("")}</div>
+   ${n?`<div class="checks">${list("strength","What went well")}${list("development","Next steps")}</div>`:""}
+  </div></article>`;}).join("");}
+$("criteria").addEventListener("click",e=>{const b=e.target.closest(".lv");if(!b)return;const code=b.dataset.ind,n=+b.dataset.n;
+ const y=scrollY;
+ if(judg[code]===n){delete judg[code];save(()=>sb.from("observation_judgements").delete().eq("observation_id",obs.id).eq("indicator_code",code));}
+ else{judg[code]=n;save(()=>sb.from("observation_judgements").upsert({observation_id:obs.id,indicator_code:code,level:n}));}
+ // untick statements from other levels of this indicator
+ const stale=stmts.filter(s=>s.indicator_code===code&&s.level!==judg[code]&&ticked.has(s.id)).map(s=>s.id);
+ if(stale.length){stale.forEach(id=>ticked.delete(id));save(()=>sb.from("observation_statements").delete().eq("observation_id",obs.id).in("statement_id",stale));}
+ renderCriteria();renderOverall();scrollTo(0,y);});
+$("criteria").addEventListener("change",e=>{const i=e.target;if(!i.dataset.st)return;const id=i.dataset.st;
+ i.closest(".ck").classList.toggle("on",i.checked);
+ if(i.checked){ticked.add(id);save(()=>sb.from("observation_statements").upsert({observation_id:obs.id,statement_id:id}));}
+ else{ticked.delete(id);save(()=>sb.from("observation_statements").delete().eq("observation_id",obs.id).eq("statement_id",id));}});
+function suggested(){const v=Object.values(judg);return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):0;}
+function renderOverall(){const chosen=+$("ovSel").value||0,n=chosen||suggested(),L=lvl(n);const c=$("ovChip");
+ c.textContent=L?`${n} · ${L.name}`:"Not judged";c.style.background=L?L.bg:"";c.style.color=L?L.fg:"";
+ $("ovSel").options[0].textContent=suggested()?"Use suggested ("+lvl(suggested()).name+")":"Use suggested";}
+$("ovSel").onchange=()=>{renderOverall();save(()=>sb.from("observations").update({overall_level:+$("ovSel").value||null}).eq("id",obs.id));};
+
+// ---- photos ----
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src;});}
+async function compress(file){const u=URL.createObjectURL(file);try{const img=await loadImg(u);const s=Math.min(1,1600/Math.max(img.naturalWidth,img.naturalHeight));
+ const cv=document.createElement("canvas");cv.width=Math.round(img.naturalWidth*s);cv.height=Math.round(img.naturalHeight*s);cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);
+ return await new Promise(r=>cv.toBlob(r,"image/jpeg",0.82));}finally{URL.revokeObjectURL(u);}}
+const urls={};
+async function signed(path){if(urls[path])return urls[path];const {data}=await sb.storage.from("evidence").createSignedUrl(path,3600);urls[path]=data?.signedUrl||"";return urls[path];}
+async function renderPhotos(){
+ const opts='<option value="">Link to an indicator…</option>'+inds.map(i=>`<option value="${i.code}">${esc(i.code+" "+i.title)}</option>`).join("");
+ const html=await Promise.all(evidence.map(async(ev,k)=>`<div class="ph"><img src="${esc(await signed(ev.storage_path))}" alt="Evidence photo ${k+1}"><div class="pb">
+  <select data-ev="${ev.id}" data-f="indicator_code">${opts.replace(`value="${ev.indicator_code}"`,`value="${ev.indicator_code}" selected`)}</select>
+  <input data-ev="${ev.id}" data-f="caption" placeholder="Caption" value="${esc(ev.caption||"")}">
+  <button class="btn ghost small" data-delev="${ev.id}" style="color:var(--danger)">Remove</button></div></div>`));
+ $("photos").innerHTML=html.join("");}
+async function addPhoto(f){try{$("saveSt").textContent="Uploading photo…";const blob=await compress(f);
+  const path=`${ctx.school.id}/${obs.id}/${crypto.randomUUID()}.jpg`;
+  const up=await sb.storage.from("evidence").upload(path,blob,{contentType:"image/jpeg"});if(up.error)throw up.error;
+  const {data,error}=await sb.from("evidence").insert({observation_id:obs.id,school_id:ctx.school.id,storage_path:path}).select().single();if(error)throw error;
+  evidence.push(data);await renderPhotos();$("saveSt").textContent="Photo saved";
+ }catch(err){console.error(err);showMsg($("msg"),"A photo couldn’t be uploaded: "+friendly(err),"err");}}
+$("photoIn").onchange=async e=>{const files=[...e.target.files];e.target.value="";for(const f of files)await addPhoto(f);};
+$("camIn").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(f)await addPhoto(f);};
+// Camera: phones and iPads open the camera directly; computers use the webcam in a window
+const isTouch=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+let stream=null,facing="environment";
+async function startCam(){stopCam();stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1920},height:{ideal:1080}},audio:false});$("camVideo").srcObject=stream;}
+function stopCam(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}}
+$("camBtn").onclick=async()=>{
+ if(isTouch||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){$("camIn").click();return;}
+ try{$("camModal").classList.remove("hide");await startCam();}
+ catch(err){console.error(err);$("camModal").classList.add("hide");stopCam();
+  showMsg($("msg"),"The camera couldn’t open. Allow camera access for this site in your browser settings, or use Upload photo.","err");}};
+$("flipBtn").onclick=async()=>{facing=facing==="environment"?"user":"environment";try{await startCam();}catch(e){}};
+$("camClose").onclick=()=>{stopCam();$("camModal").classList.add("hide");};
+$("snapBtn").onclick=async()=>{const v=$("camVideo");if(!v.videoWidth)return;const cv=document.createElement("canvas");cv.width=v.videoWidth;cv.height=v.videoHeight;cv.getContext("2d").drawImage(v,0,0);
+ const blob=await new Promise(r=>cv.toBlob(r,"image/jpeg",0.9));$("snapBtn").textContent="Saved ✓";setTimeout(()=>$("snapBtn").textContent="Capture",900);await addPhoto(blob);};
+let pt=null;
+$("photos").addEventListener("input",e=>{const id=e.target.dataset.ev;if(!id)return;const f=e.target.dataset.f,v=e.target.value;const ev=evidence.find(x=>x.id===id);ev[f]=v||null;
+ clearTimeout(pt);pt=setTimeout(()=>save(()=>sb.from("evidence").update({[f]:v||null}).eq("id",id)),500);});
+$("photos").addEventListener("click",async e=>{const id=e.target.dataset.delev;if(!id)return;if(!confirm("Remove this photo?"))return;
+ const ev=evidence.find(x=>x.id===id);evidence=evidence.filter(x=>x.id!==id);renderPhotos();
+ save(async()=>{await sb.storage.from("evidence").remove([ev.storage_path]);return sb.from("evidence").delete().eq("id",id);});});
+$("delBtn").onclick=async()=>{if(!obs)return;if(obs.status==="sent")return showMsg($("msg"),"Sent observations are kept as part of the teacher’s record and can’t be deleted.","info");
+ if(!confirm("Delete this draft observation and its photos?"))return;
+ if(evidence.length)await sb.storage.from("evidence").remove(evidence.map(e=>e.storage_path));
+ const {error}=await sb.from("observations").delete().eq("id",obs.id);if(error)return showMsg($("msg"),friendly(error),"err");location.href="observations.html";};
+// ---- compile feedback ----
+function compile(){const www=[],nxt=[];
+ inds.forEach(ind=>{const n=judg[ind.code];if(!n)return;stmts.filter(x=>x.indicator_code===ind.code&&x.level===n&&ticked.has(x.id)).forEach(x=>(x.kind==="strength"?www:nxt).push(x.text));});
+ const sp=v=>v.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+ return {www:www.concat(sp($("extraS").value)),nxt:nxt.concat(sp($("extraD").value)),overall:(+$("ovSel").value||suggested())};}
+function teacherOf(){return teachers.find(x=>x.id===obs.teacher_id)||obs.teachers||{};}
+async function makeObsDoc(){const c=compile(),t=teacherOf();
+  const toBytes=async b=>new Uint8Array(await b.arrayBuffer());
+  const dims=async b=>{try{const bm=await createImageBitmap(b);return [bm.width,bm.height];}catch{return [1600,1200];}};
+  let logo=null;try{const lb=await (await fetch(ctx.school.logo_path?logoUrl(ctx.school.logo_path):"logo-header.png")).blob();const [w,h]=await dims(lb);logo={bytes:await toBytes(lb),w,h};}catch{try{const lb=await (await fetch("logo-header.png")).blob();const [w,h]=await dims(lb);logo={bytes:await toBytes(lb),w,h};}catch{}}
+  const photos=[];for(const ev of evidence){try{const {data,error}=await sb.storage.from("evidence").download(ev.storage_path);if(error)throw error;const [w,h]=await dims(data);
+   const ind=inds.find(i=>i.code===ev.indicator_code);photos.push({bytes:await toBytes(data),w,h,caption:ev.caption||"",ind:ind?ind.code+" "+ind.title:""});}catch(e){console.warn(e);}}
+  const ar=teacherLang(t)==="ar";
+  const blob=await buildObsDocx({lang:ar?"ar":"en",school:ctx.school.name,teacher:t.full_name,grade:$("grade").value,subject:ar?subjAr($("subject").value):$("subject").value,date:ar?fmtDateIn($("date").value,"ar"):fmtDate($("date").value),focus:$("focus").value,
+   observer:ctx.staff.full_name,role:ctx.staff.job_title,overall:c.overall,rows:inds.map(i=>({title:ar?(i.title_ar||i.title):i.title,moe:i.moe_ref,level:judg[i.code]||null})),www:ar?c.www.map(x=>arStmt(stmts,x)):c.www,nxt:ar?c.nxt.map(x=>arStmt(stmts,x)):c.nxt,photos:ar?photos.map(p=>p):photos,logo});
+ return {blob,name:((ar?"الملاحظة الصفية - ":"Lesson observation - ")+(t.full_name||"")+" - "+$("date").value+".docx").replace(/[\\/:*?"<>|]/g,"")};}
+$("sendBtn").onclick=async()=>{if(!obs)return;const t=teacherOf();
+ if(!t.email)return showMsg($("msg"),"This teacher has no email address. Add it on the Teachers page first.","err");
+ if(!Object.keys(judg).length)return showMsg($("msg"),"Please judge at least one indicator before sending.","err");
+ if(!$("subject").value&&!confirm("You haven’t chosen the lesson subject. Send anyway?"))return;
+ const c=compile();
+ if(obs.status!=="sent"){const {error}=await sb.from("observations").update({status:"sent",sent_at:new Date().toISOString(),overall_level:c.overall||null}).eq("id",obs.id);
+  if(error)return showMsg($("msg"),friendly(error),"err");obs.status="sent";}
+ const first=(t.full_name||"").split(" ")[0], when=fmtDate($("date").value), L=lvl(c.overall);
+ const link=ch=>SITE+"respond.html?t="+obs.response_token+"&c="+ch;
+ let lines=["Dear "+first+",","",
+  "Thank you for welcoming me into your "+($("subject").value||"")+" lesson with "+($("grade").value||"your class")+" on "+when+". Here is your feedback, judged against the UAE MOE inspection framework.","",
+  "Overall judgement: "+(L?c.overall+" – "+L.name:"Not recorded"),"",
+  "Judgements:",...inds.filter(i=>judg[i.code]).map(i=>"• "+i.title+" (MOE "+i.moe_ref+"): "+lvl(judg[i.code]).name),"",
+  "What went well:",...(c.www.length?c.www.map(x=>"• "+x):["• —"]),"",
+  "Next steps:",...(c.nxt.length?c.nxt.map(x=>"• "+x):["• —"]),"",
+  "Please let me know whether you would like to meet to discuss this feedback by tapping one of these links:","",
+  "I would like a meeting:",link("meeting_requested"),"",
+  "I don’t need a meeting:",link("no_meeting"),"",
+  "Kind regards,",ctx.staff.full_name||"",ctx.staff.job_title||"",ctx.school.name];
+ let subj="Lesson observation feedback – "+[$("subject").value,when].filter(Boolean).join(", ");
+ const lang=teacherLang(t);
+ if(lang==="ar"){const wA=fmtDateIn($("date").value,"ar"),sA=subjAr($("subject").value);
+  lines=["عزيزي/عزيزتي "+first+"،","",
+   "شكرًا لاستقبالي في حصة "+(sA||"")+" مع "+($("grade").value||"صفّك")+" بتاريخ "+wA+". إليك التغذية الراجعة وفق إطار الرقابة المدرسية في دولة الإمارات.","",
+   "الحكم العام: "+(L?c.overall+" – "+LV_AR[c.overall]:"غير مسجّل"),"",
+   "الأحكام:",...inds.filter(i=>judg[i.code]).map(i=>"• "+(i.title_ar||i.title)+" (مرجع الوزارة "+i.moe_ref+"): "+LV_AR[judg[i.code]]),"",
+   "ما الذي سار بشكل جيد:",...(c.www.length?c.www.map(x=>"• "+arStmt(stmts,x)):["• —"]),"",
+   "الخطوات التالية:",...(c.nxt.length?c.nxt.map(x=>"• "+arStmt(stmts,x)):["• —"]),"",
+   "يُرجى إعلامي إن كنت ترغب في اجتماع لمناقشة هذه التغذية الراجعة بالضغط على أحد الرابطين:","",
+   "أرغب في اجتماع:",link("meeting_requested")+"&l=ar","",
+   "لا أحتاج إلى اجتماع:",link("no_meeting")+"&l=ar","",
+   "مع خالص التحية،",ctx.staff.full_name||"",ctx.staff.job_title||"",ctx.school.name];
+  subj="التغذية الراجعة للملاحظة الصفية – "+[sA,wA].filter(Boolean).join("، ");}
+ $("sendBtn").disabled=true;$("sendBtn").textContent="Sending…";
+ let att=null;try{if(window.JSZip){const d=await makeObsDoc();att={filename:d.name,content:await blobToBase64(d.blob)};}}catch(e){console.warn(e);}
+ const r=await deliverFeedback({observationId:obs.id,to:t.email,subject:subj,lines,attachment:att,lang});
+ $("sendBtn").disabled=false;$("sendBtn").textContent="Send to teacher";
+ if(r==="sent")showMsg($("msg"),"Feedback emailed to "+t.full_name+(att?", with the Word form attached":"")+". Their reply will come to your email.","ok");};
+$("wordBtn").onclick=async()=>{if(!obs)return;if(!window.JSZip)return showMsg($("msg"),"The Word maker didn’t load. Check your connection and refresh.","err");
+ $("wordBtn").disabled=true;$("wordBtn").textContent="Creating…";
+ try{const c=compile(),t=teacherOf();
+  const toBytes=async b=>new Uint8Array(await b.arrayBuffer());
+  const dims=async b=>{try{const bm=await createImageBitmap(b);return [bm.width,bm.height];}catch{return [1600,1200];}};
+  let logo=null;try{const lb=await (await fetch(ctx.school.logo_path?logoUrl(ctx.school.logo_path):"logo-header.png")).blob();const [w,h]=await dims(lb);logo={bytes:await toBytes(lb),w,h};}catch{try{const lb=await (await fetch("logo-header.png")).blob();const [w,h]=await dims(lb);logo={bytes:await toBytes(lb),w,h};}catch{}}
+  const photos=[];for(const ev of evidence){try{const {data,error}=await sb.storage.from("evidence").download(ev.storage_path);if(error)throw error;const [w,h]=await dims(data);
+   const ind=inds.find(i=>i.code===ev.indicator_code);photos.push({bytes:await toBytes(data),w,h,caption:ev.caption||"",ind:ind?ind.code+" "+ind.title:""});}catch(e){console.warn(e);}}
+  const ar=teacherLang(t)==="ar";
+  const blob=await buildObsDocx({lang:ar?"ar":"en",school:ctx.school.name,teacher:t.full_name,grade:$("grade").value,subject:ar?subjAr($("subject").value):$("subject").value,date:ar?fmtDateIn($("date").value,"ar"):fmtDate($("date").value),focus:$("focus").value,
+   observer:ctx.staff.full_name,role:ctx.staff.job_title,overall:c.overall,rows:inds.map(i=>({title:ar?(i.title_ar||i.title):i.title,moe:i.moe_ref,level:judg[i.code]||null})),www:ar?c.www.map(x=>arStmt(stmts,x)):c.www,nxt:ar?c.nxt.map(x=>arStmt(stmts,x)):c.nxt,photos:ar?photos.map(p=>p):photos,logo});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=("Lesson observation - "+(t.full_name||"")+" - "+$("date").value+".docx").replace(/[\/:*?"<>|]/g,"");
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+ }catch(e){console.error(e);showMsg($("msg"),"The Word form couldn’t be created. Please try again.","err");}
+ finally{$("wordBtn").disabled=false;$("wordBtn").textContent="Word form";}};
+init();</script>
+</body></html>

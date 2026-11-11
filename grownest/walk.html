@@ -1,0 +1,182 @@
+<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#4A2C5E"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="GrowNest"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=20261108s"><title>Learning walk · GrowNest</title><style>
+main.wk{padding:22px 20px 80px}
+.visit{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px;border-left:6px solid var(--lilac)}
+.visit.sent{border-left-color:var(--sage)}
+.vhead{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ind{padding:12px 0;border-top:1px solid var(--line)}
+.ind h4{margin:0 0 8px;font-size:.95rem;color:var(--plum)}
+.seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.seg button{font:inherit;font-weight:600;border:2px solid var(--line);background:#fff;border-radius:10px;padding:8px 14px;cursor:pointer;font-size:.9rem}
+.seg button[aria-pressed="true"].seen{background:#CFE6CA;border-color:#4F8A4B;color:#1E3A1C}
+.seg button[aria-pressed="true"].partly{background:#F6D892;border-color:#B88A1E;color:#4A3500}
+.seg button[aria-pressed="true"].not{background:#F3B08A;border-color:#B5592A;color:#4A2000}
+.note{font:inherit;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:.9rem}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sumt{width:100%;border-collapse:collapse}.sumt td,.sumt th{padding:8px;border-bottom:1px solid var(--line);text-align:left;font-size:.92rem}
+.sumt td.n{text-align:center;font-weight:600}
+.phs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:8px}
+.phs figure{margin:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
+.phs img{width:100%;height:96px;object-fit:cover;display:block}
+.phs input{font:inherit;font-size:.78rem;border:0;border-top:1px solid var(--line);width:100%;padding:5px 6px}
+.phs button{font:inherit;font-size:.75rem;border:0;background:none;color:var(--danger);padding:4px;cursor:pointer;width:100%}
+@media (max-width:640px){.two{grid-template-columns:1fr}.visit{padding:14px}}
+</style><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"><script>(function(){try{if((localStorage.getItem("gn_lang")||"en")==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl";}}catch(e){}})();</script><script src="i18n-app.js?v=20261108s"></script><link rel="stylesheet" href="rtl-app.css?v=20261108s"></head><body>
+<header class="top"><div class="wrap"><a href="index.html"><img src="logo-header.png" alt="GrowNest"></a><a class="btn ghost small" href="app.html">Dashboard</a></div></header>
+<main class="wrap wk">
+ <h1 id="wTitle">Learning walk</h1><p class="muted" id="wSub"></p>
+ <div id="msg" class="msg hide" role="status"></div>
+ <section class="card" style="margin-bottom:16px"><h2>What the walk showed</h2><div id="summary" style="overflow-x:auto"></div></section>
+ <section class="card" style="margin-bottom:16px">
+  <h2>Add a class visit</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 14px">
+   <label class="f">Teacher<select id="vTeacher"><option value="">Choose a teacher…</option></select></label>
+   <label class="f">Class / grade<input id="vGrade" list="vClasses"></label>
+   <label class="f">Subject<select id="vSubject"><option value="">Choose…</option></select></label>
+   <label class="f">Part of the lesson<select id="vStage"><option value="">Choose…</option><option value="beginning">Beginning</option><option value="middle">Middle</option><option value="end">End</option><option value="whole">Whole lesson</option></select></label>
+   <label class="f">Time in the class (minutes)<input id="vMins" type="number" min="1" max="120" inputmode="numeric" placeholder="e.g. 10"></label>
+  </div><datalist id="vClasses"></datalist>
+  <button class="btn primary" id="addVisit">Add visit</button>
+ </section>
+ <div id="visits"></div>
+ <input id="photoIn" type="file" accept="image/*" multiple class="hide">
+ <input id="camIn" type="file" accept="image/*" capture="environment" class="hide">
+ <div id="camModal" class="hide" style="position:fixed;inset:0;background:rgba(20,10,30,.85);z-index:20;display:flex;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:18px;padding:14px;max-width:720px;width:100%">
+   <video id="camVideo" playsinline autoplay muted style="width:100%;border-radius:12px;background:#000;max-height:70vh"></video>
+   <div style="display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap"><button type="button" class="btn primary" id="snapBtn">Capture</button><button type="button" class="btn ghost" id="flipBtn">Switch camera</button><button type="button" class="btn ghost" id="camClose">Close</button></div>
+  </div>
+ </div>
+ <p><button class="btn ghost small" id="delWalk" style="color:var(--danger)">Delete this walk</button></p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261108s"></script>
+<script>
+let ctx=null,walk=null,inds=[],teachers=[],visits=[],judg={},evid={};
+const ST={seen:"Seen",partly_seen:"Partly seen",not_seen:"Not yet seen"};
+const STAGE={beginning:"Beginning",middle:"Middle",end:"End",whole:"Whole lesson"};
+const stageText=v=>[v.lesson_stage?(v.lesson_stage==="whole"?"Whole lesson":STAGE[v.lesson_stage]+" of the lesson"):"",v.duration_minutes?v.duration_minutes+" min":""].filter(Boolean).join(" · ");
+const wid=new URLSearchParams(location.search).get("id");
+let chain=Promise.resolve();
+function save(fn){chain=chain.then(fn).then(r=>{if(r&&r.error)throw r.error;}).catch(e=>{console.error(e);showMsg($("msg"),"A change wasn’t saved – check your connection. ("+friendly(e)+")","err");});return chain;}
+async function init(){ctx=await requireStaff();if(!ctx)return;headerButtons([["app.html","Dashboard"],["walks.html","Learning walks"]]);
+ if(!wid)return location.href="walks.html";
+ const w=await sb.from("walks").select("*").eq("id",wid).maybeSingle();if(w.error||!w.data)return showMsg($("msg"),"This learning walk could not be found.","err");walk=w.data;
+ const [i,t]=await Promise.all([sb.from("indicators").select("*").in("code",walk.indicator_codes).order("sort"),sb.from("teachers").select("*").eq("school_id",ctx.school.id).eq("status","active").order("full_name")]);
+ inds=i.data||[];teachers=t.data||[];
+ $("wTitle").textContent=walk.title||"Learning walk";$("wSub").textContent=fmtDate(walk.walked_on)+" · focus: "+inds.map(x=>x.code+" "+x.title).join("; ");
+ $("vTeacher").innerHTML='<option value="">Choose a teacher…</option>'+teachers.map(x=>`<option value="${x.id}">${esc(x.full_name)}</option>`).join("");
+ await loadVisits();}
+async function loadVisits(){
+ const v=await sb.from("observations").select("*, teachers(*)").eq("walk_group",wid).order("created_at");if(v.error)return showMsg($("msg"),friendly(v.error),"err");visits=v.data;
+ const ids=visits.map(x=>x.id);judg={};evid={};
+ if(ids.length){const [j,e]=await Promise.all([sb.from("observation_judgements").select("*").in("observation_id",ids),sb.from("evidence").select("*").in("observation_id",ids).order("created_at")]);
+  (j.data||[]).forEach(r=>{(judg[r.observation_id]=judg[r.observation_id]||{})[r.indicator_code]={s:r.walk_status,note:r.note||""};});
+  (e.data||[]).forEach(r=>(evid[r.observation_id]=evid[r.observation_id]||[]).push(r));}
+ renderVisits();renderSummary();}
+function renderSummary(){if(!visits.length){$("summary").innerHTML='<p class="muted">Add class visits below. A summary of what you saw across all classes will build up here.</p>';return;}
+ $("summary").innerHTML=`<table class="sumt"><tr><th>Indicator</th><th style="text-align:center">Seen</th><th style="text-align:center">Partly</th><th style="text-align:center">Not yet</th></tr>${inds.map(ind=>{const c={seen:0,partly_seen:0,not_seen:0};visits.forEach(v=>{const s=judg[v.id]?.[ind.code]?.s;if(s)c[s]++;});
+  return `<tr><td><b>${esc(ind.code)}</b> ${esc(ind.title)}</td><td class="n" style="color:#3F6B3B">${c.seen}</td><td class="n" style="color:#8A6100">${c.partly_seen}</td><td class="n" style="color:#A0441A">${c.not_seen}</td></tr>`;}).join("")}</table><p class="muted" style="margin:8px 0 0">${visits.length} class visit${visits.length===1?"":"s"}${(()=>{const m=visits.reduce((a,v)=>a+(v.duration_minutes||0),0);const st=["beginning","middle","end","whole"].map(k=>[k,visits.filter(v=>v.lesson_stage===k).length]).filter(x=>x[1]).map(x=>x[1]+" "+STAGE[x[0]].toLowerCase());return (m?" · "+m+" minutes in classrooms":"")+(st.length?" · "+st.join(", "):"");})()}</p>`;}
+const urls={};async function signed(p){if(urls[p])return urls[p];const {data}=await sb.storage.from("evidence").createSignedUrl(p,3600);return urls[p]=data?.signedUrl||"";}
+async function renderVisits(){
+ const html=await Promise.all(visits.map(async v=>{const jv=judg[v.id]||{};const sent=v.status==="sent";
+  const phs=await Promise.all((evid[v.id]||[]).map(async e=>`<figure><img src="${esc(await signed(e.storage_path))}" alt="Evidence photo"><input data-cap="${e.id}" placeholder="Caption" value="${esc(e.caption||"")}"><button data-delph="${e.id}" data-v="${v.id}">Remove</button></figure>`));
+  const resp=v.teacher_response==="meeting_requested"?'<span class="lchip" style="background:#FCE9C8;color:#6B4500">Meeting requested</span>':v.teacher_response==="no_meeting"?'<span class="lchip" style="background:#E5F0E3;color:#3F6B3B">No meeting needed</span>':sent?'<span class="lchip">Sent · awaiting reply</span>':'<span class="lchip">Not sent yet</span>';
+  return `<article class="visit ${sent?"sent":""}" id="v-${v.id}"><div class="vhead"><div><b>${esc(v.teachers?.full_name||"")}</b><br><span class="muted">${esc([v.grade_class,v.subject].filter(Boolean).join(" · "))}</span></div>${resp}</div>
+   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+    <label class="f" style="margin:0;min-width:170px">Part of the lesson<select data-vt="lesson_stage" data-v="${v.id}">${["","beginning","middle","end","whole"].map(k=>`<option value="${k}" ${v.lesson_stage===k||(!v.lesson_stage&&!k)?"selected":""}>${k?STAGE[k]:"Choose…"}</option>`).join("")}</select></label>
+    <label class="f" style="margin:0;width:150px">Minutes<input type="number" min="1" max="120" inputmode="numeric" data-vt="duration_minutes" data-v="${v.id}" value="${v.duration_minutes||""}"></label>
+   </div>
+   ${inds.map(ind=>{const cur=jv[ind.code]||{};return `<div class="ind"><h4>${esc(ind.code)} ${esc(ind.title)}</h4><div class="seg">${[["seen","seen"],["partly_seen","partly"],["not_seen","not"]].map(([k,c])=>`<button type="button" class="${c}" data-v="${v.id}" data-ind="${ind.code}" data-s="${k}" aria-pressed="${cur.s===k}">${ST[k]}</button>`).join("")}</div>
+    <input class="note" data-v="${v.id}" data-ind="${ind.code}" placeholder="What you saw (optional)" value="${esc(cur.note||"")}"></div>`;}).join("")}
+   <div class="two" style="margin-top:10px"><label class="f">What went well<textarea class="note" data-vf="extra_strengths" data-v="${v.id}" rows="2">${esc(v.extra_strengths||"")}</textarea></label><label class="f">Next step<textarea class="note" data-vf="extra_development" data-v="${v.id}" rows="2">${esc(v.extra_development||"")}</textarea></label></div>
+   <div style="margin-top:10px"><span class="muted" style="font-size:.85rem;font-weight:600">Also seen (optional)</span>${alsoSeenHtml(v.also_seen||[],'data-v="'+v.id+'"')}</div>
+   <div class="phs">${phs.join("")}</div>
+   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn ghost small" data-cam="${v.id}">📷 Take photo</button><button class="btn ghost small" data-up="${v.id}">Upload photo</button><button class="btn primary small" data-send="${v.id}">${sent?"Send again":"Send to teacher"}</button>${sent?"":`<button class="btn ghost small" data-delv="${v.id}" style="color:var(--danger);margin-left:auto">Remove visit</button>`}</div>
+  </article>`;}));
+ $("visits").innerHTML=html.join("");}
+$("vTeacher").onchange=()=>{const t=teachers.find(x=>x.id===$("vTeacher").value);$("vClasses").innerHTML=(t?t.classes:[]).map(c=>`<option value="${esc(c)}">`).join("");
+ if(t&&t.homeroom)$("vGrade").value=t.homeroom;else if(t&&t.classes.length===1)$("vGrade").value=t.classes[0];
+ const mine=t?t.subjects:[],others=SUBJECTS.filter(x=>!mine.includes(x));
+ $("vSubject").innerHTML='<option value="">Choose…</option>'+(mine.length?`<optgroup label="Subjects this teacher teaches">${mine.map(x=>`<option>${esc(x)}</option>`).join("")}</optgroup>`:"")+`<optgroup label="Other subjects">${others.map(x=>`<option>${esc(x)}</option>`).join("")}</optgroup>`+OTHER_OPT;
+ if(mine.length===1)$("vSubject").value=mine[0];};
+watchOther($("vSubject"));
+$("addVisit").onclick=async()=>{const tid=$("vTeacher").value;if(!tid)return showMsg($("msg"),"Choose the teacher for this visit.","err");
+ const mins=+$("vMins").value;if($("vMins").value&&(!(mins>=1&&mins<=120)))return showMsg($("msg"),"Please enter the time in the class in minutes (1–120).","err");
+ const {error}=await sb.from("observations").insert({school_id:ctx.school.id,teacher_id:tid,observer_id:ctx.user.id,type:"learning_walk",walk_group:wid,observed_on:walk.walked_on,academic_year:walk.academic_year,grade_class:$("vGrade").value,subject:$("vSubject").value,focus:walk.title,lesson_stage:$("vStage").value||null,duration_minutes:+$("vMins").value||null});
+ if(error)return showMsg($("msg"),friendly(error),"err");$("vTeacher").value="";$("vGrade").value="";$("vStage").value="";$("vMins").value="";$("vSubject").innerHTML='<option value="">Choose…</option>';$("msg").classList.add("hide");await loadVisits();
+ const last=visits[visits.length-1];if(last)$("v-"+last.id).scrollIntoView({behavior:"smooth"});};
+const timers={};
+document.addEventListener("click",async e=>{const b=e.target.closest("button");if(!b)return;
+ if(b.dataset.also&&b.dataset.v){const v=visits.find(x=>x.id===b.dataset.v);const a=new Set(v.also_seen||[]);const c=b.dataset.also;a.has(c)?a.delete(c):a.add(c);v.also_seen=[...a];b.setAttribute("aria-pressed",a.has(c));
+  save(()=>sb.from("observations").update({also_seen:v.also_seen}).eq("id",v.id));return;}
+ if(b.dataset.s){const v=b.dataset.v,ind=b.dataset.ind,s=b.dataset.s;const jv=judg[v]=judg[v]||{};const cur=jv[ind]=jv[ind]||{note:""};
+  cur.s=cur.s===s?null:s;b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.s===cur.s));
+  save(()=>sb.from("observation_judgements").upsert({observation_id:v,indicator_code:ind,walk_status:cur.s,note:cur.note||null}));renderSummary();}
+ if(b.dataset.delv){if(!confirm("Remove this visit?"))return;const id=b.dataset.delv;if(evid[id])await sb.storage.from("evidence").remove(evid[id].map(x=>x.storage_path));
+  const {error}=await sb.from("observations").delete().eq("id",id);if(error)return showMsg($("msg"),friendly(error),"err");loadVisits();}
+ if(b.dataset.up){photoTarget=b.dataset.up;$("photoIn").click();}
+ if(b.dataset.cam){photoTarget=b.dataset.cam;openCam();}
+ if(b.dataset.delph){if(!confirm("Remove this photo?"))return;const id=b.dataset.delph,v=b.dataset.v;const ev=evid[v].find(x=>x.id===id);evid[v]=evid[v].filter(x=>x.id!==id);
+  await sb.storage.from("evidence").remove([ev.storage_path]);await sb.from("evidence").delete().eq("id",id);renderVisits();}
+ if(b.dataset.send)sendVisit(b.dataset.send);});
+document.addEventListener("change",e=>{if(e.target.dataset.vt==="lesson_stage")e.target.dispatchEvent(new Event("input",{bubbles:true}));});
+document.addEventListener("input",e=>{const el=e.target;
+ if(el.dataset.ind&&el.classList.contains("note")&&el.tagName==="INPUT"){const v=el.dataset.v,ind=el.dataset.ind;const jv=judg[v]=judg[v]||{};const cur=jv[ind]=jv[ind]||{s:null};cur.note=el.value;
+  clearTimeout(timers[v+ind]);timers[v+ind]=setTimeout(()=>save(()=>sb.from("observation_judgements").upsert({observation_id:v,indicator_code:ind,walk_status:cur.s||null,note:cur.note||null})),700);}
+ if(el.dataset.vf){const v=el.dataset.v,f=el.dataset.vf;const ob=visits.find(x=>x.id===v);ob[f]=el.value;clearTimeout(timers[v+f]);timers[v+f]=setTimeout(()=>save(()=>sb.from("observations").update({[f]:el.value}).eq("id",v)),700);}
+ if(el.dataset.vt){const v=el.dataset.v,f=el.dataset.vt;const ob=visits.find(x=>x.id===v);let val=el.value;
+  if(f==="duration_minutes"){val=+val||null;if(val&&(val<1||val>120))return;}else val=val||null;
+  ob[f]=val;clearTimeout(timers[v+f]);timers[v+f]=setTimeout(()=>save(()=>sb.from("observations").update({[f]:val}).eq("id",v)),600);}
+ if(el.dataset.cap){const id=el.dataset.cap;clearTimeout(timers[id]);timers[id]=setTimeout(()=>save(()=>sb.from("evidence").update({caption:el.value||null}).eq("id",id)),600);}});
+// photos
+let photoTarget=null;
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src;});}
+async function compress(file){const u=URL.createObjectURL(file);try{const img=await loadImg(u);const s=Math.min(1,1600/Math.max(img.naturalWidth,img.naturalHeight));const cv=document.createElement("canvas");cv.width=Math.round(img.naturalWidth*s);cv.height=Math.round(img.naturalHeight*s);cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);return await new Promise(r=>cv.toBlob(r,"image/jpeg",0.82));}finally{URL.revokeObjectURL(u);}}
+async function addPhoto(f){const v=photoTarget;if(!v)return;try{const blob=await compress(f);const path=`${ctx.school.id}/${v}/${crypto.randomUUID()}.jpg`;
+ const up=await sb.storage.from("evidence").upload(path,blob,{contentType:"image/jpeg"});if(up.error)throw up.error;
+ const {data,error}=await sb.from("evidence").insert({observation_id:v,school_id:ctx.school.id,storage_path:path}).select().single();if(error)throw error;(evid[v]=evid[v]||[]).push(data);await renderVisits();
+ }catch(err){console.error(err);showMsg($("msg"),"A photo couldn’t be uploaded: "+friendly(err),"err");}}
+$("photoIn").onchange=async e=>{const fs=[...e.target.files];e.target.value="";for(const f of fs)await addPhoto(f);};
+$("camIn").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(f)await addPhoto(f);};
+const isTouch=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+let stream=null,facing="environment";
+async function startCam(){stopCam();stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1920},height:{ideal:1080}},audio:false});$("camVideo").srcObject=stream;}
+function stopCam(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}}
+async function openCam(){if(isTouch||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){$("camIn").click();return;}
+ try{$("camModal").classList.remove("hide");await startCam();}catch(err){$("camModal").classList.add("hide");stopCam();showMsg($("msg"),"The camera couldn’t open. Allow camera access for this site, or use Upload photo.","err");}}
+$("flipBtn").onclick=async()=>{facing=facing==="environment"?"user":"environment";try{await startCam();}catch(e){}};
+$("camClose").onclick=()=>{stopCam();$("camModal").classList.add("hide");};
+$("snapBtn").onclick=async()=>{const vd=$("camVideo");if(!vd.videoWidth)return;const cv=document.createElement("canvas");cv.width=vd.videoWidth;cv.height=vd.videoHeight;cv.getContext("2d").drawImage(vd,0,0);
+ const blob=await new Promise(r=>cv.toBlob(r,"image/jpeg",0.9));$("snapBtn").textContent="Saved ✓";setTimeout(()=>$("snapBtn").textContent="Capture",900);await addPhoto(blob);};
+// send
+async function sendVisit(id){const v=visits.find(x=>x.id===id),t=v.teachers||{};
+ if(!t.email)return showMsg($("msg"),"This teacher has no email address. Add it on the Teachers page first.","err");
+ const jv=judg[id]||{};if(!Object.values(jv).some(x=>x&&x.s))return showMsg($("msg"),"Mark at least one indicator as seen, partly seen or not yet seen before sending.","err");
+ if(v.status!=="sent"){const {error}=await sb.from("observations").update({status:"sent",sent_at:new Date().toISOString()}).eq("id",id);if(error)return showMsg($("msg"),friendly(error),"err");v.status="sent";}
+ const first=(t.full_name||"").split(" ")[0],when=fmtDate(walk.walked_on),link=ch=>SITE+"respond.html?t="+v.response_token+"&c="+ch;
+ const sp=s=>(s||"").split(/\n+/).map(x=>x.trim()).filter(Boolean);
+ let lines=["Dear "+first+",","","Thank you for welcoming me into your "+(v.subject?v.subject+" ":"")+"lesson"+(v.grade_class?" with "+v.grade_class:"")+" during today’s learning walk ("+when+")."+(walk.title?" The focus of the walk was: "+walk.title+".":""),
+  ...(v.lesson_stage||v.duration_minutes?["I visited "+(v.lesson_stage==="whole"?"for the whole lesson":v.lesson_stage?"at the "+STAGE[v.lesson_stage].toLowerCase()+" of the lesson":"your lesson")+(v.duration_minutes?" for about "+v.duration_minutes+" minutes":"")+"."]:[]),"",
+  "What I looked for (UAE MOE framework):",...inds.map(i=>{const c=jv[i.code]||{};return "• "+i.title+" (MOE "+i.moe_ref+"): "+(c.s?ST[c.s]:"Not looked at")+(c.note?" – "+c.note:"");}),"",
+  ...(sp(v.extra_strengths).length?["What went well:",...sp(v.extra_strengths).map(x=>"• "+x),""]:[]),
+  ...(sp(v.extra_development).length?["Next step:",...sp(v.extra_development).map(x=>"• "+x),""]:[]),
+  "Please let me know whether you would like to meet to discuss this by tapping one of these links:","","I would like a meeting:",link("meeting_requested"),"","I don’t need a meeting:",link("no_meeting"),"",
+  "Kind regards,",ctx.staff.full_name||"",ctx.staff.job_title||"",ctx.school.name];
+ const lang=teacherLang(t);let subj="Learning walk feedback – "+when;
+ if(lang==="ar"){const wA=fmtDateIn(walk.walked_on,"ar"),STA={seen:"ملاحَظ",partly_seen:"ملاحَظ جزئيًا",not_seen:"لم يُلاحَظ بعد"},STG={beginning:"في بداية الحصة",middle:"في منتصف الحصة",end:"في نهاية الحصة",whole:"طوال الحصة"};
+  lines=["عزيزي/عزيزتي "+first+"،","","شكرًا لاستقبالي في حصة "+(v.subject?subjAr(v.subject)+" ":"")+(v.grade_class?"مع "+v.grade_class+" ":"")+"خلال الجولة التعليمية اليوم ("+wA+")."+(walk.title?" وكان تركيز الجولة: "+walk.title+".":""),
+   ...(v.lesson_stage||v.duration_minutes?["كانت زيارتي "+(v.lesson_stage?STG[v.lesson_stage]:"لحصتك")+(v.duration_minutes?" لمدة "+v.duration_minutes+" دقيقة تقريبًا":"")+"."]:[]),"",
+   "ما ركّزت عليه (إطار وزارة التربية والتعليم):",...inds.map(i=>{const c=jv[i.code]||{};return "• "+(i.title_ar||i.title)+" (مرجع الوزارة "+i.moe_ref+"): "+(c.s?STA[c.s]:"لم يُنظر فيه")+(c.note?" – "+c.note:"");}),"",
+   ...(sp(v.extra_strengths).length?["ما الذي سار بشكل جيد:",...sp(v.extra_strengths).map(x=>"• "+x),""]:[]),
+   ...(sp(v.extra_development).length?["الخطوة التالية:",...sp(v.extra_development).map(x=>"• "+x),""]:[]),
+   "يُرجى إعلامي إن كنت ترغب في اجتماع لمناقشة ذلك بالضغط على أحد الرابطين:","","أرغب في اجتماع:",link("meeting_requested")+"&l=ar","","لا أحتاج إلى اجتماع:",link("no_meeting")+"&l=ar","",
+   "مع خالص التحية،",ctx.staff.full_name||"",ctx.staff.job_title||"",ctx.school.name];
+  subj="التغذية الراجعة للجولة التعليمية – "+wA;}
+ renderVisits();
+ const r=await deliverFeedback({observationId:id,to:t.email,subject:subj,lines,lang});
+ if(r==="sent")showMsg($("msg"),"Feedback emailed to "+t.full_name+". Their reply will come to your email.","ok");}
+$("delWalk").onclick=async()=>{if(visits.some(v=>v.status==="sent"))return showMsg($("msg"),"This walk has feedback that was sent to teachers, so it’s kept as part of their records.","info");
+ if(!confirm("Delete this learning walk and all its visits?"))return;
+ const paths=Object.values(evid).flat().map(e=>e.storage_path);if(paths.length)await sb.storage.from("evidence").remove(paths);
+ const {error}=await sb.from("walks").delete().eq("id",wid);if(error)return showMsg($("msg"),friendly(error),"err");location.href="walks.html";};
+init();</script>
+</body></html>

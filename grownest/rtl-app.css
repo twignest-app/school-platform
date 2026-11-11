@@ -1,0 +1,9 @@
+/* GrowNest · right-to-left adjustments for the app pages */
+[dir="rtl"] body{font-family:"IBM Plex Sans Arabic",Poppins,Tahoma,Arial,sans-serif}
+[dir="rtl"] h1,[dir="rtl"] h2,[dir="rtl"] h3{letter-spacing:0}
+[dir="rtl"] table.t th,[dir="rtl"] table.t td,[dir="rtl"] .st th,[dir="rtl"] .st td,[dir="rtl"] .jt th,[dir="rtl"] .jt td{text-align:right}
+[dir="rtl"] td[style*="text-align:right"]{text-align:left!important}
+[dir="rtl"] .wc{float:left}
+[dir="rtl"] input[type=email],[dir="rtl"] input[type=tel],[dir="rtl"] .code{direction:ltr;text-align:right}
+[dir="rtl"] .badge-left{margin-left:0;margin-right:6px}
+[dir="rtl"] .chip{margin:2px 0 2px 4px}
