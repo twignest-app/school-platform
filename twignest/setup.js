@@ -157,6 +157,9 @@
   }
 
   let OBJ = null;
+  // Ready-made curricula shared by every school on the platform (files in the curricula folder)
+  let LIB = null, LIBUI = null;
+  const LIBRARY = [{ file: "curricula/british-national-curriculum.json", name: "British National Curriculum (England, 2014)" }];
   async function loadXLSX() { if (window.XLSX) return; await new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; sc.onload = res; sc.onerror = () => rej(new Error("Couldn’t load the Excel reader. Check your internet connection.")); document.head.appendChild(sc); }); }
   const nz = v => String(v ?? "").toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]/g, "");
   const objCols = () => { const o = []; C.subjects.forEach(sb => sb.strands.forEach(st => st.cols.filter(c => c.type === "objectives").forEach(c => o.push({ sb, st, c })))); return o; };
@@ -169,12 +172,57 @@
         <div class="colcard" style="margin:0"><h3 style="margin-top:0">2. Paste them</h3><p class="note">Copy from Excel, Word or Atlas and paste into the boxes in step 5, one grade and term at a time.</p><button class="btn ghost small" data-step="4">Go to data columns</button></div>
         <div class="colcard" style="margin:0"><h3 style="margin-top:0">3. Copy from another grade</h3><p class="note">Start from a similar grade’s objectives, then edit them.</p>
           <div class="row"><select id="cpFrom" aria-label="Copy from" style="width:auto">${g.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select><span class="note">to</span><select id="cpTo" aria-label="Copy to" style="width:auto">${g.map((x, i) => `<option value="${x.id}" ${i === 1 ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select><button class="btn ghost small" data-act="obj-copy">Copy</button></div></div></div>
+      <div class="colcard" style="margin:12px 0 0"><h3 style="margin-top:0">4. Start from a ready-made curriculum</h3><p class="note">Load the ${esc(LIBRARY[0].name)} for English, Maths and Science, Years 1 to 6. You choose which of your grades each year group belongs to, and check everything before it’s added.</p>
+        <button class="btn small" data-act="lib-open">Choose a curriculum</button></div>
       <div class="row" style="margin-top:12px"><button class="btn ghost small" data-act="obj-export">Download all current objectives (Excel)</button><span class="note">Edit the file and upload it again to make changes in bulk.</span></div><div id="objMsg"></div></div>`;
+    if (LIBUI && LIB && !OBJ) h += libForm();
     if (OBJ) h += objPreview();
     h += `<div class="card"><h2>What’s in place</h2><div class="tablewrap"><table><tr><th>Grade</th>${oc.map(x => `<th>${esc(x.sb.name === x.st.name ? x.sb.name : x.sb.name + ": " + x.st.name)}</th>`).join("")}<th>Total</th></tr>
       ${g.map(x => `<tr><td><b>${esc(x.name)}</b></td>${oc.map(({ c }) => { const per = (c.objectives || {})[x.id] || []; const n = per.reduce((a, l) => a + l.length, 0); return `<td>${n ? per.map(l => l.length).join(" / ") : `<span class="note">–</span>`}</td>`; }).join("")}<td><b>${countObj(x.id)}</b></td></tr>`).join("")}</table></div>
       <p class="note">Numbers show objectives per term (${C.terms.map(esc).join(" / ")}).</p></div>`;
     return h;
+  }
+  function libGuess(y) {
+    const n = +y, by = name => C.grades.find(g => nz(g.name) === nz(name));
+    const g = by("Year " + n) || (n === 1 ? by("KG2") : null) || by("Grade " + (n - 1));
+    return g ? g.id : "";
+  }
+  function libForm() {
+    const L = LIB;
+    return `<div class="card"><h2>${esc(L.name)}</h2><p class="note">${esc(L.note || "")} Choose which of your grades each year group is taught in. Any year set to “Don’t add” is skipped.</p>
+      <div class="tablewrap"><table><tr><th>Curriculum year</th><th>Your grade</th></tr>${L.years.map(y => `<tr><td>${esc(y.name)}</td><td><select data-lib-year="${esc(y.key)}" aria-label="Grade for ${esc(y.name)}" style="width:auto"><option value="">Don’t add</option>${C.grades.map(g => `<option value="${g.id}" ${libGuess(y.key) === g.id ? "selected" : ""}>${esc(g.name)}</option>`).join("")}</select></td></tr>`).join("")}</table></div>
+      <p class="note" style="margin:14px 0 4px"><b>Subjects</b></p>${L.subjects.map(sb => `<label class="check" style="margin:4px 0"><input type="checkbox" data-lib-subj="${esc(sb.name)}" checked> ${esc(sb.name)}</label>`).join("")}
+      <label for="libTerm" style="display:block;margin-top:14px"><b>Which term should they go in?</b></label>
+      <select id="libTerm" style="width:auto"><option value="all">Every term (${C.terms.map(esc).join(", ")})</option>${C.terms.map((t, i) => `<option value="${i}">${esc(t)} only</option>`).join("")}</select>
+      <p class="note" style="margin-top:12px">Objectives go into your own subjects and strands where the names match (for example Reading, Spelling or Fractions). You’ll see everything before anything is added.</p>
+      <div class="row"><button class="btn" data-act="lib-load">Check these objectives</button><button class="btn ghost" data-act="lib-cancel">Cancel</button></div></div>`;
+  }
+  function libBuild() {
+    const map = {}; document.querySelectorAll("[data-lib-year]").forEach(x => { if (x.value) map[x.dataset.libYear] = C.grades.find(g => g.id === x.value); });
+    const subs = new Set([...document.querySelectorAll("[data-lib-subj]")].filter(x => x.checked).map(x => x.dataset.libSubj));
+    const tv = (document.getElementById("libTerm") || {}).value || "all", terms = tv === "all" ? C.terms.map((_, i) => i) : [+tv];
+    const oc = objCols(), out = []; let n = 0;
+    LIB.subjects.filter(sb => subs.has(sb.name)).forEach(lsb => {
+      const sbNames = [lsb.name].concat(lsb.aliases || []).map(nz);
+      const sb = sbNames.map(nm => C.subjects.find(x => nz(x.name) === nm)).find(Boolean);
+      lsb.strands.forEach(lst => {
+        const stNames = [lst.name].concat(lst.aliases || []).map(nz);
+        let col = null, exSt = null;
+        if (sb) {
+          for (const nm of stNames) { const hit = oc.find(x => x.sb === sb && nz(x.st.name) === nm); if (hit) { col = hit; break; } }
+          if (!col) exSt = stNames.map(nm => sb.strands.find(x => nz(x.name) === nm)).find(Boolean);
+        }
+        Object.entries(lst.years || {}).forEach(([y, list]) => {
+          const grade = map[y]; if (!grade) return;
+          list.forEach(text => terms.forEach(ti => {
+            const row = { row: ++n, text, step: "", grade, term: ti, col };
+            if (!col) { row.problem = `No objectives column for “${lsb.name} › ${lst.name}”`; row.need = { sb: sb ? sb.name : lsb.name, st: exSt ? exSt.name : lst.name }; }
+            out.push(row);
+          }));
+        });
+      });
+    });
+    OBJ = { file: LIB.name, rows: out };
   }
   function objPreview() {
     const p = OBJ, ok = p.rows.filter(r => !r.problem), make = p.rows.filter(r => r.need), bad = p.rows.filter(r => r.problem && !r.need);
@@ -340,6 +388,14 @@
         const ws = XLSX.utils.aoa_to_sheet(rows); ws["!cols"] = [{ wch: 12 }, { wch: 14 }, { wch: 22 }, { wch: 10 }, { wch: 60 }, { wch: 60 }]; const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Objectives");
         XLSX.writeFile(wb, a === "obj-template" ? "TwigNest objectives template.xlsx" : "TwigNest objectives.xlsx"); }).catch(err => alert(err.message)); return; }
     if (a === "obj-cancel") { OBJ = null; return render(); }
+    if (a === "lib-open") {
+      fetch(LIBRARY[0].file, { cache: "no-store" }).then(r => { if (!r.ok) throw new Error("Couldn’t load the curriculum (" + r.status + ")."); return r.json(); })
+        .then(j => { LIB = j; LIBUI = {}; OBJ = null; render(); })
+        .catch(err => { const m = document.getElementById("objMsg"); if (m) m.innerHTML = `<div class="msg err">${esc(err.message)}</div>`; });
+      return;
+    }
+    if (a === "lib-cancel") { LIBUI = null; return render(); }
+    if (a === "lib-load") { libBuild(); if (!OBJ.rows.length) { OBJ = null; const m = document.getElementById("objMsg"); if (m) m.innerHTML = `<div class="msg err">Choose at least one grade and one subject.</div>`; return; } LIBUI = null; render(); return; }
     if (a === "obj-import") { const mode = (document.querySelector('input[name="objMode"]:checked') || {}).value || "replace"; applyObj(mode); OBJ = null; save(true); render(); document.getElementById("objMsg") && (document.getElementById("objMsg").innerHTML = `<div class="msg ok">Objectives imported.</div>`); return; }
     if (a === "obj-copy") { const from = document.getElementById("cpFrom").value, to = document.getElementById("cpTo").value; if (from === to) return alert("Choose two different grades.");
       if (countObj(to) && !confirm("The grade you’re copying to already has objectives. Replace them with a copy?")) return;
