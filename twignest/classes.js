@@ -85,40 +85,60 @@
 
   function gradeName(id) { const g = (setup.config.grades || []).find(x => x.id === id); return g ? g.name : "Other"; }
 
+  let addFor = null;
+  function teacherName(id) { const t = teachers.find(x => x.id === id); return t ? (t.full_name || t.email) : "Former staff"; }
   function render() {
     const el = ctx.el;
     if (!setup) { el.innerHTML = `<div class="card"><h2>Classes and students</h2><p class="note">Finish the school setup first, so TwigNest knows your grades and student groups.</p></div>`; return; }
-    const grades = setup.config.grades || [];
-    let h = `<div class="card"><h2>Add a class</h2><p class="note">For ${esc(setup.year)}. Add each class, choose its teachers, then add its students. You can paste names straight from Excel.</p>
-      <div class="row" style="margin-top:12px"><select id="newGrade" aria-label="Grade">${grades.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join("")}</select>
-      <input id="newClass" type="text" placeholder="Class name, for example 2A" aria-label="Class name" style="max-width:260px"><button class="btn" data-cact="add-class">Add class</button></div><div id="cMsg"></div>
-      <h3>Or upload a whole-school list</h3><p class="note">Upload an Excel or CSV file with the columns <b>Name</b>, <b>Arabic name</b>, <b>Student ID</b>, <b>Class</b>, <b>Grade</b> and <b>Groups</b>. The Arabic name is used in Arabic report comments. The Student ID is optional but recommended, since it matches students exactly. TwigNest creates any missing classes and shows you a preview before anything is saved.</p>
-      <div class="row"><label class="btn" style="display:inline-block;margin:0;font-size:16px;cursor:pointer">Upload a list<input type="file" id="listFile" accept=".xlsx,.xls,.csv" hidden></label><button class="btn ghost" data-cact="template">Download the template</button></div><div id="upMsg"></div></div>`;
+    const grades = setup.config.grades || [], subs = setup.config.subjects || [];
+    const totalSt = students.length;
+    let h = `<style>
+      .cl-table{width:100%;border-collapse:collapse}.cl-table th{font-size:13px;text-align:left;color:var(--muted,#6B6480);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line,#E6E1EF)}
+      .cl-table td{padding:10px 8px;border-bottom:1px solid var(--line,#E6E1EF);vertical-align:middle;font-size:15px}.cl-table tr:last-child td{border-bottom:0}
+      .cl-name{font-weight:700;font-size:16px}.cl-panel{background:var(--bg,#F7F5FB);border-radius:14px;padding:16px;margin:4px 0 8px}
+      .cl-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.cl-head h2{margin:0}
+      .cl-chip{display:inline-block;font-size:13px;background:var(--bg,#F3EEF8);border-radius:99px;padding:3px 10px;margin:2px 4px 2px 0}
+      .cl-sec{margin:14px 0 6px;font-weight:700}
+    </style>
+    <div class="card"><div class="cl-head"><div><h2>Classes and students</h2><p class="note" style="margin:4px 0 0">${esc(setup.year)} · ${classes.length} class${classes.length === 1 ? "" : "es"} · ${totalSt} student${totalSt === 1 ? "" : "s"}</p></div></div>
+      <p class="note">Your classes are listed by grade below. Use <b>Manage</b> on a class to choose its teachers and add or edit its students.</p>
+      <details style="margin-top:10px" ${preview ? "open" : ""}><summary style="cursor:pointer;font-weight:700">Import a whole-school student list from Excel</summary>
+        <p class="note">Upload an Excel or CSV file with the columns <b>Name</b>, <b>Arabic name</b>, <b>Student ID</b>, <b>Class</b>, <b>Grade</b> and <b>Groups</b>. TwigNest creates any missing classes and shows you a preview before anything is saved.</p>
+        <div class="row"><label class="btn" style="display:inline-block;margin:0;font-size:16px;cursor:pointer">Upload a list<input type="file" id="listFile" accept=".xlsx,.xls,.csv" hidden></label><button class="btn ghost" data-cact="template">Download the template</button></div><div id="upMsg"></div>
+      </details></div>`;
     if (preview) h += previewCard();
-    const byGrade = grades.map(g => [g, classes.filter(c => c.grade_id === g.id)]).filter(x => x[1].length);
-    if (!classes.length) h += `<div class="card"><p class="note">No classes yet. Add your first class above.</p></div>`;
-    byGrade.forEach(([g, list]) => {
-      h += `<h3 style="margin:18px 0 8px;font-family:Poppins,sans-serif;color:var(--plum)">${esc(g.name)}</h3><div class="grid2">`;
+    grades.forEach(g => {
+      const list = classes.filter(c => c.grade_id === g.id), n = students.filter(s => list.some(c => c.id === s.class_id)).length;
+      h += `<div class="card"><div class="cl-head"><div><h2>${esc(g.name)}</h2><p class="note" style="margin:2px 0 0">${list.length} class${list.length === 1 ? "" : "es"} · ${n} student${n === 1 ? "" : "s"}</p></div>
+        <button class="btn ghost small" data-cact="add-open" data-id="${g.id}">+ Add a class</button></div>`;
+      if (addFor === g.id) h += `<div class="cl-panel"><div class="row"><input id="newClass-${g.id}" type="text" placeholder="Class name, for example ${esc(g.name.replace(/^grade\s*/i, ""))}A" aria-label="Class name" style="max-width:260px"><button class="btn" data-cact="add-class" data-id="${g.id}">Add class</button><button class="btn ghost" data-cact="add-open" data-id="${g.id}">Cancel</button></div><div id="cMsg-${g.id}"></div></div>`;
+      if (!list.length) { h += `<p class="note" style="margin:12px 0 0">No classes in ${esc(g.name)} yet.</p></div>`; return; }
+      h += `<div class="tablewrap" style="margin-top:10px"><table class="cl-table"><tr><th>Class</th><th>Class teachers</th><th>Specialist teachers</th><th>Students</th><th></th></tr>`;
       list.forEach(c => {
-        const tIds = links.filter(l => l.class_id === c.id && !l.subject_id).map(l => l.teacher_id), spec = links.filter(l => l.class_id === c.id && l.subject_id), n = students.filter(s => s.class_id === c.id).length, subs = setup.config.subjects || [];
-        h += `<div class="card" style="margin:0"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(c.name)}</h2><span class="note">${n} student${n === 1 ? "" : "s"}</span></div>
-          <p class="note" style="margin:8px 0 4px"><b>Class teachers</b> (all subjects)</p>
+        const tIds = links.filter(l => l.class_id === c.id && !l.subject_id).map(l => l.teacher_id), spec = links.filter(l => l.class_id === c.id && l.subject_id), cn = students.filter(s => s.class_id === c.id).length, open = openClass === c.id;
+        h += `<tr><td class="cl-name">${esc(c.name)}</td><td>${tIds.length ? tIds.map(id => esc(teacherName(id))).join(", ") : `<span class="note">None yet</span>`}</td>
+          <td>${spec.length ? spec.length + " teacher" + (spec.length === 1 ? "" : "s") : `<span class="note">None</span>`}</td><td>${cn}</td>
+          <td style="text-align:right"><button class="btn ${open ? "" : "ghost "}small" data-cact="students" data-id="${c.id}">${open ? "Close" : "Manage"}</button></td></tr>`;
+        if (open) h += `<tr><td colspan="5"><div class="cl-panel">
+          <div class="cl-sec">Class teachers <span class="note" style="font-weight:400">(teach all subjects)</span></div>
           ${teachers.length ? teachers.map(t => `<label class="check" style="margin:4px 0"><input type="checkbox" data-teach="${c.id}|${t.id}" ${tIds.includes(t.id) ? "checked" : ""}> ${esc(t.full_name || t.email)}</label>`).join("") : `<p class="note">No approved staff yet.</p>`}
-          <p class="note" style="margin:12px 0 4px"><b>Specialist teachers</b> (one subject)</p>
-          ${spec.map(l => { const tt = teachers.find(x => x.id === l.teacher_id), sb = subs.find(x => x.id === l.subject_id); return `<div class="row" style="margin:3px 0"><span style="font-size:14px">${esc(tt ? (tt.full_name || tt.email) : "Former staff")} · <b>${esc(sb ? sb.name : "Removed subject")}</b></span><button class="mini" data-cact="del-spec" data-id="${c.id}|${l.teacher_id}|${l.subject_id}" aria-label="Remove">Remove</button></div>`; }).join("") || `<p class="note" style="margin:0">None yet.</p>`}
-          ${teachers.length && subs.length ? `<div class="row" style="margin-top:6px"><select id="spT-${c.id}" aria-label="Teacher" style="width:auto;padding:6px 8px">${teachers.map(t => `<option value="${t.id}">${esc(t.full_name || t.email)}</option>`).join("")}</select><select id="spS-${c.id}" aria-label="Subject" style="width:auto;padding:6px 8px">${subs.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join("")}</select><button class="btn ghost small" data-cact="add-spec" data-id="${c.id}">Add</button></div>` : ""}
-          <div class="row" style="margin-top:12px"><button class="btn small" data-cact="students" data-id="${c.id}">${openClass === c.id ? "Close student list" : "Add or edit students"}</button>
-          <button class="btn ghost small" data-cact="del-class" data-id="${c.id}">Remove class</button></div>
-          ${openClass === c.id ? studentEditor(c) : ""}</div>`;
+          <div class="cl-sec">Specialist teachers <span class="note" style="font-weight:400">(one subject)</span></div>
+          ${spec.map(l => { const sb = subs.find(x => x.id === l.subject_id); return `<span class="cl-chip">${esc(teacherName(l.teacher_id))} · <b>${esc(sb ? sb.name : "Removed subject")}</b> <button class="mini" data-cact="del-spec" data-id="${c.id}|${l.teacher_id}|${l.subject_id}" aria-label="Remove">×</button></span>`; }).join("") || `<p class="note" style="margin:0">None yet.</p>`}
+          ${teachers.length && subs.length ? `<div class="row" style="margin-top:8px"><select id="spT-${c.id}" aria-label="Teacher" style="width:auto;padding:6px 8px">${teachers.map(t => `<option value="${t.id}">${esc(t.full_name || t.email)}</option>`).join("")}</select><select id="spS-${c.id}" aria-label="Subject" style="width:auto;padding:6px 8px">${subs.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select><button class="btn ghost small" data-cact="add-spec" data-id="${c.id}">Add</button></div>` : ""}
+          <div class="cl-sec">Students</div>${studentEditor(c)}
+          <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn ghost small" data-cact="del-class" data-id="${c.id}">Remove this class</button></div>
+        </div></td></tr>`;
       });
-      h += `</div>`;
+      h += `</table></div></div>`;
     });
+    const other = classes.filter(c => !grades.some(g => g.id === c.grade_id));
+    if (other.length) h += `<div class="card"><h2>Other classes</h2><p class="note">These classes belong to a grade that’s no longer in your setup: ${other.map(c => esc(c.name)).join(", ")}.</p></div>`;
     el.innerHTML = h;
   }
 
   function studentEditor(c) {
     const list = students.filter(s => s.class_id === c.id), groups = setup.config.groups || [];
-    return `<div style="margin-top:12px"><label for="st-${c.id}">One student per line: full name, Arabic name, student ID, then any groups, separated by commas</label>
+    return `<div><label for="st-${c.id}">One student per line: full name, Arabic name, student ID, then any groups, separated by commas</label>
       <p class="note">The Arabic name and student ID are optional. Groups you can use: ${groups.map(esc).join(", ") || "none set up"}. For example: Layla Hassan, ليلى حسن, 20145, EAL</p>
       <textarea id="st-${c.id}" style="min-height:220px">${esc(list.map(s => [s.full_name, s.arabic_name, s.student_number, ...(s.groups || [])].filter(Boolean).join(", ")).join("\n"))}</textarea>
       <div class="row" style="margin-top:8px"><button class="btn" data-cact="save-students" data-id="${c.id}">Save students</button><span id="stMsg-${c.id}" class="note"></span></div>
@@ -127,11 +147,13 @@
 
   async function act(a, id, btn) {
     const sb = ctx.sb;
+    if (a === "add-open") { addFor = addFor === id ? null : id; render(); const i = document.getElementById("newClass-" + id); if (i) i.focus(); return; }
     if (a === "add-class") {
-      const name = document.getElementById("newClass").value.trim(), grade = document.getElementById("newGrade").value;
-      if (!name) { document.getElementById("cMsg").innerHTML = `<div class="msg err">Type a class name first.</div>`; return; }
+      const name = document.getElementById("newClass-" + id).value.trim(), grade = id, m = document.getElementById("cMsg-" + id);
+      if (!name) { m.innerHTML = `<div class="msg err">Type a class name first.</div>`; return; }
       const { error } = await sb.from("classes").insert({ school_id: ctx.school.id, year: setup.year, grade_id: grade, name });
-      if (error) { document.getElementById("cMsg").innerHTML = `<div class="msg err">${esc(/duplicate/i.test(error.message) ? "A class with this name already exists." : error.message)}</div>`; return; }
+      if (error) { m.innerHTML = `<div class="msg err">${esc(/duplicate/i.test(error.message) ? "A class with this name already exists." : error.message)}</div>`; return; }
+      addFor = null;
     }
     if (a === "del-class") {
       const n = students.filter(s => s.class_id === id).length;
