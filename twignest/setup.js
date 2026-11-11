@@ -99,7 +99,7 @@
           if ((x.type === "score" || x.type === "rubric") && !(x.max > 0 && x.below < x.above && x.above <= x.max)) block.push([`${n}: set the maximum mark, with below < above ≤ maximum.`, 4, st.id]);
           if ((x.type === "standardised" || x.type === "readingAge") && !(x.below < x.above)) block.push([`${n}: the “below” value must be lower than the “above” value.`, 4, st.id]);
           if (x.type === "list" && (x.options.length < 2 || !(x.below < x.above))) block.push([`${n}: add at least two options, with the first “above” option after the first “in line” option.`, 4, st.id]);
-          if (x.type === "objectives") { const missing = C.grades.filter(g => !((x.objectives[g.id] || []).flat().length)).map(g => g.name); if (missing.length) warn.push([`${n}: no objectives yet for ${missing.join(", ")}.`, 5, st.id]); }
+          if (x.type === "objectives") { const missing = C.grades.filter(g => !((x.objectives[g.id] || []).flat().length)).map(g => g.name); if (missing.length === C.grades.length) warn.push([`${n}: no objectives added yet.`, 5, st.id]); }
         });
       });
     });
@@ -267,6 +267,13 @@
     });
     OBJ = { file: f.name, rows: out };
   }
+  function ensureBaselines() {
+    let changed = false;
+    C.subjects.forEach(sb => sb.strands.forEach(st => {
+      if (st.cols.some(x => x.type === "objectives") && !st.cols.some(x => x.baseline)) { st.cols.unshift(col("Baseline teacher assessment", "list", { baseline: true })); changed = true; }
+    }));
+    return changed;
+  }
   function applyObj(mode) {
     if (OBJ.create !== false) OBJ.rows.filter(r => r.need).forEach(r => {
       let sb = C.subjects.find(x => nz(x.name) === nz(r.need.sb));
@@ -277,6 +284,7 @@
       if (!c) { c = col(`${r.need.st} objectives`, "objectives"); st.cols.push(c); }
       r.col = { sb, st, c }; r.problem = null; r.need = null;
     });
+    ensureBaselines();
     const ok = OBJ.rows.filter(r => !r.problem), keys = new Set(ok.map(r => `${r.col.c.id}|${r.grade.id}|${r.term}`));
     keys.forEach(k => { const [cid, gid, ti] = k.split("|"), c = objCols().find(x => x.c.id === cid).c, per = c.objectives[gid] = c.objectives[gid] || []; while (per.length < C.terms.length) per.push([]);
       const old = per[+ti] || [], incoming = ok.filter(r => `${r.col.c.id}|${r.grade.id}|${r.term}` === k), taken = new Set();
@@ -476,7 +484,7 @@
       const g = await ctx.sb.from("classes").select("grade_id").eq("school_id", ctx.school.id); if (!g.error) g.data.forEach(r => GRADES_USED.add(r.grade_id));
       if (!bound) { document.addEventListener("click", onClick); document.addEventListener("change", onChange); bound = true; }
       if (!row) return chooseTemplate();
-      C = row.config; if (!C.year) C.year = row.year; render();
+      C = row.config; if (!C.year) C.year = row.year; if (ensureBaselines()) save(true); render();
     }
   };
 })();
