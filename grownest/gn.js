@@ -132,3 +132,9 @@ function phaseOf(gradeClass, phases){
   }
   return null;
 }
+
+// The founders now appear on Nestopia's landing page, so GrowNest no longer shows its own Founders section or menu link
+(function () {
+  const hide = () => { const f = document.getElementById("founders"); if (f) f.remove(); document.querySelectorAll('a[href$="#founders"]').forEach(a => a.remove()); };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", hide); else hide();
+})();

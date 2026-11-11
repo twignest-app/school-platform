@@ -273,6 +273,20 @@ path.draw.d2{animation-delay:.4s}
 .cta .notes{animation:noteUp 3.4s ease-in-out infinite}
 .pulse{animation:pulse 4s ease-in-out infinite}
 .spin-dash{animation:dash 6s linear infinite}
+/* founders */
+.people{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:42px}
+.person{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:28px 26px;text-align:center;align-self:start}
+.person img{width:116px;height:116px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 16px;border:4px solid var(--card);box-shadow:0 0 0 2px var(--blue-soft),var(--shadow)}
+.person h3{font-size:22px;color:var(--navy)}
+.person .role{color:var(--blue-2);font-weight:700;font-size:14px;margin:6px 0 12px}
+.person p{color:var(--muted);font-size:15px;margin:0}
+.person details{margin-top:14px;text-align:left}
+.person summary{cursor:pointer;color:var(--navy);font-weight:700;text-align:center;list-style:none}
+.person summary::-webkit-details-marker{display:none}
+.person summary::after{content:" ▾"}.person details[open] summary::after{content:" ▴"}
+.person .full{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+.person .full p{margin:0 0 10px;font-size:14.5px}
+@media (max-width:900px){.people{grid-template-columns:1fr}}
 /* gentle reveal, only when JavaScript is running */
 .js .reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}
 .js .reveal.in{opacity:1;transform:none}
@@ -384,7 +398,7 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
   <div class="wrap">
     <a class="logo" href="#top" aria-label="Nestopia home"><svg aria-hidden="true"><use href="#bird"/></svg><span><b>Nest<i>op</i>ia</b><small>POWERED BY THINKNEST</small></span></a>
     <nav class="nav" aria-label="Main">
-      <a href="#top">Home</a><a href="#ecosystem">Our Ecosystem</a><a href="#features">Features</a><a href="#family">About ThinkNest</a><a href="#" data-demo>Contact</a>
+      <a href="#top">Home</a><a href="#ecosystem">Our Ecosystem</a><a href="#features">Features</a><a href="#family">About ThinkNest</a><a href="#founders">Founders</a><a href="#" data-demo>Contact</a>
     </nav>
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="siteTop" id="menuBtn">Menu</button>
     <div class="top-acts"><button class="btn text" type="button" data-auth="signin">Sign in</button>
@@ -558,6 +572,43 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
   </div>
 </section>
 
+<section class="band" id="founders">
+  <div class="wrap">
+    <div class="sec-head center reveal"><p class="eyebrow">MEET THE FOUNDERS</p>
+      <h2 class="serif">Designed by Educators,<br>for Educators.</h2>
+      <p>Nestopia was created by the founders of ThinkNest, bringing together school leadership and communications experience across the UAE and beyond.</p></div>
+    <div class="people">
+      <article class="person reveal"><img src="grownest/founder-fatma.jpg" alt="Fatma Elzahraa Nabil" loading="lazy">
+        <h3>Fatma Elzahraa Nabil</h3><p class="role">Co-founder · Assistant Principal (Primary) &amp; PYP Coordinator</p>
+        <p>An experienced educator and school leader passionate about inquiry-based learning, student well-being and inclusive education.</p>
+        <details><summary>Read full bio</summary><div class="full">
+          <p>An experienced educator and school leader passionate about inquiry-based learning, student well-being, and inclusive education.</p>
+          <p>With over a decade of teaching experience and a strong foundation in educational leadership, I am committed to creating engaging, learner-centred environments where every child feels valued, supported, and inspired to reach their potential.</p>
+          <p>My leadership approach centres on collaboration, empowering educators, fostering curiosity, and developing compassionate, confident learners who are ready to make a positive difference in the world.</p>
+        </div></details></article>
+      <article class="person reveal"><img src="grownest/founder-mona.jpg" alt="Mona Abushousha" loading="lazy">
+        <h3>Mona Abushousha</h3><p class="role">Co-founder · School Principal</p>
+        <p>Over 16 years in education, from classroom teaching to Principal across two countries, with a PGCE from the University of Nottingham and the NPQH.</p>
+        <details><summary>Read full bio</summary><div class="full">
+          <p>My passion for education led me from an Honours degree in Pharmaceutical Sciences into the classroom, where I discovered my true calling. Over the past 16 years, I have progressed from classroom teaching to leadership roles across two countries, ultimately achieving my goal of becoming a school Principal.</p>
+          <p>My commitment to professional growth is reflected in my PGCE from the University of Nottingham, Middle Leadership training with the British Council, and National Professional Qualification for Headship (NPQH) from the UK Department for Education.</p>
+          <p>Throughout my career, I have remained passionate about student-centred leadership, empowering teachers, building strong relationships with parents, and creating environments where every learner can thrive.</p>
+          <p>As Co-Founder of ThinkNest, I am excited to extend my impact beyond the school walls, supporting students, parents, and educators through a platform dedicated to meaningful learning, growth, and educational excellence.</p>
+        </div></details></article>
+      <article class="person reveal"><img src="grownest/founder-salma.jpg" alt="Salma Farid" loading="lazy">
+        <h3>Salma Farid</h3><p class="role">Co-founder · Marketing &amp; Communications</p>
+        <p>A marketing and communications professional with over 10 years of experience across the UAE and Egypt, bringing together storytelling, brand development and community engagement.</p>
+        <details><summary>Read full bio</summary><div class="full">
+          <p>Marketing &amp; Communications | Brand Storytelling | Parent Relations &amp; Community Engagement</p>
+          <p>I believe that great communication is more than just sharing a message, it is about creating connections, inspiring trust, and making people feel that they truly belong.</p>
+          <p>I am a passionate Marketing and Communications professional with over 10 years of diverse experience across the UAE and Egypt, bringing together creativity, strategic thinking, and a genuine love for people.</p>
+          <p>My professional journey has been driven by one simple belief: every interaction is an opportunity to make a difference, and every story deserves to be told in a way that leaves an impact.</p>
+          <p>With experience working across educational organisations and diverse professional environments, I combine my passion for storytelling, digital marketing, brand development, and community engagement to create meaningful experiences that go far beyond traditional communications. From developing compelling digital content and strengthening brand identity to leading large-scale events and building lasting relationships, I thrive on turning ideas into experiences that connect, inspire, and bring communities together.</p>
+        </div></details></article>
+    </div>
+  </div>
+</section>
+
 <section class="cta">
   <div class="wrap">
     <svg class="nestbird" viewBox="0 20 600 325" aria-hidden="true">
@@ -600,7 +651,7 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
       <p>One Nest. Infinite Possibilities.<br><small>Powered by ThinkNest</small></p></div>
     <div class="cols">
       <div><h4>Explore</h4><a href="grownest/">GrowNest</a><a href="twignest/">TwigNest</a><button type="button" data-auth="signin">School Hub</button></div>
-      <div><h4>Connect</h4><button type="button" data-demo>Contact</button><button type="button" data-demo>Request a Demo</button><a href="https://thinknestonline.com/">ThinkNest</a></div>
+      <div><h4>Connect</h4><a href="#founders">Founders</a><button type="button" data-demo>Contact</button><button type="button" data-demo>Request a Demo</button><a href="https://thinknestonline.com/">ThinkNest</a></div>
     </div>
   </div>
   <div class="wrap legal"><small>© <span id="yr">2026</span> Nestopia · A ThinkNest solution</small></div>
