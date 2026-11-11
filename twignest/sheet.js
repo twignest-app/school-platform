@@ -237,55 +237,91 @@
   const nsFor = (sid, st, t) => nsSaved(String(t), sid, st.id) || nsAuto(sid, st, t);
   function progFinal(sid, st, t) { const c = cmt(String(t), sid, st.id), p = progress(sid, st, t);
     if (c && c.progress) return { band: c.progress, steps: p ? p.steps : null, over: true }; return p; }
+  const RP_COL = { none: "grey", draft: "lilac", ready: "blue", changes: "amber", approved: "green" };
+  const RP_LABEL = { none: "Not started", draft: "Draft", ready: "Ready to check", changes: "Changes needed", approved: "Approved" };
+  const RP_CSS = `<style>
+    .rp{--g:#2F9E5B;--g-s:#E3F5EA;--b:#2F7BD8;--b-s:#E4EFFC;--a:#D98A1C;--a-s:#FDF1DE;--l:#8A63C9;--l-s:#F0E9FB;--n:#9B92AB;--n-s:#F1EEF5}
+    @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rp{--g:#6FD39A;--g-s:#1E3A2A;--b:#7DB3F3;--b-s:#1C2C44;--a:#F2B35C;--a-s:#3A2C16;--l:#C3A6F0;--l-s:#30254A;--n:#B7AEC6;--n-s:#2B2533}}
+    .rp-head{background:linear-gradient(135deg,var(--plum-soft),var(--card));border:1px solid var(--line);border-radius:18px;padding:18px 20px;margin-bottom:14px}
+    .rp-head h2{margin:0 0 4px}.rp-bar{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--n-s);margin:12px 0 10px}.rp-bar i{display:block;height:100%}
+    .rp-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13.5px;color:var(--ink)}.rp-legend span{display:inline-flex;align-items:center;gap:6px}.rp-legend b{font-size:15px}
+    .rp-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+    .rp-pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:4px 12px;font-weight:800;font-size:12.5px;white-space:nowrap}
+    .rp-grey{background:var(--n-s);color:var(--n)}.rp-lilac{background:var(--l-s);color:var(--l)}.rp-blue{background:var(--b-s);color:var(--b)}.rp-amber{background:var(--a-s);color:var(--a)}.rp-green{background:var(--g-s);color:var(--g)}
+    .bg-grey{background:var(--n)}.bg-lilac{background:var(--l)}.bg-blue{background:var(--b)}.bg-amber{background:var(--a)}.bg-green{background:var(--g)}
+    .rp-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-left:6px solid var(--n);border-radius:14px;padding:12px 14px;margin-bottom:8px;cursor:pointer;font:inherit;color:inherit}
+    .rp-row:hover{box-shadow:0 4px 14px rgba(70,45,91,.10)}.rp-row .nm{font-weight:800;color:var(--plum);min-width:150px}.rp-row .pv{flex:1;color:var(--muted);font-size:14px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+    .rp-row.c-grey,.rcard.c-grey{border-left-color:var(--n)}.rp-row.c-lilac,.rcard.c-lilac{border-left-color:var(--l)}.rp-row.c-blue,.rcard.c-blue{border-left-color:var(--b)}.rp-row.c-amber,.rcard.c-amber{border-left-color:var(--a)}.rp-row.c-green,.rcard.c-green{border-left-color:var(--g)}
+    .rp .rcard{border-left:6px solid var(--n);border-radius:16px;padding:16px 18px;box-shadow:0 6px 20px rgba(70,45,91,.10)}
+    .rp-data{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}.rp-data .rp-pill{font-weight:700}
+    .rp details.rp-judge{margin:4px 0 6px}.rp details summary{cursor:pointer;color:var(--plum-2);font-weight:700;font-size:13.5px}
+    .rp .rtext{border-radius:12px}.rp-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:12px}
+    .rp-more{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    @media (max-width:640px){.rp-row{flex-wrap:wrap}.rp-row .nm{min-width:0}.rp-row .pv{flex-basis:100%;order:3}}
+  </style>`;
+  const rpPill = st => `<span class="rp-pill rp-${RP_COL[st] || "grey"}">${RP_LABEL[st] || RP_LABEL.none}</span>`;
   function card(sid, st, title) {
     const t = ui.term, k = String(t), chk = role() === "checker", s = studs.find(x => x.id === sid), c = cmt(k, sid, st.id) || { status: "none" };
     const e = strandEval(sid, st, k), tl = tLv(sid, st.id, k), p = progress(sid, st, t), lim = (C.reports || {}).limit || 600;
-    const text = c.text || draft(sid, st, t).text, locked = !chk && (c.status === "ready" || c.status === "approved"), [scl, sl] = STATUS[c.status || "none"];
-    const key = `${sid}|${st.id}`, over = tl !== undefined && tl !== null;
-    return `<div class="rcard" id="rc-${sid}-${st.id}"><div class="row" style="justify-content:space-between"><h3 style="margin:0">${title}</h3><div class="row">${over || c.progress ? badge("above", "Teacher judgement") : ""}${badge(scl, sl)}</div></div>
+    const text = c.text || draft(sid, st, t).text, locked = !chk && (c.status === "ready" || c.status === "approved");
+    const key = `${sid}|${st.id}`, over = (tl !== undefined && tl !== null) || !!c.progress, colr = RP_COL[c.status || "none"];
+    const att = tl !== undefined && tl !== null ? C.scale[tl] : e ? lab(e.sug) : null, prog = c.progress ? PROG[c.progress] : p ? PROG[p.band] : null;
+    return `<div class="rcard c-${colr}" id="rc-${sid}-${st.id}"><div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0">${title}</h3>
+        <div class="row" style="gap:6px">${rpPill(c.status || "none")}<button class="mini" data-ropen="${key}" aria-label="Close">Close</button></div></div>
       ${c.note ? `<div class="msg info" style="margin-top:8px">Checker’s note: ${esc(c.note)}</div>` : ""}
-      <div class="rgrid"><div><label class="note" for="rl-${key}"><b>Attainment this term</b></label><select id="rl-${key}" data-rlv="${key}" ${locked || chk ? "disabled" : ""}><option value="">From the data: ${e ? esc(lab(e.sug)) + " (" + e.pct + "%)" : "–"}</option>${C.scale.map((x, i) => `<option value="${i}" ${tl === i ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></div>
-        <div><label class="note" for="rp-${key}"><b>Progress this term</b></label><select id="rp-${key}" data-rpg="${key}" ${locked || chk ? "disabled" : ""}><option value="">From the data: ${p ? PROG[p.band] : "–"}</option>${Object.entries(PROG).map(([v, l]) => `<option value="${v}" ${c.progress === v ? "selected" : ""}>${l}</option>`).join("")}</select></div></div>
-      <label class="note" for="rt-${key}"><b>Report comment</b>${c.text ? "" : " (drafted from the data, not saved yet)"}</label>
+      <div class="rp-data"><span class="rp-pill rp-lilac">Attainment: ${att ? esc(att) : "–"}${e && !over ? ` (${e.pct}%)` : ""}</span><span class="rp-pill rp-blue">Progress: ${prog ? esc(prog) : "–"}</span>${over ? `<span class="rp-pill rp-amber">Teacher judgement</span>` : `<span class="note" style="align-self:center">from this term’s data</span>`}</div>
+      ${locked || chk ? "" : `<details class="rp-judge" ${over ? "open" : ""}><summary>Change attainment or progress</summary>
+        <div class="rgrid"><div><label class="note" for="rl-${key}"><b>Attainment this term</b></label><select id="rl-${key}" data-rlv="${key}"><option value="">From the data: ${e ? esc(lab(e.sug)) + " (" + e.pct + "%)" : "–"}</option>${C.scale.map((x, i) => `<option value="${i}" ${tl === i ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></div>
+        <div><label class="note" for="rp-${key}"><b>Progress this term</b></label><select id="rp-${key}" data-rpg="${key}"><option value="">From the data: ${p ? PROG[p.band] : "–"}</option>${Object.entries(PROG).map(([v, l]) => `<option value="${v}" ${c.progress === v ? "selected" : ""}>${l}</option>`).join("")}</select></div></div></details>`}
+      <label class="note" for="rt-${key}"><b>Report comment</b>${c.text ? "" : " · drafted from the data, not saved yet"}</label>
       ${isArSt(st) && !s.arabic_name ? `<p class="note" style="color:var(--amber);margin:0 0 4px">No Arabic name saved for ${esc(s.full_name)}, so the English first name is used. Add it in Classes and students.</p>` : ""}
       <textarea id="rt-${key}" data-rtx="${key}" class="rtext"${dirAttr(st)} ${locked ? "readonly" : ""}>${esc(text)}</textarea>
-      <div class="row" style="justify-content:space-between"><span class="note">${chk ? "" : locked ? (c.status === "approved" ? "Approved by the buddy checker." : "Waiting for the buddy checker.") : "Edit freely. Changes save when you click away."}</span><span class="note rcount" id="rn-${key}">${text.length} / ${lim}</span></div>
-      <label class="note" for="rs-${key}"><b>Next step</b> (used in the report)</label>
-      <textarea id="rs-${key}" data-rns="${key}" class="rstep"${dirAttr(st)} ${locked ? "readonly" : ""}>${esc(nsFor(sid, st, t))}</textarea>
+      <div class="row" style="justify-content:space-between"><span class="note">${chk ? "" : locked ? (c.status === "approved" ? "Approved by the buddy checker." : "Waiting for the buddy checker.") : "Changes save when you click away."}</span><span class="note rcount" id="rn-${key}">${text.length} / ${lim}</span></div>
+      <details ${nsFor(sid, st, t) ? "open" : ""}><summary>Next step <span class="note" style="font-weight:400">(used in the report)</span></summary>
+        <textarea id="rs-${key}" data-rns="${key}" class="rstep"${dirAttr(st)} ${locked ? "readonly" : ""} style="margin-top:6px">${esc(nsFor(sid, st, t))}</textarea></details>
       ${chk ? `<label class="note" for="rk-${key}"><b>Note for the teacher</b></label><input type="text" id="rk-${key}" data-rnote="${key}" value="${esc(c.note || "")}">` : ""}
-      <div class="row" style="margin-top:10px">${chk ? `<button class="btn ghost small" data-rc="return" data-k="${key}" ${c.status === "ready" ? "" : "disabled"}>Return with note</button><button class="btn small" data-rc="approve" data-k="${key}" ${["ready", "changes"].includes(c.status) ? "" : "disabled"}>Approve</button>`
+      <div class="rp-actions">${chk ? `<button class="btn ghost small" data-rc="return" data-k="${key}" ${c.status === "ready" ? "" : "disabled"}>Return with note</button><button class="btn small" data-rc="approve" data-k="${key}" ${["ready", "changes"].includes(c.status) ? "" : "disabled"}>Approve</button>`
         : locked ? `<button class="btn ghost small" data-rc="recall" data-k="${key}">${c.status === "approved" ? "Reopen" : "Take back to edit"}</button>`
         : `<button class="btn ghost small" data-rc="redraft" data-k="${key}">Redraft from the data</button><button class="btn small" data-rc="send" data-k="${key}" ${text.length > lim || !text.trim() ? "disabled" : ""}>Send for checking</button>`}</div></div>`;
+  }
+  function rpRow(sid, st, title) {
+    const k = String(ui.term), c = cmt(k, sid, st.id) || { status: "none" }, key = `${sid}|${st.id}`;
+    if (ui.ropen === key) return card(sid, st, title);
+    const pv = c.text ? esc(c.text) : `<i>Not started. A draft from the data is ready.</i>`;
+    return `<button class="rp-row c-${RP_COL[c.status || "none"]}" data-ropen="${key}"><span class="nm">${title}</span><span class="pv">${pv}</span>${rpPill(c.status || "none")}<span aria-hidden="true" style="color:var(--muted)">›</span></button>`;
   }
   function renderReports(head) {
     const t = String(ui.term), list = strands(), vs = visible(); let tot = 0; const cnt = { none: 0, draft: 0, ready: 0, changes: 0, approved: 0 };
     vs.forEach(s => list.forEach(([, st]) => { tot++; const c = cmt(t, s.id, st.id); cnt[c ? c.status : "none"]++; }));
-    const pct = tot ? Math.round(cnt.approved / tot * 100) : 0, chk = role() === "checker";
+    const chk = role() === "checker";
     if (!ui.rview) ui.rview = "subject"; if (!list.find(p => p[1].id === ui.rstrand)) ui.rstrand = list[0] && list[0][1].id; if (!vs.find(x => x.id === ui.rstud)) ui.rstud = vs[0] && vs[0].id;
-    let h = head + `<div class="card"><h2>Report comments, ${esc(C.terms[ui.term])}</h2><div class="meter"><i style="width:${pct}%"></i></div>
-      <p class="note">${cnt.approved} of ${tot} approved. ${cnt.ready} ready to check, ${cnt.changes} need changes, ${cnt.draft} drafts, ${cnt.none} not started.</p>
-      <div class="row">${chk ? `<button class="btn" data-rp="next">Check the next comment</button>` : `<button class="btn" data-rp="draftall">Draft all empty comments from the data</button>`}<button class="btn ghost" data-rp="export">Export approved comments (Excel)</button><button class="btn ghost" data-rp="printall">Print all reports</button></div>
-      <p class="note">Attainment and progress come straight from each student’s data for this term. Change them only if your professional judgement differs, and TwigNest marks them as teacher judgement.</p></div>
-      <div class="tabs2" role="tablist" style="margin-top:6px"><button role="tab" data-rv="subject" aria-selected="${ui.rview === "subject"}">By subject</button><button role="tab" data-rv="student" aria-selected="${ui.rview === "student"}">By student</button><button role="tab" data-rv="status" aria-selected="${ui.rview === "status"}">Status overview</button></div>`;
-    if (!vs.length) { ctx.el.innerHTML = h + `<div class="card"><p class="note">No students match these filters.</p></div>`; return; }
+    const seg = ["approved", "ready", "changes", "draft", "none"].map(k => cnt[k] ? `<i class="bg-${RP_COL[k]}" style="width:${cnt[k] / tot * 100}%" title="${RP_LABEL[k]}: ${cnt[k]}"></i>` : "").join("");
+    let h = head + RP_CSS + `<div class="rp"><div class="rp-head"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h2>Report comments · ${esc(C.terms[ui.term])}</h2>
+        <p class="note" style="margin:0">${cnt.approved} of ${tot} approved</p></div>
+        ${chk ? `<button class="btn" data-rp="next">Check the next comment</button>` : cnt.none ? `<button class="btn" data-rp="draftall">Draft all ${cnt.none} empty comments</button>` : ""}</div>
+      <div class="rp-bar">${seg}</div>
+      <div class="rp-legend">${["approved", "ready", "changes", "draft", "none"].map(k => `<span><i class="rp-dot bg-${RP_COL[k]}"></i>${RP_LABEL[k]} <b>${cnt[k]}</b></span>`).join("")}</div>
+      <div class="rp-more"><button class="btn ghost small" data-rp="export">Export approved (Excel)</button><button class="btn ghost small" data-rp="printall">Print all reports</button></div></div>
+      <div class="tabs2" role="tablist" style="margin-top:6px"><button role="tab" data-rv="subject" aria-selected="${ui.rview === "subject"}">By subject</button><button role="tab" data-rv="student" aria-selected="${ui.rview === "student"}">By student</button><button role="tab" data-rv="status" aria-selected="${ui.rview === "status"}">Overview</button></div>`;
+    if (!vs.length) { ctx.el.innerHTML = h + `<div class="card"><p class="note">No students match these filters.</p></div></div>`; return; }
     if (ui.rview === "subject") {
       const [sb, st] = findStrand(ui.rstrand);
       h += `<div class="fbar"><label class="fl" for="rvStrand">Subject</label><select id="rvStrand" class="fsel">${list.map(([a, b]) => `<option value="${b.id}" ${b.id === ui.rstrand ? "selected" : ""}>${esc(sname(a, b))}</option>`).join("")}</select>
-        <span class="note">${vs.length} students. When you finish, choose the next subject.</span></div>`;
-      h += vs.map(x => card(x.id, st, `${esc(x.full_name)}${isArSt(st) && x.arabic_name ? ` <span dir="rtl" lang="ar" class="arname">${esc(x.arabic_name)}</span>` : ""}${x.student_number ? ` <span class="sid">${esc(x.student_number)}</span>` : ""}`)).join("");
+        <span class="note">Tap a student to write or check their comment.</span></div>`;
+      h += vs.map(x => rpRow(x.id, st, `${esc(x.full_name)}${isArSt(st) && x.arabic_name ? ` <span dir="rtl" lang="ar" class="arname">${esc(x.arabic_name)}</span>` : ""}`)).join("");
     } else if (ui.rview === "student") {
       const i = vs.findIndex(x => x.id === ui.rstud), x = vs[i];
       h += `<div class="fbar"><button class="btn ghost small" data-rstep="-1" ${i <= 0 ? "disabled" : ""}>← Previous</button><label class="fl" for="rvStud">Student</label><select id="rvStud" class="fsel">${vs.map(y => `<option value="${y.id}" ${y.id === ui.rstud ? "selected" : ""}>${esc(y.full_name)}</option>`).join("")}</select><button class="btn ghost small" data-rstep="1" ${i >= vs.length - 1 ? "disabled" : ""}>Next →</button><button class="btn ghost small" data-print="${x.id}">Print this report</button></div>`;
       h += `<div class="card" style="margin-bottom:12px"><h2 style="margin:0">${esc(x.full_name)}${x.arabic_name ? ` <span dir="rtl" lang="ar" class="arname">${esc(x.arabic_name)}</span>` : ""} ${x.student_number ? `<span class="sid">${esc(x.student_number)}</span>` : ""}</h2><div class="tags">${(x.groups || []).map(g => `<span class="tag">${esc(g)}</span>`).join("")}</div></div>`;
-      h += list.map(([a, b]) => card(x.id, b, esc(sname(a, b)))).join("");
+      h += list.map(([a, b]) => rpRow(x.id, b, esc(sname(a, b)))).join("");
     } else {
       let tb = `<thead><tr><th class="namecol">Student</th>${list.map(([a, b]) => `<th class="colh"><b>${esc(sname(a, b))}</b></th>`).join("")}</tr></thead><tbody>`;
       vs.forEach(x => { tb += `<tr><td class="namecol"><button class="name" data-rgo="student|${x.id}">${esc(x.full_name)}</button></td>`;
-        list.forEach(([a, b]) => { const c = cmt(t, x.id, b.id), [cl, l] = STATUS[c ? c.status : "none"];
-          tb += `<td><button class="statusbtn b-${cl}" data-rgo="subject|${b.id}|${x.id}">${l}${c && c.text ? `<span>${c.text.length}</span>` : ""}</button></td>`; }); tb += `</tr>`; });
+        list.forEach(([a, b]) => { const c = cmt(t, x.id, b.id), stt = c ? c.status : "none";
+          tb += `<td><button class="rp-pill rp-${RP_COL[stt]}" style="border:0;cursor:pointer" data-rgo="subject|${b.id}|${x.id}">${RP_LABEL[stt]}</button></td>`; }); tb += `</tr>`; });
       h += `<div class="sheetwrap"><table class="sheet">${tb}</tbody></table></div><p class="note">Tap a status to open that comment, or a name to see all of that student’s comments.</p>`;
     }
-    ctx.el.innerHTML = h;
+    ctx.el.innerHTML = h + `</div>`;
   }
   function exportCSV() {
     const t = String(ui.term), list = strands(), q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -306,15 +342,22 @@
     if (a === "printall") return printReports(visible());
     if (a === "draftall") { const rows = []; visible().forEach(s => strands().forEach(([, st]) => { const c = cmt(String(ui.term), s.id, st.id); if (!c || !c.text) { const d = draft(s.id, st, ui.term); if (d.text) rows.push({ student_id: s.id, strand_id: st.id, term: String(ui.term), text: d.text, level: d.lv, band: d.band, status: "draft", note: "", progress: c ? c.progress || null : null }); } }));
       rows.forEach(r => (((CM[r.term] = CM[r.term] || {})[r.student_id] = (CM[r.term] || {})[r.student_id] || {}))[r.strand_id] = r); render(); if (rows.length) run(ctx.sb.from("report_comments").upsert(rows)); return; }
-    if (a === "next") { for (const [, st] of strands()) for (const s of visible()) { const c = cmt(String(ui.term), s.id, st.id); if (c && c.status === "ready") { ui.rview = "subject"; ui.rstrand = st.id; render(); return focusCard(s.id, st.id); } } return alert("There are no comments waiting to be checked."); }
+    if (a === "next") { for (const [, st] of strands()) for (const s of visible()) { const c = cmt(String(ui.term), s.id, st.id); if (c && c.status === "ready") { ui.rview = "subject"; ui.rstrand = st.id; ui.ropen = `${s.id}|${st.id}`; render(); return focusCard(s.id, st.id); } } return alert("There are no comments waiting to be checked."); }
   }
   function focusCard(sid, stid) { setTimeout(() => { const el = document.getElementById(`rc-${sid}-${stid}`); if (el) { el.scrollIntoView({ behavior: "smooth", block: "center" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1600); } }, 60); }
+  function openNext(sid, stid, want) { // after finishing a comment, open the next one that still needs work
+    const t = String(ui.term), vs = visible();
+    if (ui.rview === "student") { const list = strands().map(p => p[1]), i = list.findIndex(x => x.id === stid);
+      const nx = list.slice(i + 1).find(st => want.includes((cmt(t, sid, st.id) || { status: "none" }).status)); ui.ropen = nx ? `${sid}|${nx.id}` : null; return nx ? [sid, nx.id] : null; }
+    const i = vs.findIndex(x => x.id === sid), nx = vs.slice(i + 1).concat(vs.slice(0, i)).find(x => want.includes((cmt(t, x.id, stid) || { status: "none" }).status));
+    ui.ropen = nx ? `${nx.id}|${stid}` : null; return nx ? [nx.id, stid] : null;
+  }
   async function cardAction(a, key) {
     const [sid, stid] = key.split("|"), st = findStrand(stid)[1], t = String(ui.term), ta = document.getElementById(`rt-${key}`);
     if (a === "redraft") { const d = draft(sid, st, ui.term); ta.value = d.text; await upC(sid, stid, { text: d.text, level: d.lv, band: d.band }); return render(); }
-    if (a === "send") { await upC(sid, stid, { text: ta.value.trim(), status: "ready", note: "" }); render(); return focusCard(sid, stid); }
+    if (a === "send") { await upC(sid, stid, { text: ta.value.trim(), status: "ready", note: "" }); const n = openNext(sid, stid, ["none", "draft", "changes"]); render(); return n ? focusCard(n[0], n[1]) : null; }
     if (a === "recall") { await upC(sid, stid, { status: "draft" }); render(); return focusCard(sid, stid); }
-    if (a === "approve") { await upC(sid, stid, { text: ta.value.trim(), status: "approved", note: "" }); render(); return focusCard(sid, stid); }
+    if (a === "approve") { await upC(sid, stid, { text: ta.value.trim(), status: "approved", note: "" }); const n = openNext(sid, stid, ["ready"]); render(); return n ? focusCard(n[0], n[1]) : null; }
     if (a === "return") { const n = (document.getElementById(`rk-${key}`) || {}).value || ""; if (!n.trim()) return alert("Add a note so the teacher knows what to change."); await upC(sid, stid, { note: n.trim(), status: "changes" }); render(); return focusCard(sid, stid); }
   }
 
@@ -442,7 +485,8 @@
     if (t.dataset.print) return printReports([studs.find(x => x.id === t.dataset.print)]);
     if (t.dataset.rp) { t.disabled = true; try { await reportAction(t.dataset.rp, t); } finally { t.disabled = false; } return; }
     if (t.dataset.rv) { ui.rview = t.dataset.rv; return render(); }
-    if (t.dataset.rgo) { const [v, a, b] = t.dataset.rgo.split("|"); ui.rview = v; if (v === "student") ui.rstud = a; else { ui.rstrand = a; } render(); if (v === "subject" && b) focusCard(b, a); return; }
+    if (t.dataset.ropen) { ui.ropen = ui.ropen === t.dataset.ropen ? null : t.dataset.ropen; render(); const el = document.getElementById("rc-" + t.dataset.ropen.replace("|", "-")); if (el) el.scrollIntoView({ block: "nearest" }); return; }
+    if (t.dataset.rgo) { const [v, a, b] = t.dataset.rgo.split("|"); ui.rview = v; if (v === "student") ui.rstud = a; else { ui.rstrand = a; if (b) ui.ropen = `${b}|${a}`; } render(); if (v === "subject" && b) focusCard(b, a); return; }
     if (t.dataset.rstep) { const vs = visible(), i = vs.findIndex(x => x.id === ui.rstud) + +t.dataset.rstep; if (vs[i]) { ui.rstud = vs[i].id; render(); window.scrollTo(0, 0); } return; }
     if (t.dataset.rc) { t.disabled = true; try { await cardAction(t.dataset.rc, t.dataset.k); } finally { t.disabled = false; } return; }
     if (t.dataset.pstrand) { ui.pStrand = t.dataset.pstrand; return openProfile(ui.pid); }
