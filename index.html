@@ -690,7 +690,7 @@ const MODULES = [
   { id: "grownest",  name: "GrowNest",       tint: "var(--green-soft)", icon: "i-sprout", colour: "var(--green)",  desc: "Learning walks, observations and appraisals, with feedback emailed to teachers.", url: "grownest/app.html" },
   { id: "planning",  name: "Planning",       tint: "var(--blue-soft)",  icon: "i-book",   colour: "var(--blue-2)", desc: "The curriculum coverage map: what each grade has taught and assessed.", url: "planning.html" },
   { id: "inclusion", name: "Inclusion",      tint: "var(--blue-soft)",  icon: "i-heart",  colour: "var(--rose)",   desc: "The inclusion register and support plans: students of determination, gifted and talented and EAL, with targets and reviews.", url: "inclusion.html" },
-  { id: "wellbeing", name: "Wellbeing",      tint: "var(--blue-soft)",  icon: "i-spark",  colour: "var(--amber)",  desc: "Short daily check-ins, so the right adult hears when a student needs to talk." },
+  { id: "wellbeing", name: "Wellbeing",      tint: "var(--blue-soft)",  icon: "i-spark",  colour: "var(--amber)",  desc: "Short daily check-ins, so the right adult hears when a student needs to talk.", url: "wellbeing.html" },
   { id: "evidence",  name: "Evidence packs", tint: "var(--blue-soft)",  icon: "i-file",   colour: "var(--muted)",  desc: "Inspection evidence gathered from every part of Nestopia." }
 ];
 const ROLES = { admin: "Admin", school_lead: "School leader", coordinator: "Coordinator", teacher: "Teacher", checker: "Buddy checker" };
@@ -852,6 +852,30 @@ function homeView(p, school){
       : `<div class="panel"><p class="note" style="margin:0">No parts of Nestopia are switched on for your school yet.</p></div>`}
     ${later.length ? `<div class="later"><h2>Coming soon for your school</h2><ul>${later.map(m => `<li>${esc(m.name)}</li>`).join("")}</ul></div>` : ""}`;
   inclusionReminder(p, school);
+  wellbeingReminder(p, school);
+}
+
+// Wellbeing: students who asked to talk today and haven't been followed up yet
+async function wellbeingReminder(p, school){
+  try {
+    if (!(school.modules || []).includes("wellbeing")) return;
+    const d = new Date(), t = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    // new concerns: safeguarding ones are only visible to the safeguarding lead(s), so each person sees only their own count
+    try {
+      const { data: cs } = await sb.from("wellbeing_concerns").select("safeguarding,urgent").eq("school_id", school.id).eq("status", "new");
+      if (cs && cs.length) {
+        const sg = cs.filter(c => c.safeguarding).length, other = cs.length - sg, urg = cs.filter(c => c.urgent).length;
+        const b2 = document.createElement("div"); b2.className = "panel"; b2.style.cssText = "margin-bottom:16px;border-left:5px solid " + (sg || urg ? "#B4473A" : "#A86C12");
+        b2.innerHTML = `<p style="margin:0;font-weight:700">📝 Wellbeing: ${[sg ? `${sg} new safeguarding concern${sg === 1 ? "" : "s"} 🔒` : "", other ? `${other} new concern${other === 1 ? "" : "s"}` : ""].filter(Boolean).join(" and ")}${urg ? ` (${urg} urgent)` : ""}.</p><p style="margin:8px 0 0"><a class="btn" href="wellbeing.html">Open Wellbeing</a></p>`;
+        const hd2 = app.querySelector(".phead"); if (hd2) hd2.after(b2); else app.prepend(b2);
+      }
+    } catch (_) {}
+    const { data, error } = await sb.from("wellbeing_checkins").select("id").eq("school_id", school.id).eq("day", t).eq("talk", true).is("followed_up_at", null);
+    if (error || !data || !data.length) return;
+    const b = document.createElement("div"); b.className = "panel"; b.style.cssText = "margin-bottom:16px;border-left:5px solid #B4473A";
+    b.innerHTML = `<p style="margin:0;font-weight:700">🙋 Wellbeing: ${data.length} student${data.length === 1 ? " has" : "s have"} asked to talk to someone today.</p><p style="margin:8px 0 0"><a class="btn" href="wellbeing.html">See who</a></p>`;
+    const hd = app.querySelector(".phead"); if (hd) hd.after(b); else app.prepend(b);
+  } catch (_) {}
 }
 
 // Inclusion team: plan reviews that are overdue or due in the next 14 days

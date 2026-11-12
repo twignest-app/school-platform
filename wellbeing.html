@@ -129,6 +129,7 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 <dialog id="dlg"></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="wellbeing-concerns.js?v=1"></script>
 <script>
 /* Keep this the same as in index.html */
 const PLATFORM = "Nestopia";
@@ -173,7 +174,8 @@ async function load(){
   const year = set.data && set.data[0] ? set.data[0].year : null; window.SETUP = set.data && set.data[0] ? set.data[0].config : null;
   let cq = sb.from("classes").select("*").eq("school_id", sid); if (year) cq = cq.eq("year", year);
   classes = (await cq).data || [];
-  let st = await sb.from("profiles").select("id,full_name,email,role,active,wellbeing_team").eq("school_id", sid);
+  let st = await sb.from("profiles").select("id,full_name,email,role,active,wellbeing_team,safeguarding_lead").eq("school_id", sid);
+  if (st.error) st = await sb.from("profiles").select("id,full_name,email,role,active,wellbeing_team").eq("school_id", sid);
   if (st.error) st = await sb.from("profiles").select("id,full_name,email,role,active").eq("school_id", sid);
   staff = (st.data || []).filter(x => x.active);
   const { data: ct } = await sb.from("class_teachers").select("class_id").eq("teacher_id", me.id);
@@ -182,20 +184,23 @@ async function load(){
   else studs = myClassIds.length ? await fetchAll(() => sb.from("students").select("id,full_name,class_id,archived").in("class_id", myClassIds).eq("archived", false).order("full_name")) : [];
   const since = dayStr(new Date(Date.now() - 60 * 864e5));
   checks = await fetchAll(() => sb.from("wellbeing_checkins").select("*").eq("school_id", sid).gte("day", since));
+  if (typeof concernsLoad === "function") await concernsLoad();
   try { reg = await fetchAll(() => sb.from("inclusion_students").select("student_id,categories,active").eq("school_id", sid)); } catch (_) { reg = []; }
 }
 
 /* ---------- Page ---------- */
 function render(){
   const myClasses = classes.filter(c => myClassIds.includes(String(c.id)));
-  const tabs = [["today", "Today"], ...(isTeam ? [["overview", "Overview"]] : []), ...(isLead ? [["team", "Wellbeing team"]] : [])];
+  const openC = sg => concerns.filter(c => !!c.safeguarding === sg && c.status !== "closed").length;
+  const tabs = [["today", "Today"], ...(isTeam ? [["concerns", "Concerns" + (openC(false) ? " (" + openC(false) + ")" : "")]] : []), ...(isDSL() ? [["safeguarding", "🔒 Safeguarding" + (openC(true) ? " (" + openC(true) + ")" : "")]] : []), ...(isTeam ? [["overview", "Overview"]] : []), ...(isLead ? [["team", "Wellbeing team"]] : [])];
   app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Wellbeing</h1><p class="note">${esc(school.name)} · Short daily check-ins, so the right adult hears when a student needs to talk.</p></div>
-    ${myClasses.length ? `<div class="row"><select id="kc" aria-label="Class">${myClasses.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("")}</select><button class="btn" id="startK">▶ Start the class check-in</button></div>` : ""}</div>
+    <div class="row"><button class="btn ghost" data-logc="">📝 Log a concern</button>${myClasses.length ? `<select id="kc" aria-label="Class">${myClasses.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("")}</select><button class="btn" id="startK">▶ Start the class check-in</button>` : ""}</div></div>
     ${tabs.length > 1 ? `<div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}</button>`).join("")}</div>` : ""}
     <div id="pane"></div>`;
   const sk = document.getElementById("startK"); if (sk) sk.onclick = () => startKiosk(document.getElementById("kc").value);
   app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; render(); });
-  ({ today: todayPane, overview: overviewPane, team: teamPane })[ui.tab]();
+  ({ today: todayPane, concerns: concernsPane, safeguarding: concernsPane, overview: overviewPane, team: teamPane })[ui.tab]();
+  bindCC(app);
 }
 
 function todayPane(){
@@ -205,18 +210,20 @@ function todayPane(){
   const talk = todays.filter(c => c.talk && !c.followed_up_at), low = todays.filter(c => c.mood <= 2);
   const repeat = repeatedLow();
   const row = c => { const s = stud(c.student_id) || { full_name: "Student" }, f = face(c.mood);
-    return `<tr><td><b>${esc(s.full_name)}</b><br><span class="note">${esc((cls(s.class_id) || {}).name || "")}</span></td><td class="mood">${f[1]} <span class="note">${f[2]}</span></td><td>${c.talk ? "🙋 Wants to talk" : ""}${c.followed_up_at ? `<br><span class="note">✅ Followed up${c.follow_note ? ": " + esc(c.follow_note) : ""}</span>` : ""}</td>
+    return `<tr><td><button class="nm" data-stu="${esc(c.student_id)}">${esc(s.full_name)}</button><br><span class="note">${esc((cls(s.class_id) || {}).name || "")}</span></td><td class="mood">${f[1]} <span class="note">${f[2]}</span></td><td>${c.talk ? "🙋 Wants to talk" : ""}${c.followed_up_at ? `<br><span class="note">✅ Followed up${c.follow_note ? ": " + esc(c.follow_note) : ""}</span>` : ""}</td>
       <td>${c.talk && !c.followed_up_at ? `<button class="btn small" data-fu="${esc(c.id)}">Mark as followed up</button>` : ""}</td></tr>`; };
   // class summary for each of my classes
   const myClasses = classes.filter(c => myClassIds.includes(String(c.id)));
   const classCard = c => { const kids = studs.filter(s => String(s.class_id) === String(c.id)), done = todays.filter(x => kids.some(k => String(k.id) === String(x.student_id)));
     return `<div class="card"><div class="row" style="justify-content:space-between"><h2>${esc(c.name)} · today</h2><span class="note">${done.length} of ${kids.length} checked in</span></div>
-      ${moodBar(done)}<div class="row" style="margin-top:10px;flex-wrap:wrap">${kids.map(k => { const x = done.find(d => String(d.student_id) === String(k.id)); return `<span class="tag ${x ? (x.mood <= 2 ? "sod" : "eal") : "other"}" title="${x ? face(x.mood)[2] : "Not checked in"}">${x ? face(x.mood)[1] : "·"} ${esc(k.full_name.split(" ")[0])}${x && x.talk ? " 🙋" : ""}</span>`; }).join("")}</div></div>`; };
+      ${moodBar(done)}<div class="row" style="margin-top:10px;flex-wrap:wrap">${kids.map(k => { const x = done.find(d => String(d.student_id) === String(k.id)); return `<span class="tag ${x ? (x.mood <= 2 ? "sod" : "eal") : "other"}" title="${x ? face(x.mood)[2] : "Not checked in"}">${x ? face(x.mood)[1] : "·"} <button class="nm" data-stu="${esc(k.id)}" style="font-size:12px">${esc(k.full_name.split(" ")[0])}</button>${x && x.talk ? " 🙋" : ""}</span>`; }).join("")}</div></div>`; };
   pane.innerHTML = `${talk.length ? `<div class="card" style="border-left:5px solid var(--red)"><h2>🙋 Asked to talk to someone today <span class="note">(${talk.length})</span></h2><p class="note">Please make time for these students today, or ask the wellbeing team to.</p><div class="tablewrap"><table class="reg">${talk.map(row).join("")}</table></div></div>` : ""}
     ${myClasses.map(classCard).join("")}
     ${isTeam ? `<div class="card"><h2>Feeling low today <span class="note">(${low.length})</span></h2>${low.length ? `<div class="tablewrap"><table class="reg">${low.map(row).join("")}</table></div>` : '<p class="note" style="margin:0">No student chose sad or very sad today.</p>'}</div>
       <div class="card"><h2>Low on 2 or more days this week <span class="note">(${repeat.length})</span></h2>${repeat.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Low days (last 7 days)</th><th>Latest</th></tr>${repeat.map(([s, n, last]) => `<tr><td><b>${esc(s.full_name)}</b><br><span class="note">${esc((cls(s.class_id) || {}).name || "")}</span></td><td>${n}</td><td>${face(last.mood)[1]} ${fmt(last.day)}</td></tr>`).join("")}</table></div>` : '<p class="note" style="margin:0">Nobody has been low on more than one day this week.</p>'}</div>` : ""}
+    ${typeof myConcernsHtml === "function" && !isTeam ? myConcernsHtml() : ""}
     ${!myClasses.length && !isTeam ? '<div class="card"><p class="note" style="margin:0">You don’t have a class linked in TwigNest yet, so there’s no class check-in to start.</p></div>' : ""}`;
+  bindCC(pane);
   pane.querySelectorAll("[data-fu]").forEach(b => b.onclick = async () => {
     const n = prompt("What happened? (optional, for example: “Talked at break, worried about a friendship; told parents”)", ""); if (n === null) return;
     const { error } = await sb.from("wellbeing_checkins").update({ followed_up_at: new Date().toISOString(), followed_up_by: me.id, follow_note: n.trim() || null }).eq("id", b.dataset.fu);
@@ -252,8 +259,15 @@ function overviewPane(){
 function teamPane(){
   const pane = document.getElementById("pane");
   pane.innerHTML = `<div class="card"><h2>Wellbeing team</h2><p class="note">School leaders and coordinators always see every student’s check-ins. Tick anyone else who should, such as your counsellor or wellbeing lead. Class teachers see only their own classes.</p>
-    <div class="tablewrap"><table class="reg"><tr><th>Name</th><th>Role</th><th>Wellbeing team</th></tr>${staff.slice().sort((a, b) => (a.full_name || "").localeCompare(b.full_name || "")).map(p => { const always = ["school_lead", "coordinator", "admin"].includes(p.role);
-      return `<tr><td>${esc(p.full_name || p.email)}</td><td>${esc({ school_lead: "School leader", coordinator: "Coordinator", teacher: "Teacher", checker: "Buddy checker", admin: "Admin" }[p.role] || p.role)}</td><td>${always ? '<span class="note">Always</span>' : `<label style="display:flex;gap:6px;align-items:center;font-weight:600"><input type="checkbox" data-wt="${p.id}" ${p.wellbeing_team ? "checked" : ""}> Team</label>`}</td></tr>`; }).join("")}</table></div></div>`;
+    <div class="tablewrap"><table class="reg"><tr><th>Name</th><th>Role</th><th>Wellbeing team</th><th>Safeguarding lead</th></tr>${staff.slice().sort((a, b) => (a.full_name || "").localeCompare(b.full_name || "")).map(p => { const always = ["school_lead", "coordinator", "admin"].includes(p.role);
+      return `<tr><td>${esc(p.full_name || p.email)}</td><td>${esc({ school_lead: "School leader", coordinator: "Coordinator", teacher: "Teacher", checker: "Buddy checker", admin: "Admin" }[p.role] || p.role)}</td><td>${always ? '<span class="note">Always</span>' : `<label style="display:flex;gap:6px;align-items:center;font-weight:600"><input type="checkbox" data-wt="${p.id}" ${p.wellbeing_team ? "checked" : ""}> Team</label>`}</td>
+      <td><label style="display:flex;gap:6px;align-items:center;font-weight:600"><input type="checkbox" data-dsl="${p.id}" ${p.safeguarding_lead ? "checked" : ""}> 🔒 Lead</label></td></tr>`; }).join("")}</table></div>
+    <p class="note" style="margin-top:10px"><b>Safeguarding lead(s)</b> (for example your designated safeguarding lead and deputy) are the only staff, with school leaders, who see safeguarding concerns.</p></div>`;
+  pane.querySelectorAll("[data-dsl]").forEach(cb => cb.onchange = async () => {
+    const { error } = await sb.rpc("set_safeguarding_lead", { pid: cb.dataset.dsl, on: cb.checked });
+    if (error) { cb.checked = !cb.checked; return toast(/set_safeguarding_lead/.test(error.message) ? "Please run the Wellbeing Part 2 database step first." : error.message); }
+    (staff.find(p => p.id === cb.dataset.dsl) || {}).safeguarding_lead = cb.checked; toast("Saved");
+  });
   pane.querySelectorAll("[data-wt]").forEach(cb => cb.onchange = async () => {
     const { error } = await sb.rpc("set_wellbeing_team", { pid: cb.dataset.wt, on: cb.checked });
     if (error) { cb.checked = !cb.checked; return toast(error.message); }
