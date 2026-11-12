@@ -705,7 +705,7 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
 </template>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=7"></script>
+<script src="hub.js?v=8"></script>
 <script src="twcalc.js?v=3"></script>
 <script src="getstarted.js?v=1"></script>
 <script>
@@ -883,7 +883,7 @@ function homeView(p, school){
       ${card("Attendance today", "ovAtt", "Loading…", "muted")}
       ${card("Active students", "ovStu", "Across your school")}
       ${card(lead ? "Observations this year" : "My observations", "ovObs", on.includes("grownest") ? "In GrowNest" : "GrowNest is off", "lav")}
-      ${card("Needs your attention", "ovTask", "From Inclusion and Wellbeing", "amber")}
+      ${card("Needs your attention", "ovTask", "From Inclusion, Wellbeing and Behaviour", "amber")}
     </div>
     <div class="ovgrid">
       <section class="ovpanel"><div class="ovph"><h2>Student progress</h2><span class="note" id="ovProgNote">From TwigNest</span></div><div id="ovChart"><p class="note">Loading…</p></div></section>
@@ -895,11 +895,22 @@ function homeView(p, school){
   if (window.hubInit) hubInit("overview");
   overviewData(p, school, lead);
   if (["school_lead", "admin"].includes(p.role) && typeof gsSteps === "function") gsSteps(sb, school).then(steps => { const b = document.getElementById("gsBox"); if (b && steps.some(s => !s[2])) { b.innerHTML = gsHtml(steps, true); b.hidden = false; } }).catch(() => {});
-  Promise.all([inclusionReminder(p, school), wellbeingReminder(p, school)]).then(() => {
+  Promise.all([inclusionReminder(p, school), wellbeingReminder(p, school), behaviourReminder(p, school)]).then(() => {
     const n = document.querySelectorAll("#hubnotes > div").length;
     const t = document.getElementById("ovTask"); if (t) t.textContent = n;
     const e = document.getElementById("ovNoNotes"); if (e) e.hidden = n > 0;
   });
+}
+// Behaviour: open high-level incidents for leaders
+async function behaviourReminder(p, school){
+  try {
+    if (!["school_lead", "coordinator", "admin"].includes(p.role) && !p.wellbeing_team && !p.inclusion_head) return;
+    const { data, error } = await sb.from("behaviour_events").select("id").eq("school_id", school.id).eq("kind", "incident").eq("level", "high").eq("status", "open");
+    if (error || !data || !data.length) return;
+    const b = document.createElement("div");
+    b.innerHTML = `<p style="margin:0;font-weight:700">⚠️ Behaviour: ${data.length} high-level incident${data.length === 1 ? " needs" : "s need"} following up.</p><p style="margin:8px 0 0"><a class="btn" href="behaviour.html">See incidents</a></p>`;
+    placeNote(b);
+  } catch (_) {}
 }
 // a reminder goes into the Recent notifications panel (or above the page on other layouts)
 function placeNote(b){ const box = document.getElementById("hubnotes"); if (box) { b.className = "ovnote"; b.style.cssText = ""; box.append(b); } else { placeNote(b); } }

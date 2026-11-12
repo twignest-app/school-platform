@@ -111,7 +111,7 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 <main id="app"><p class="note">Loading…</p></main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=7"></script>
+<script src="hub.js?v=8"></script>
 <script src="twcalc.js?v=2"></script>
 <script>
 /* Keep this the same as in index.html */
@@ -200,6 +200,7 @@ async function profile(id){
       ${on.includes("inclusion") ? `<section class="card"><div class="row" style="justify-content:space-between"><h2>Inclusion</h2><a class="btn ghost small" href="inclusion.html${lead ? "#register" : ""}">Inclusion →</a></div><div id="inc"><p class="note">Loading…</p></div></section>` : ""}
     </div><div class="cols">
       ${on.includes("wellbeing") ? `<section class="card"><div class="row" style="justify-content:space-between"><h2>Wellbeing</h2><a class="btn ghost small" href="wellbeing.html">Wellbeing →</a></div><div id="wb"><p class="note">Loading…</p></div></section>` : ""}
+      <section class="card"><div class="row" style="justify-content:space-between"><h2>Behaviour</h2><a class="btn ghost small" href="behaviour.html">Behaviour →</a></div><div id="bh"><p class="note">Loading…</p></div></section>
       <section class="card"><div class="row" style="justify-content:space-between"><h2>Attendance</h2><a class="btn ghost small" href="attendance.html">Attendance →</a></div><div id="att"><p class="note">Loading…</p></div></section>
     </div></div>`;
   document.getElementById("bk").onclick = back; window.scrollTo(0, 0);
@@ -230,6 +231,17 @@ async function profile(id){
     const openRef = (rf || []).find(x => !["closed", "declined"].includes(x.status));
     if (openRef) parts.push(`<p class="note" style="margin:8px 0 0">🙋 Referral in progress (sent ${fmt(openRef.created_at.slice(0, 10))})</p>`);
     box.innerHTML = parts.join("");
+  }, null);
+  // Behaviour: last 90 days
+  safe(async () => {
+    const box = document.getElementById("bh"), since = new Date(Date.now() - 89 * 864e5).toISOString().slice(0, 10);
+    const { data, error } = await sb.from("behaviour_events").select("kind,category,points,level,status,happened_on").eq("student_id", s.id).gte("happened_on", since).order("happened_on", { ascending: false });
+    if (error) { box.innerHTML = '<p class="note" style="margin:0">Nothing logged yet.</p>'; return; }
+    const m = data.filter(e => e.kind === "merit"), inc = data.filter(e => e.kind === "incident"), pts = m.reduce((a, e) => a + (e.points || 1), 0);
+    const topM = Object.entries(m.reduce((a, e) => (a[e.category] = (a[e.category] || 0) + (e.points || 1), a), {})).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    box.innerHTML = `<p style="margin:0"><b style="font-size:24px;color:var(--sage)">⭐ ${pts}</b> <span class="note">merit points · ${inc.length} incident${inc.length === 1 ? "" : "s"} (last 90 days)</span></p>
+      ${topM.length ? `<p class="note" style="margin:6px 0 0">Most often: ${topM.map(([k, n]) => esc(k) + " (" + n + ")").join(", ")}</p>` : ""}
+      ${inc.slice(0, 4).map(e => `<p class="note" style="margin:6px 0 0">⚠️ ${new Date(e.happened_on + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" })} · ${{ low: "Low", medium: "Medium", high: "High" }[e.level] || ""}: ${esc(e.category)}${e.status === "open" ? " (open)" : ""}</p>`).join("")}`;
   }, null);
   // Attendance: this year and recent absences
   safe(async () => {

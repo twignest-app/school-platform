@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Behaviour · Nestopia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--plum:#462D5B;--plum-2:#6A4B85;--plum-soft:#EDE6F5;--sage:#5E8455;--sage-soft:#E6EFE2;--amber:#A86C12;--amber-soft:#FBF0DC;--red:#B4473A;--red-soft:#F8E4E1;--blue:#4E6FB8;--blue-soft:#E4EBF8;--bg:#F7F4FB;--card:#FFFFFF;--ink:#2E2140;--muted:#6F6680;--line:#E4DDEE;--empty:#ECE7F3;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--plum:#CDB9EA;--plum-2:#DCCCF2;--plum-soft:#352A45;--sage:#A7C59A;--sage-soft:#26331F;--amber:#E6B566;--amber-soft:#3A2E17;--red:#E8897C;--red-soft:#3D2220;--blue:#9DB4E8;--blue-soft:#1E2A40;--bg:#17131D;--card:#221C2B;--ink:#F1ECF7;--muted:#B2A8C2;--line:#382F45;--empty:#2C2536;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--plum-2);outline-offset:2px}
+h1,h2,h3,.btn,.brand{font-family:"Poppins","Nunito",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-weight:600;font-size:22px;color:var(--plum);text-decoration:none}
+header .who{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:14px;color:var(--muted);flex-wrap:wrap}
+main{max-width:1200px;margin:0 auto;padding:24px 20px 48px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px}
+.card h2{margin:0 0 8px;font-size:20px;color:var(--plum);font-weight:600}
+.btn{border:0;background:var(--plum);color:#fff;border-radius:999px;padding:10px 20px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--bg);color:var(--plum);border:1px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:13px}
+.note{color:var(--muted);font-size:14px}
+.msg{border-radius:12px;padding:10px 14px;margin-top:12px;font-weight:600;font-size:14px;background:var(--red-soft);color:var(--red)}
+.ptitle{margin:0 0 4px;font-weight:600;font-size:26px}
+.phead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.metric{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.metric span{display:block;font-size:13px;color:var(--muted);font-weight:700}
+.metric b{display:block;font-size:26px;color:var(--plum);font-family:Poppins,Nunito,sans-serif;font-weight:600;line-height:1.3}
+.tablewrap{overflow-x:auto}
+table.grid{border-collapse:separate;border-spacing:8px;min-width:100%}
+table.grid th{font-size:13px;color:var(--muted);text-align:left;font-weight:700;padding:4px}
+.cell{width:100%;min-width:150px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;cursor:pointer;display:block}
+.cell:hover{border-color:var(--plum-2)}
+.cell b{font-size:20px;font-family:Poppins,Nunito,sans-serif;font-weight:600;color:var(--plum)}
+.cell small{display:block;color:var(--muted);font-size:12.5px}
+.cell.none{cursor:default;color:var(--muted);background:var(--bg)}
+.cell.on{outline:3px solid var(--plum-2)}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--empty);margin:6px 0 4px}
+.bar i{display:block;height:100%}
+.bar .a{background:var(--sage)}.bar .t{background:var(--amber)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
+.obj{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.obj:last-child{border-bottom:0}
+.st{font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;justify-self:start}
+.st.n{background:var(--empty);color:var(--muted)}.st.p{background:var(--amber-soft);color:var(--amber)}.st.t{background:var(--blue-soft);color:var(--blue)}.st.a{background:var(--sage-soft);color:var(--sage)}
+.obj small{display:block;color:var(--muted);font-size:12.5px}
+.sec{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
+.sec b{display:block;font-size:16px;color:var(--ink)}
+@media (max-width:640px){.obj{grid-template-columns:1fr}.sec{text-align:left}}
+textarea,input{font:inherit;color:inherit}
+input[type=text],input[type=date],input[type=search],textarea{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;width:100%}
+label.f{display:grid;gap:4px;font-weight:700;font-size:14px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tab{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 16px;font-weight:700;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+table.reg{width:100%;border-collapse:collapse}
+table.reg th{font-size:13px;color:var(--muted);text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+table.reg td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14.5px}
+table.reg tr:hover td{background:var(--bg)}
+.nm{font-weight:800;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.nm:hover{color:var(--plum-2);text-decoration:underline}
+.tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;margin:2px 4px 2px 0}
+.tag.sod{background:var(--plum-soft);color:var(--plum)}.tag.gt{background:var(--amber-soft);color:var(--amber)}.tag.eal{background:var(--blue-soft);color:var(--blue)}.tag.other{background:var(--empty);color:var(--muted)}
+.lvl{font-size:12.5px;font-weight:800;border-radius:8px;padding:2px 8px}
+.lvl.u{background:var(--sage-soft);color:var(--sage)}.lvl.t{background:var(--amber-soft);color:var(--amber)}.lvl.s{background:var(--red-soft);color:var(--red)}
+.due{font-size:12.5px;font-weight:800}.due.late{color:var(--red)}.due.soon{color:var(--amber)}.due.ok{color:var(--muted)}
+dialog{border:0;border-radius:18px;padding:0;width:min(760px,96vw);max-height:92vh;background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(30,20,45,.45)}
+.dlg{padding:22px 24px;display:grid;gap:14px}
+.dlg h2{margin:0;color:var(--plum);font-size:21px}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px}
+.checks label{display:flex;gap:6px;align-items:center;font-weight:600;font-size:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.two{grid-template-columns:1fr}table.reg .hide-sm{display:none}}
+.box{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--bg)}
+.box h3{margin:0 0 6px;font-size:16px;color:var(--plum)}
+.target{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:8px 0;border-bottom:1px dashed var(--line)}
+.target:last-child{border-bottom:0}
+.pg{font-size:12.5px;font-weight:800;border-radius:999px;padding:2px 10px;border:1px solid var(--line);background:var(--card);cursor:pointer;white-space:nowrap}
+.pg.a{background:var(--sage-soft);color:var(--sage)}.pg.w{background:var(--amber-soft);color:var(--amber)}.pg.n{background:var(--empty);color:var(--muted)}
+.lock{font-size:12.5px;color:var(--red);font-weight:800}
+.empty{text-align:center;padding:30px 10px}
+.okmsg{border-radius:12px;padding:10px 14px;font-weight:600;font-size:14px;background:var(--sage-soft);color:var(--sage)}
+
+.kids{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.kid{font:inherit;text-align:left;border:2px solid var(--line);background:var(--card);border-radius:14px;padding:10px 12px;cursor:pointer;color:var(--ink)}
+.kid b{display:block}.kid small{display:block;color:var(--muted)}
+.kid[aria-pressed="true"]{border-color:var(--plum);background:var(--plum-soft)}
+.vals{display:flex;flex-wrap:wrap;gap:8px}
+.val{font:inherit;font-weight:800;border:0;border-radius:12px;padding:10px 14px;cursor:pointer;background:#E4F1E6;color:#2E6B3A}
+.lv{font-size:12px;font-weight:800;border-radius:8px;padding:2px 8px}.lv.low{background:#FBEBD5;color:#8A5A10}.lv.medium{background:#FDE0D2;color:#A04A1E}.lv.high{background:#F8E1DE;color:#8E3328}.lv.merit{background:#E4F1E6;color:#2E6B3A}
+input[type=number]{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;font:inherit}
+
+</style>
+</head>
+<body>
+<header><a class="brand" href="./" id="brand">Nestopia</a><div class="who" id="who"></div></header>
+<main id="app"><p class="note">Loading…</p></main>
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="hub.js?v=8"></script>
+<script>
+/* Keep this the same as in index.html */
+const PLATFORM = "Nestopia";
+const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const app = document.getElementById("app"), who = document.getElementById("who"), dlg = document.getElementById("dlg");
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2600); };
+const ymd = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+const fmt = d => new Date(d + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+const DEFAULTS = { merits: ["Kindness", "Effort", "Respect", "Responsibility", "Excellent work", "Leadership", "Helping others", "Honesty"],
+  incidents: { low: ["Disrupting learning", "Not following instructions", "Uniform", "Homework not done", "Lateness to lesson"], medium: ["Disrespect to staff", "Unkind words", "Repeated low-level disruption", "Misuse of devices"], high: ["Physical aggression", "Bullying", "Unsafe behaviour", "Damage to property", "Leaving class without permission"] },
+  actions: ["Verbal reminder", "Moved seat", "Time out", "Restorative conversation", "Lost break or privilege", "Parents contacted", "Referred to a leader"] };
+const LV = { low: "Low", medium: "Medium", high: "High" };
+let me, school, lead = false, cfg = DEFAULTS, classes = [], myClassIds = [], studs = [], evs = [], ui = { tab: "log", cls: null, pick: new Set(), range: 30 };
+const cls = id => classes.find(c => String(c.id) === String(id)) || {};
+const sName = id => (studs.find(s => String(s.id) === String(id)) || { full_name: "Student" }).full_name;
+function fail(t){ app.innerHTML = `<div class="card"><div class="msg">${esc(t)}</div></div>`; }
+async function fetchAll(q){ const out = []; for (let f = 0; ; f += 1000) { const { data, error } = await q().range(f, f + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; } return out; }
+
+(async function start(){
+  const { data: { session } } = await sb.auth.getSession(); if (!session) { location.href = "./"; return; }
+  const { data: p } = await sb.from("profiles").select("*").eq("id", session.user.id).single();
+  if (!p || !p.school_id) return fail("Your account isn’t linked to a school yet.");
+  me = p; who.innerHTML = `<span>${esc(p.full_name || p.email)}</span><a class="btn ghost small" href="./">← ${esc(PLATFORM)}</a>`;
+  const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single(); school = s;
+  if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
+  lead = ["school_lead", "coordinator", "admin"].includes(p.role) || !!p.wellbeing_team || !!p.inclusion_head;
+  if (window.hubInit) hubInit("behaviour");
+  const set = await sb.from("school_setups").select("year").eq("school_id", school.id).order("updated_at", { ascending: false }).limit(1);
+  const year = set.data && set.data[0] ? set.data[0].year : null;
+  let cq = sb.from("classes").select("*").eq("school_id", school.id); if (year) cq = cq.eq("year", year);
+  classes = ((await cq).data || []).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
+  const { data: ct } = await sb.from("class_teachers").select("class_id").eq("teacher_id", me.id);
+  myClassIds = [...new Set((ct || []).map(x => String(x.class_id)))];
+  const cols = "id,full_name,class_id,archived";
+  studs = lead ? await fetchAll(() => sb.from("students").select(cols).eq("school_id", school.id).eq("archived", false).order("full_name"))
+    : myClassIds.length ? await fetchAll(() => sb.from("students").select(cols).in("class_id", myClassIds).eq("archived", false).order("full_name")) : [];
+  ui.cls = myClassIds[0] || (classes[0] && String(classes[0].id)) || null;
+  const bs = await sb.from("behaviour_settings").select("config").eq("school_id", school.id).maybeSingle();
+  if (bs.error && /behaviour_/.test(bs.error.message)) return fail("Behaviour needs its database step first. Please run the Behaviour update in Supabase.");
+  if (bs.data && bs.data.config) cfg = Object.assign({}, DEFAULTS, bs.data.config);
+  await load(); draw();
+})();
+async function load(){ const since = ymd(new Date(Date.now() - 365 * 864e5)); evs = await fetchAll(() => sb.from("behaviour_events").select("*").eq("school_id", school.id).gte("happened_on", since).order("created_at", { ascending: false })); }
+
+function draw(){
+  const tabs = [["log", "Log"], ["recent", lead ? "Recent" : "My classes"], ...(lead ? [["overview", "Overview"], ["settings", "Settings"]] : [])];
+  const open = evs.filter(e => e.kind === "incident" && e.level === "high" && e.status === "open").length;
+  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Behaviour</h1><p class="note">${esc(school.name)} · Celebrate the positives, and follow up incidents.</p></div></div>
+    <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}${k === "recent" && lead && open ? ` (${open})` : ""}</button>`).join("")}</div><div id="pane"></div>`;
+  app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; draw(); });
+  ({ log: logPane, recent: recentPane, overview: overviewPane, settings: settingsPane })[ui.tab]();
+}
+
+/* ---------- Log: pick students, then a merit or an incident ---------- */
+function logPane(){
+  const pane = document.getElementById("pane"), choices = classes.filter(c => lead || myClassIds.includes(String(c.id)));
+  if (!choices.length) { pane.innerHTML = '<div class="card"><p class="note" style="margin:0">You don’t have a class linked in TwigNest yet.</p></div>'; return; }
+  const kids = studs.filter(s => String(s.class_id) === String(ui.cls)), since = ymd(new Date(Date.now() - 6 * 864e5));
+  const wk = id => evs.filter(e => String(e.student_id) === String(id) && e.happened_on >= since);
+  pane.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:10px"><div class="row"><select id="lc" aria-label="Class">${choices.map(c => `<option value="${esc(c.id)}" ${String(c.id) === String(ui.cls) ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select>
+      <button class="btn ghost small" id="all">Select everyone</button><button class="btn ghost small" id="none">Clear</button></div><span class="note" id="sel">${ui.pick.size} selected</span></div>
+    <div class="kids">${kids.map(k => { const w = wk(k.id), m = w.filter(e => e.kind === "merit").reduce((a, e) => a + (e.points || 1), 0), n = w.filter(e => e.kind === "incident").length;
+      return `<button class="kid" data-k="${esc(k.id)}" aria-pressed="${ui.pick.has(String(k.id))}"><b>${esc(k.full_name.split(" ")[0])}</b><small>${esc(k.full_name.split(" ").slice(1).join(" "))}</small><small>⭐ ${m}${n ? ` · ⚠️ ${n}` : ""} this week</small></button>`; }).join("") || '<p class="note">No students.</p>'}</div></div>
+    <div class="card"><h2>⭐ Give a merit</h2><div class="row" style="margin-bottom:8px"><label class="f" style="flex-direction:row;display:flex;gap:8px;align-items:center">Points <input type="number" id="pts" min="1" max="10" value="1" style="width:80px"></label></div>
+      <div class="vals">${cfg.merits.map(v => `<button class="val" data-merit="${esc(v)}">${esc(v)}</button>`).join("")}</div></div>
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>⚠️ Log an incident</h2><button class="btn" id="inc">Log an incident</button></div><p class="note" style="margin:0">Choose one student, then log what happened.</p></div>`;
+  document.getElementById("lc").onchange = e => { ui.cls = e.target.value; ui.pick.clear(); logPane(); };
+  document.getElementById("all").onclick = () => { kids.forEach(k => ui.pick.add(String(k.id))); logPane(); };
+  document.getElementById("none").onclick = () => { ui.pick.clear(); logPane(); };
+  pane.querySelectorAll("[data-k]").forEach(b => b.onclick = () => { const k = b.dataset.k; ui.pick.has(k) ? ui.pick.delete(k) : ui.pick.add(k); b.setAttribute("aria-pressed", ui.pick.has(k)); document.getElementById("sel").textContent = ui.pick.size + " selected"; });
+  pane.querySelectorAll("[data-merit]").forEach(b => b.onclick = async () => {
+    if (!ui.pick.size) return toast("Tap one or more students first.");
+    const pts = Math.max(1, Math.min(10, +document.getElementById("pts").value || 1));
+    const rows = [...ui.pick].map(id => { const s = studs.find(x => String(x.id) === id); return { school_id: school.id, student_id: s.id, class_id: s.class_id, kind: "merit", category: b.dataset.merit, points: pts, happened_on: ymd(new Date()), logged_by: me.id }; });
+    const { error } = await sb.from("behaviour_events").insert(rows); if (error) return toast(error.message);
+    toast(`⭐ ${b.dataset.merit}: ${pts} point${pts === 1 ? "" : "s"} for ${rows.length} student${rows.length === 1 ? "" : "s"}`); ui.pick.clear(); await load(); logPane();
+  });
+  document.getElementById("inc").onclick = () => { if (ui.pick.size !== 1) return toast("Choose exactly one student for an incident."); incidentForm(studs.find(x => String(x.id) === [...ui.pick][0])); };
+}
+function incidentForm(s, e){
+  const lvl0 = e ? e.level : "low";
+  dlg.innerHTML = `<form class="dlg"><h2>${e ? "Incident" : "Log an incident"} · ${esc(s.full_name)}</h2>
+    <div class="two"><label class="f">Level <select name="lv">${Object.entries(LV).map(([k, v]) => `<option value="${k}" ${lvl0 === k ? "selected" : ""}>${v}</option>`).join("")}</select></label><label class="f">Type <select name="ty"></select></label></div>
+    <div class="two"><label class="f">Date <input type="date" name="d" value="${esc(e ? e.happened_on : ymd(new Date()))}" max="${ymd(new Date())}"></label><label class="f">Where <input type="text" name="lo" value="${esc(e ? e.location || "" : "")}" placeholder="Classroom, playground, corridor…"></label></div>
+    <label class="f">What happened <textarea name="dt" rows="3" required placeholder="Facts: what happened and who was involved">${esc(e ? e.details || "" : "")}</textarea></label>
+    <div><b>Action taken</b><div class="checks">${cfg.actions.map(a => `<label><input type="checkbox" name="ac" value="${esc(a)}" ${e && (e.action || "").split("; ").includes(a) ? "checked" : ""}> ${esc(a)}</label>`).join("")}</div></div>
+    <div class="checks"><label><input type="checkbox" name="pi" ${e && e.parents_informed ? "checked" : ""}> Parents have been informed</label></div>
+    <p class="lock" id="bully" hidden>If this could be bullying, please also log a <a href="wellbeing.html">wellbeing concern</a>, so the wellbeing team can support everyone involved.</p>
+    ${e && lead ? `<div class="checks"><label><input type="checkbox" name="rs" ${e.status === "resolved" ? "checked" : ""}> Resolved</label></div>` : ""}
+    <div class="row" style="justify-content:space-between"><div>${e && (lead || e.logged_by === me.id) ? '<button type="button" class="btn ghost small" id="del">Delete</button>' : ""}</div><div class="row"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn">Save</button></div></div></form>`;
+  const f = dlg.querySelector("form"), fillTypes = () => { f.ty.innerHTML = (cfg.incidents[f.lv.value] || []).map(t => `<option ${e && e.category === t ? "selected" : ""}>${esc(t)}</option>`).join("") + `<option value="Other">Other</option>`; bully(); };
+  const bully = () => document.getElementById("bully").hidden = !/bully|unkind/i.test(f.ty.value);
+  f.lv.onchange = fillTypes; f.ty.onchange = bully; fillTypes();
+  dlg.querySelector("[data-x]").onclick = () => dlg.close();
+  const dl = document.getElementById("del"); if (dl) dl.onclick = async () => { if (!confirm("Delete this incident?")) return; await sb.from("behaviour_events").delete().eq("id", e.id); dlg.close(); await load(); draw(); };
+  f.onsubmit = async ev => {
+    ev.preventDefault();
+    const row = { school_id: school.id, student_id: s.id, class_id: s.class_id, kind: "incident", level: f.lv.value, category: f.ty.value, happened_on: f.d.value, location: f.lo.value.trim() || null, details: f.dt.value.trim(), action: [...f.querySelectorAll("input[name=ac]:checked")].map(x => x.value).join("; ") || null, parents_informed: f.pi.checked, status: f.rs ? (f.rs.checked ? "resolved" : "open") : (e ? e.status : (f.lv.value === "high" ? "open" : "resolved")) };
+    const { error } = e ? await sb.from("behaviour_events").update(row).eq("id", e.id) : await sb.from("behaviour_events").insert(Object.assign(row, { logged_by: me.id }));
+    if (error) return toast(error.message);
+    dlg.close(); ui.pick.clear(); await load(); draw(); toast(row.level === "high" && !e ? "Logged. School leaders can see it to follow up." : "Saved");
+  };
+  dlg.showModal();
+}
+
+/* ---------- Recent ---------- */
+function evRow(e){ return `<tr><td>${fmt(e.happened_on)}</td><td><a class="nm" href="students.html?id=${esc(e.student_id)}">${esc(sName(e.student_id))}</a><br><span class="note">${esc(cls(e.class_id).name || "")}</span></td>
+  <td>${e.kind === "merit" ? `<span class="lv merit">⭐ ${e.points || 1}</span> ${esc(e.category)}` : `<span class="lv ${e.level}">${LV[e.level]}</span> ${esc(e.category)}${e.status === "open" ? ' <b style="color:var(--red)">· open</b>' : ""}`}</td>
+  <td class="hide-sm">${esc(e.kind === "incident" ? (e.details || "").slice(0, 90) : "")}</td><td>${e.kind === "incident" ? `<button class="btn ghost small" data-ev="${esc(e.id)}">Open</button>` : ""}</td></tr>`; }
+function recentPane(){
+  const pane = document.getElementById("pane");
+  const mine = lead ? evs : evs.filter(e => myClassIds.includes(String(e.class_id)) || e.logged_by === me.id);
+  const open = mine.filter(e => e.kind === "incident" && e.level === "high" && e.status === "open");
+  pane.innerHTML = `${open.length ? `<div class="card" style="border-left:5px solid var(--red)"><h2>Open high-level incidents <span class="note">(${open.length})</span></h2><div class="tablewrap"><table class="reg">${open.map(evRow).join("")}</table></div></div>` : ""}
+    <div class="card"><h2>Recent</h2>${mine.length ? `<div class="tablewrap"><table class="reg"><tr><th>Date</th><th>Student</th><th>What</th><th class="hide-sm">Details</th><th></th></tr>${mine.slice(0, 80).map(evRow).join("")}</table></div>` : '<p class="note" style="margin:0">Nothing logged yet.</p>'}</div>`;
+  pane.querySelectorAll("[data-ev]").forEach(b => b.onclick = () => { const e = evs.find(x => x.id === b.dataset.ev); incidentForm(studs.find(s => String(s.id) === String(e.student_id)) || { id: e.student_id, full_name: sName(e.student_id), class_id: e.class_id }, e); });
+}
+
+/* ---------- Leaders: overview ---------- */
+function overviewPane(){
+  const pane = document.getElementById("pane"), since = ymd(new Date(Date.now() - (ui.range - 1) * 864e5)), E = evs.filter(e => e.happened_on >= since);
+  const M = E.filter(e => e.kind === "merit"), I = E.filter(e => e.kind === "incident"), pts = M.reduce((a, e) => a + (e.points || 1), 0);
+  const top = (list, key) => Object.entries(list.reduce((a, e) => (a[e[key]] = (a[e[key]] || 0) + (e.kind === "merit" ? e.points || 1 : 1), a), {})).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const by30 = {}, s30 = ymd(new Date(Date.now() - 29 * 864e5)); evs.filter(e => e.kind === "incident" && e.happened_on >= s30).forEach(e => by30[e.student_id] = (by30[e.student_id] || 0) + 1);
+  const rep = Object.entries(by30).filter(([, n]) => n >= 3).sort((a, b) => b[1] - a[1]);
+  const byClass = classes.filter(c => studs.some(s => String(s.class_id) === String(c.id))).map(c => { const l = E.filter(e => String(e.class_id) === String(c.id)); return [c.name, l.filter(e => e.kind === "merit").reduce((a, e) => a + (e.points || 1), 0), l.filter(e => e.kind === "incident").length]; });
+  pane.innerHTML = `<div class="row" style="margin-bottom:12px"><select id="rg">${[[7, "Last 7 days"], [30, "Last 30 days"], [90, "Last 90 days"], [365, "This year"]].map(([v, l]) => `<option value="${v}" ${ui.range === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>
+    <div class="metrics"><div class="metric"><span>Merit points</span><b style="color:var(--sage)">${pts}</b></div><div class="metric"><span>Incidents</span><b>${I.length}</b></div><div class="metric"><span>High-level</span><b style="color:var(--red)">${I.filter(e => e.level === "high").length}</b></div><div class="metric"><span>Positives for every incident</span><b>${I.length ? (M.length / I.length).toFixed(1) : "–"}</b></div></div>
+    <div class="two"><div class="card"><h2>Top merits</h2>${top(M, "category").map(([k, n]) => `<p style="margin:4px 0">⭐ ${esc(k)} <span class="note">· ${n} points</span></p>`).join("") || '<p class="note">None yet.</p>'}</div>
+      <div class="card"><h2>Most common incidents</h2>${top(I, "category").map(([k, n]) => `<p style="margin:4px 0">⚠️ ${esc(k)} <span class="note">· ${n}</span></p>`).join("") || '<p class="note">None. 🎉</p>'}</div></div>
+    <div class="card"><h2>3 or more incidents in 30 days <span class="note">(${rep.length})</span></h2>${rep.length ? `<p class="note" style="margin-top:0">These students may need extra support. Consider a wellbeing concern or an inclusion referral.</p><div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Class</th><th>Incidents</th></tr>${rep.map(([id, n]) => `<tr><td><a class="nm" href="students.html?id=${esc(id)}">${esc(sName(id))}</a></td><td>${esc(cls((studs.find(s => String(s.id) === String(id)) || {}).class_id).name || "")}</td><td><b>${n}</b></td></tr>`).join("")}</table></div>` : '<p class="note" style="margin:0">No student has 3 or more incidents.</p>'}</div>
+    <div class="card"><h2>By class</h2><div class="tablewrap"><table class="reg"><tr><th>Class</th><th>Merit points</th><th>Incidents</th></tr>${byClass.map(([n, m, i]) => `<tr><td>${esc(n)}</td><td>${m}</td><td>${i}</td></tr>`).join("")}</table></div></div>`;
+  document.getElementById("rg").onchange = e => { ui.range = +e.target.value; overviewPane(); };
+}
+
+/* ---------- Leaders: the school's own values and types ---------- */
+function settingsPane(){
+  const pane = document.getElementById("pane"), L = a => (a || []).join("\n");
+  pane.innerHTML = `<form class="card" id="sf"><h2>Your school’s values and incident types</h2><p class="note">One per line. Change these to match your school’s values and behaviour policy.</p>
+    <label class="f">Merit values <textarea name="m" rows="6">${esc(L(cfg.merits))}</textarea></label>
+    <div class="two"><label class="f">Low-level incidents <textarea name="lo" rows="6">${esc(L(cfg.incidents.low))}</textarea></label><label class="f">Medium-level incidents <textarea name="me" rows="6">${esc(L(cfg.incidents.medium))}</textarea></label></div>
+    <div class="two"><label class="f">High-level incidents <textarea name="hi" rows="6">${esc(L(cfg.incidents.high))}</textarea></label><label class="f">Actions taken <textarea name="ac" rows="6">${esc(L(cfg.actions))}</textarea></label></div>
+    <button class="btn">Save</button></form>`;
+  document.getElementById("sf").onsubmit = async e => { e.preventDefault(); const f = e.target, sp = v => v.split("\n").map(x => x.trim()).filter(Boolean);
+    const config = { merits: sp(f.m.value), incidents: { low: sp(f.lo.value), medium: sp(f.me.value), high: sp(f.hi.value) }, actions: sp(f.ac.value) };
+    const { error } = await sb.from("behaviour_settings").upsert({ school_id: school.id, config, updated_at: new Date().toISOString() }); if (error) return toast(error.message); cfg = Object.assign({}, DEFAULTS, config); toast("Saved"); };
+}
+</script>
+</body>
+</html>
