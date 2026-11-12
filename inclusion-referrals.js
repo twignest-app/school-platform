@@ -48,7 +48,8 @@ function openReferral(rid){
     const concerns = [...f.querySelectorAll("input[name=c]:checked")].map(x => x.value);
     if (!concerns.length) { err.textContent = "Tick at least one area of concern."; err.hidden = false; return; }
     const row = { concerns, details: f.d.value.trim(), tried: f.t.value.trim() || null, impact: f.i.value.trim() || null, urgency: f.u.value, parent_aware: f.p.checked, status: "submitted", updated_at: new Date().toISOString() };
-    const { error } = r ? await sb.from("inclusion_referrals").update(row).eq("id", r.id) : await sb.from("inclusion_referrals").insert(Object.assign(row, { school_id: school.id, student_id: f.s.value, teacher_id: me.id }));
+    const { data: saved, error } = r ? await sb.from("inclusion_referrals").update(row).eq("id", r.id).select("id").single() : await sb.from("inclusion_referrals").insert(Object.assign(row, { school_id: school.id, student_id: f.s.value, teacher_id: me.id })).select("id").single();
+    if (!error && window.nestMail) nestMail("referral", saved ? saved.id : r && r.id);
     if (error) { err.textContent = /inclusion_referrals/.test(error.message) ? "Please run the referrals database step first." : error.message; err.hidden = false; return; }
     dlg.close(); await refLoad(); render(); toast("Sent to the inclusion head");
   };
@@ -122,7 +123,7 @@ function openRefCase(rid){
     ${o && (isMgr) ? `<div class="box"><h3>Observation feedback · ${esc(nameOf(o.observer_id))} · ${fmt((o.observed_on || "").slice(0, 10))}</h3>${o.lesson ? `<p class="note" style="margin:0">${esc(o.lesson)}</p>` : ""}<p style="margin:6px 0 0"><b>Strengths:</b> ${esc(o.strengths || "–")}</p><p style="margin:6px 0 0"><b>Difficulties seen:</b> ${esc(o.difficulties || "–")}</p><p style="margin:6px 0 0"><b>Strategies tried or suggested:</b> ${esc(o.strategies || "–")}</p><p style="margin:6px 0 0"><b>Recommendation:</b> ${esc(OUTCOMES[o.recommendation] || "")}${o.notes ? " · " + esc(o.notes) : ""}</p></div>` : ""}
     ${r.outcome_note ? `<div class="box"><b>Next steps from the inclusion team:</b> ${esc(r.outcome_note)}</div>` : ""}
     ${evs.length ? `<div class="box"><h3>Calendar</h3>${evs.map(e => `<p style="margin:4px 0" class="note">${e.kind === "parent_meeting" ? "👪 Parent meeting" : "👀 Observation"} · ${dt(e.starts_at)} · ${esc({ proposed: "waiting for confirmation", confirmed: "confirmed", reschedule: "new time suggested", done: "done", cancelled: "cancelled" }[e.status] || e.status)}</p>`).join("")}</div>` : ""}</div>`;
-  const $ = id => document.getElementById(id), upd = async (row) => { const { error } = await sb.from("inclusion_referrals").update(Object.assign(row, { updated_at: new Date().toISOString() })).eq("id", r.id); if (error) { toast(error.message); return false; } return true; };
+  const $ = id => document.getElementById(id), upd = async (row) => { const { error } = await sb.from("inclusion_referrals").update(Object.assign(row, { updated_at: new Date().toISOString() })).eq("id", r.id); if (error) { toast(error.message); return false; } if (window.nestMail) nestMail("referral", r.id); return true; };
   const done = async (msg) => { await refLoad(); render(); openRefCase(r.id); toast(msg); };
   dlg.querySelector("[data-x]").onclick = () => dlg.close();
   if ($("doAssign")) $("doAssign").onclick = async () => { if (await upd({ status: "assigned", assigned_to: $("asg").value, head_note: $("hnote").value.trim() || null, reviewed_by: me.id })) done("Assigned"); };
@@ -133,14 +134,15 @@ function openRefCase(rid){
     const at = $("pAt").value, mins = +$("pLen").value || 30; if (!at) return toast("Choose a date and time.");
     const kind = $("propose").dataset.kind, st = new Date(at);
     if (ev && ["proposed", "reschedule"].includes(ev.status)) await sb.from("inclusion_events").update({ status: "cancelled" }).eq("id", ev.id);
-    const { error } = await sb.from("inclusion_events").insert({ school_id: school.id, referral_id: r.id, student_id: r.student_id, kind, starts_at: st.toISOString(), ends_at: new Date(st.getTime() + mins * 60e3).toISOString(), location: $("pLoc").value.trim() || null, attendees: $("pWho") ? $("pWho").value.trim() || null : null, teacher_id: r.teacher_id, staff_id: r.assigned_to || me.id, proposed_by: me.id, status: "proposed" });
+    const { data: newEv, error } = await sb.from("inclusion_events").insert({ school_id: school.id, referral_id: r.id, student_id: r.student_id, kind, starts_at: st.toISOString(), ends_at: new Date(st.getTime() + mins * 60e3).toISOString(), location: $("pLoc").value.trim() || null, attendees: $("pWho") ? $("pWho").value.trim() || null : null, teacher_id: r.teacher_id, staff_id: r.assigned_to || me.id, proposed_by: me.id, status: "proposed" }).select("id").single();
+    if (!error && newEv && window.nestMail) nestMail("event", newEv.id);
     if (error) return toast(/inclusion_events/.test(error.message) ? "Please run the referrals database step first." : error.message);
     if (kind === "observation") await upd({ status: "scheduling" });
     done("Sent to the teacher to confirm");
   };
-  if ($("takeSug")) $("takeSug").onclick = async () => { const len = new Date(ev.ends_at) - new Date(ev.starts_at); const { error } = await sb.from("inclusion_events").update({ starts_at: ev.suggested_at, ends_at: new Date(new Date(ev.suggested_at).getTime() + len).toISOString(), status: "confirmed" }).eq("id", ev.id); if (error) return toast(error.message); if (ev.kind === "observation") await upd({ status: "scheduled" }); done("Booked"); };
-  if ($("evOk")) $("evOk").onclick = async () => { const { error } = await sb.from("inclusion_events").update({ status: "confirmed", responded_at: new Date().toISOString() }).eq("id", ev.id); if (error) return toast(error.message); if (ev.kind === "observation") await sb.from("inclusion_referrals").update({ status: "scheduled", updated_at: new Date().toISOString() }).eq("id", r.id); done("Confirmed. It’s in the calendar."); };
-  if ($("evSug")) $("evSug").onclick = async () => { const at = $("sugAt").value; if (!at) return toast("Choose the time that suits you."); const { error } = await sb.from("inclusion_events").update({ status: "reschedule", suggested_at: new Date(at).toISOString(), response_note: $("sugNote").value.trim() || null, responded_at: new Date().toISOString() }).eq("id", ev.id); if (error) return toast(error.message); done("Your suggested time was sent"); };
+  if ($("takeSug")) $("takeSug").onclick = async () => { const len = new Date(ev.ends_at) - new Date(ev.starts_at); const { error } = await sb.from("inclusion_events").update({ starts_at: ev.suggested_at, ends_at: new Date(new Date(ev.suggested_at).getTime() + len).toISOString(), status: "confirmed" }).eq("id", ev.id); if (error) return toast(error.message); if (window.nestMail) nestMail("event", ev.id); if (ev.kind === "observation") await upd({ status: "scheduled" }); done("Booked"); };
+  if ($("evOk")) $("evOk").onclick = async () => { const { error } = await sb.from("inclusion_events").update({ status: "confirmed", responded_at: new Date().toISOString() }).eq("id", ev.id); if (error) return toast(error.message); if (window.nestMail) nestMail("event", ev.id); if (ev.kind === "observation") await sb.from("inclusion_referrals").update({ status: "scheduled", updated_at: new Date().toISOString() }).eq("id", r.id); done("Confirmed. It’s in the calendar."); };
+  if ($("evSug")) $("evSug").onclick = async () => { const at = $("sugAt").value; if (!at) return toast("Choose the time that suits you."); const { error } = await sb.from("inclusion_events").update({ status: "reschedule", suggested_at: new Date(at).toISOString(), response_note: $("sugNote").value.trim() || null, responded_at: new Date().toISOString() }).eq("id", ev.id); if (error) return toast(error.message); if (window.nestMail) nestMail("event", ev.id); done("Your suggested time was sent"); };
   if ($("writeObs")) $("writeObs").onclick = () => openObservation(r, ev);
   if ($("doOutcome")) $("doOutcome").onclick = async () => {
     const oc = (dlg.querySelector("input[name=oc]:checked") || {}).value; if (!oc) return toast("Choose the next step.");
@@ -177,6 +179,7 @@ function openObservation(r, ev){
     if (error) return toast(error.message);
     if (ev) await sb.from("inclusion_events").update({ status: "done" }).eq("id", ev.id);
     await sb.from("inclusion_referrals").update({ status: "observed", updated_at: new Date().toISOString() }).eq("id", r.id);
+    if (window.nestMail) nestMail("referral", r.id);
     await refLoad(); render(); openRefCase(r.id); toast("Sent to the inclusion head");
   };
 }
@@ -196,6 +199,7 @@ function recordMeeting(r, ev){
     if (error) return toast(error.message);
     await sb.from("inclusion_events").update({ status: "done" }).eq("id", ev.id);
     await sb.from("inclusion_referrals").update({ status: "next_steps", updated_at: new Date().toISOString() }).eq("id", r.id);
+    if (window.nestMail) nestMail("referral", r.id);
     await refLoad(); await load(); render(); openRefCase(r.id); toast("Saved. Last step: add to the register and write the plan.");
   };
 }

@@ -61,6 +61,8 @@
   }
   @media print{.hubside,.hubtoggle{display:none}.hubwrap{display:block}}`;
 
+  // Nestopia emails: tell the server what happened; it decides who to email (never blocks the page)
+  window.nestMail = function (action, id) { try { const c = window.sb || (typeof sb !== "undefined" ? sb : null); if (c && id) c.functions.invoke("nestopia-mail", { body: { action, id } }).catch(() => {}); } catch (_) {} };
   window.hubInit = async function (active) {
     try {
       if (document.querySelector(".hubwrap")) { document.querySelectorAll(".hubside a").forEach(a => a.toggleAttribute("aria-current", a.dataset.id === active)); return; }

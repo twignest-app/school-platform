@@ -129,8 +129,8 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 <dialog id="dlg"></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=6"></script>
-<script src="wellbeing-concerns.js?v=1"></script>
+<script src="hub.js?v=7"></script>
+<script src="wellbeing-concerns.js?v=2"></script>
 <script>
 /* Keep this the same as in index.html */
 const PLATFORM = "Nestopia";
@@ -301,7 +301,8 @@ function startKiosk(classId){
     kiosk.innerHTML = `<h1>Would you like to talk to a grown-up today?</h1><p style="text-align:center;font-size:clamp(18px,2.4vw,24px);margin:-8px 0 24px">It’s always OK to ask. 💛</p>
       <div class="yn"><button style="background:var(--plum);color:#fff" data-t="1">🙋 Yes, please</button><button style="background:var(--card);border:2px solid var(--line);color:var(--ink)" data-t="0">👍 No, thank you</button></div>`;
     kiosk.querySelectorAll("[data-t]").forEach(b => b.onclick = async () => {
-      const { error } = await sb.from("wellbeing_checkins").upsert({ school_id: school.id, student_id: k.id, class_id: k.class_id, day: today(), mood: m, talk: b.dataset.t === "1", recorded_by: me.id, created_at: new Date().toISOString() }, { onConflict: "student_id,day" });
+      const { data: ck, error } = await sb.from("wellbeing_checkins").upsert({ school_id: school.id, student_id: k.id, class_id: k.class_id, day: today(), mood: m, talk: b.dataset.t === "1", recorded_by: me.id, created_at: new Date().toISOString() }, { onConflict: "student_id,day" }).select("id").single();
+      if (!error && ck && b.dataset.t === "1" && window.nestMail) nestMail("talk", ck.id);
       if (error) { toast(/wellbeing_/.test(error.message) ? "Please run the Wellbeing database step first." : error.message); return names(); }
       done.add(String(k.id));
       kiosk.innerHTML = `<h1 style="margin-top:12vh">Thank you, ${esc(k.full_name.split(" ")[0])}! ${b.dataset.t === "1" ? "A grown-up will come and talk with you soon. 💛" : "Have a lovely day! 🌟"}</h1>`;

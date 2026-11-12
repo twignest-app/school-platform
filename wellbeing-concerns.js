@@ -32,7 +32,8 @@ function openConcern(preStudent){
   f.onsubmit = async e => {
     e.preventDefault();
     const sg = f.c.value === "safeguarding";
-    const { error } = await sb.from("wellbeing_concerns").insert({ school_id: school.id, student_id: f.s.value, category: f.c.value, safeguarding: sg, urgent: f.u.checked, happened_on: f.d.value, details: f.w.value.trim(), child_words: f.q.value.trim() || null, actions_taken: f.a.value.trim() || null, logged_by: me.id, status: "new" });
+    const { data: nc, error } = await sb.from("wellbeing_concerns").insert({ school_id: school.id, student_id: f.s.value, category: f.c.value, safeguarding: sg, urgent: f.u.checked, happened_on: f.d.value, details: f.w.value.trim(), child_words: f.q.value.trim() || null, actions_taken: f.a.value.trim() || null, logged_by: me.id, status: "new" }).select("id").single();
+    if (!error && nc && window.nestMail) nestMail("concern", nc.id);
     if (error) return toast(/wellbeing_concerns/.test(error.message) ? "Please run the Wellbeing Part 2 database step first." : error.message);
     dlg.close(); await concernsLoad(); render(); toast(sg ? "Sent to the safeguarding lead" : "Sent to the wellbeing team");
   };

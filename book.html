@@ -83,10 +83,11 @@ function render(msg){
   app.querySelectorAll("[data-book]").forEach(b => b.onclick = async () => {
     sv(); if (!parent.name) { document.getElementById("pn").focus(); return alert("Please write your name first. · يُرجى كتابة اسمك أولًا."); }
     const md = document.getElementById("md");
-    const { error } = await sb.rpc("pc_book", { p_code: b.dataset.code, p_teacher: b.dataset.book, p_at: b.dataset.at, p_name: parent.name, p_contact: parent.contact, p_mode: md ? md.value : kids[0].mode });
-    await refresh(); render(error ? error.message : "Booked! · تم الحجز");
+    const { data: bid, error } = await sb.rpc("pc_book", { p_code: b.dataset.code, p_teacher: b.dataset.book, p_at: b.dataset.at, p_name: parent.name, p_contact: parent.contact, p_mode: md ? md.value : kids[0].mode });
+    if (!error && bid) sb.functions.invoke("nestopia-mail", { body: { action: "booking", id: bid, code: b.dataset.code } }).catch(() => {});
+    await refresh(); render(error ? error.message : "Booked! · تم الحجز" + (/@/.test(parent.contact) ? " · We’ve emailed you a confirmation." : ""));
   });
-  app.querySelectorAll("[data-cancel]").forEach(b => b.onclick = async () => { if (!confirm("Cancel this booking? · إلغاء الحجز؟")) return; await sb.rpc("pc_cancel", { p_code: b.dataset.code, p_booking: b.dataset.cancel }); await refresh(); render("Booking cancelled. · تم الإلغاء"); });
+  app.querySelectorAll("[data-cancel]").forEach(b => b.onclick = async () => { if (!confirm("Cancel this booking? · إلغاء الحجز؟")) return; await sb.rpc("pc_cancel", { p_code: b.dataset.code, p_booking: b.dataset.cancel }); sb.functions.invoke("nestopia-mail", { body: { action: "booking", id: b.dataset.cancel, code: b.dataset.code } }).catch(() => {}); await refresh(); render("Booking cancelled. · تم الإلغاء"); });
   const ic = document.getElementById("ics"); if (ic) ic.onclick = () => {
     const f = d => new Date(d).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
     const L = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Nestopia//Conferences//EN"]; mine.forEach((b, i) => { const t = (b.kid.teachers.find(x => x.id === b.t) || {}).name || "Teacher";
