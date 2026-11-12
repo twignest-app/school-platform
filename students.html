@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Students · Nestopia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--plum:#462D5B;--plum-2:#6A4B85;--plum-soft:#EDE6F5;--sage:#5E8455;--sage-soft:#E6EFE2;--amber:#A86C12;--amber-soft:#FBF0DC;--red:#B4473A;--red-soft:#F8E4E1;--blue:#4E6FB8;--blue-soft:#E4EBF8;--bg:#F7F4FB;--card:#FFFFFF;--ink:#2E2140;--muted:#6F6680;--line:#E4DDEE;--empty:#ECE7F3;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--plum:#CDB9EA;--plum-2:#DCCCF2;--plum-soft:#352A45;--sage:#A7C59A;--sage-soft:#26331F;--amber:#E6B566;--amber-soft:#3A2E17;--red:#E8897C;--red-soft:#3D2220;--blue:#9DB4E8;--blue-soft:#1E2A40;--bg:#17131D;--card:#221C2B;--ink:#F1ECF7;--muted:#B2A8C2;--line:#382F45;--empty:#2C2536;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--plum-2);outline-offset:2px}
+h1,h2,h3,.btn,.brand{font-family:"Poppins","Nunito",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-weight:600;font-size:22px;color:var(--plum);text-decoration:none}
+header .who{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:14px;color:var(--muted);flex-wrap:wrap}
+main{max-width:1200px;margin:0 auto;padding:24px 20px 48px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px}
+.card h2{margin:0 0 8px;font-size:20px;color:var(--plum);font-weight:600}
+.btn{border:0;background:var(--plum);color:#fff;border-radius:999px;padding:10px 20px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--bg);color:var(--plum);border:1px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:13px}
+.note{color:var(--muted);font-size:14px}
+.msg{border-radius:12px;padding:10px 14px;margin-top:12px;font-weight:600;font-size:14px;background:var(--red-soft);color:var(--red)}
+.ptitle{margin:0 0 4px;font-weight:600;font-size:26px}
+.phead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.metric{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.metric span{display:block;font-size:13px;color:var(--muted);font-weight:700}
+.metric b{display:block;font-size:26px;color:var(--plum);font-family:Poppins,Nunito,sans-serif;font-weight:600;line-height:1.3}
+.tablewrap{overflow-x:auto}
+table.grid{border-collapse:separate;border-spacing:8px;min-width:100%}
+table.grid th{font-size:13px;color:var(--muted);text-align:left;font-weight:700;padding:4px}
+.cell{width:100%;min-width:150px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;cursor:pointer;display:block}
+.cell:hover{border-color:var(--plum-2)}
+.cell b{font-size:20px;font-family:Poppins,Nunito,sans-serif;font-weight:600;color:var(--plum)}
+.cell small{display:block;color:var(--muted);font-size:12.5px}
+.cell.none{cursor:default;color:var(--muted);background:var(--bg)}
+.cell.on{outline:3px solid var(--plum-2)}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--empty);margin:6px 0 4px}
+.bar i{display:block;height:100%}
+.bar .a{background:var(--sage)}.bar .t{background:var(--amber)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
+.obj{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.obj:last-child{border-bottom:0}
+.st{font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;justify-self:start}
+.st.n{background:var(--empty);color:var(--muted)}.st.p{background:var(--amber-soft);color:var(--amber)}.st.t{background:var(--blue-soft);color:var(--blue)}.st.a{background:var(--sage-soft);color:var(--sage)}
+.obj small{display:block;color:var(--muted);font-size:12.5px}
+.sec{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
+.sec b{display:block;font-size:16px;color:var(--ink)}
+@media (max-width:640px){.obj{grid-template-columns:1fr}.sec{text-align:left}}
+textarea,input{font:inherit;color:inherit}
+input[type=text],input[type=date],input[type=search],textarea{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;width:100%}
+label.f{display:grid;gap:4px;font-weight:700;font-size:14px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tab{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 16px;font-weight:700;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+table.reg{width:100%;border-collapse:collapse}
+table.reg th{font-size:13px;color:var(--muted);text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+table.reg td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14.5px}
+table.reg tr:hover td{background:var(--bg)}
+.nm{font-weight:800;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.nm:hover{color:var(--plum-2);text-decoration:underline}
+.tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;margin:2px 4px 2px 0}
+.tag.sod{background:var(--plum-soft);color:var(--plum)}.tag.gt{background:var(--amber-soft);color:var(--amber)}.tag.eal{background:var(--blue-soft);color:var(--blue)}.tag.other{background:var(--empty);color:var(--muted)}
+.lvl{font-size:12.5px;font-weight:800;border-radius:8px;padding:2px 8px}
+.lvl.u{background:var(--sage-soft);color:var(--sage)}.lvl.t{background:var(--amber-soft);color:var(--amber)}.lvl.s{background:var(--red-soft);color:var(--red)}
+.due{font-size:12.5px;font-weight:800}.due.late{color:var(--red)}.due.soon{color:var(--amber)}.due.ok{color:var(--muted)}
+dialog{border:0;border-radius:18px;padding:0;width:min(760px,96vw);max-height:92vh;background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(30,20,45,.45)}
+.dlg{padding:22px 24px;display:grid;gap:14px}
+.dlg h2{margin:0;color:var(--plum);font-size:21px}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px}
+.checks label{display:flex;gap:6px;align-items:center;font-weight:600;font-size:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.two{grid-template-columns:1fr}table.reg .hide-sm{display:none}}
+.box{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--bg)}
+.box h3{margin:0 0 6px;font-size:16px;color:var(--plum)}
+.target{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:8px 0;border-bottom:1px dashed var(--line)}
+.target:last-child{border-bottom:0}
+.pg{font-size:12.5px;font-weight:800;border-radius:999px;padding:2px 10px;border:1px solid var(--line);background:var(--card);cursor:pointer;white-space:nowrap}
+.pg.a{background:var(--sage-soft);color:var(--sage)}.pg.w{background:var(--amber-soft);color:var(--amber)}.pg.n{background:var(--empty);color:var(--muted)}
+.lock{font-size:12.5px;color:var(--red);font-weight:800}
+.empty{text-align:center;padding:30px 10px}
+.okmsg{border-radius:12px;padding:10px 14px;font-weight:600;font-size:14px;background:var(--sage-soft);color:var(--sage)}
+
+.prof{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
+@media(max-width:900px){.prof{grid-template-columns:1fr}}
+.prof .card{margin:0}
+.ph{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.av{width:72px;height:72px;border-radius:50%;background:var(--plum-soft);color:var(--plum);display:grid;place-items:center;font-size:26px;font-weight:800;flex:none}
+.band{font-size:12.5px;font-weight:800;border-radius:8px;padding:2px 9px;white-space:nowrap}
+.band.below{background:var(--red-soft);color:var(--red)}.band.inline{background:var(--sage-soft);color:var(--sage)}.band.above{background:var(--plum-soft);color:var(--plum)}.band.none{background:var(--empty);color:var(--muted)}
+.faces30{display:flex;gap:3px;flex-wrap:wrap;font-size:19px}
+.cols{display:grid;gap:16px;align-content:start}
+
+</style>
+</head>
+<body>
+<header><a class="brand" href="./" id="brand">Nestopia</a><div class="who" id="who"></div></header>
+<main id="app"><p class="note">Loading…</p></main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="hub.js?v=2"></script>
+<script src="twcalc.js?v=2"></script>
+<script>
+/* Keep this the same as in index.html */
+const PLATFORM = "Nestopia";
+const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const app = document.getElementById("app"), who = document.getElementById("who");
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmt = d => d ? new Date(d + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "";
+const FACES = { 1: "😢", 2: "🙁", 3: "😐", 4: "🙂", 5: "😄" };
+const BAND = { below: "Below", inline: "In line", above: "Above" }, PROGW = { below: "Below expected", inline: "Expected", above: "Better than expected" };
+const CAT = { sod: ["SoD", "sod"], gt: ["G&T", "gt"], eal: ["EAL", "eal"], other: ["Other need", "other"] };
+let me, school, lead = false, classes = [], studs = [], myClassIds = [], reg = [], ui = { q: "", grade: "all", cls: "all", grp: "all" };
+const cls = id => classes.find(c => String(c.id) === String(id)) || {};
+const gName = g => { const G = window.SETUP && (window.SETUP.grades || []).find(x => x.id === g); return G ? G.name : g || ""; };
+const initials = n => String(n || "?").split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase();
+function fail(t){ app.innerHTML = `<div class="card"><div class="msg">${esc(t)}</div></div>`; }
+async function fetchAll(q){ const out = []; for (let f = 0; ; f += 1000) { const { data, error } = await q().range(f, f + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; } return out; }
+const safe = async (fn, d) => { try { return await fn(); } catch (_) { return d; } };
+
+(async function start(){
+  const { data: { session } } = await sb.auth.getSession(); if (!session) { location.href = "./"; return; }
+  const { data: p } = await sb.from("profiles").select("*").eq("id", session.user.id).single();
+  if (!p || !p.school_id) return fail("Your account isn’t linked to a school yet.");
+  me = p; who.innerHTML = `<span>${esc(p.full_name || p.email)}</span><a class="btn ghost small" href="./">← ${esc(PLATFORM)}</a>`;
+  const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single(); school = s;
+  if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
+  lead = ["school_lead", "coordinator", "admin"].includes(p.role) || !!p.inclusion_lead || !!p.inclusion_head || !!p.wellbeing_team;
+  const set = await sb.from("school_setups").select("year,config").eq("school_id", school.id).order("updated_at", { ascending: false }).limit(1);
+  const year = set.data && set.data[0] ? set.data[0].year : null; window.SETUP = set.data && set.data[0] ? set.data[0].config : null;
+  let cq = sb.from("classes").select("*").eq("school_id", school.id); if (year) cq = cq.eq("year", year);
+  classes = ((await cq).data || []).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
+  const { data: ct } = await sb.from("class_teachers").select("class_id").eq("teacher_id", me.id);
+  myClassIds = [...new Set((ct || []).map(x => String(x.class_id)))];
+  const cols = "id,full_name,arabic_name,student_number,class_id,groups,archived";
+  studs = lead ? await fetchAll(() => sb.from("students").select(cols).eq("school_id", school.id).eq("archived", false).order("full_name"))
+    : myClassIds.length ? await fetchAll(() => sb.from("students").select(cols).in("class_id", myClassIds).eq("archived", false).order("full_name")) : [];
+  reg = await safe(() => fetchAll(() => sb.from("inclusion_students").select("student_id,categories,active,support_level").eq("school_id", school.id)), []);
+  if (window.hubInit) hubInit("students");
+  route();
+})();
+window.onpopstate = () => route();
+function route(){ const id = new URLSearchParams(location.search).get("id"); id ? profile(id) : list(); }
+const regOf = id => reg.find(r => String(r.student_id) === String(id) && r.active !== false);
+
+/* ---------- The list ---------- */
+function list(){
+  const grades = (window.SETUP && window.SETUP.grades || []).filter(g => classes.some(c => c.grade_id === g.id));
+  let rows = studs.slice();
+  if (ui.q) { const q = ui.q.toLowerCase(); rows = rows.filter(s => (s.full_name || "").toLowerCase().includes(q) || (s.arabic_name || "").includes(ui.q) || String(s.student_number || "").toLowerCase().includes(q)); }
+  if (ui.grade !== "all") rows = rows.filter(s => cls(s.class_id).grade_id === ui.grade);
+  if (ui.cls !== "all") rows = rows.filter(s => String(s.class_id) === ui.cls);
+  if (ui.grp === "reg") rows = rows.filter(s => regOf(s.id)); else if (ui.grp !== "all") rows = rows.filter(s => (regOf(s.id) || { categories: [] }).categories.includes(ui.grp) || (s.groups || []).includes(ui.grp));
+  const classOpts = classes.filter(c => (ui.grade === "all" || c.grade_id === ui.grade) && (lead || myClassIds.includes(String(c.id))));
+  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Students</h1><p class="note">${esc(school.name)} · ${lead ? "Every student in the school" : "Students in your classes"} (${studs.length}). Open a student to see everything about them in one place.</p></div></div>
+    <div class="card"><div class="row" style="margin-bottom:12px"><input type="search" id="q" placeholder="Search a name or student number" value="${esc(ui.q)}" style="max-width:280px">
+      ${lead ? `<select id="fg" aria-label="Grade"><option value="all">All grades</option>${grades.map(g => `<option value="${esc(g.id)}" ${ui.grade === g.id ? "selected" : ""}>${esc(g.name)}</option>`).join("")}</select>` : ""}
+      <select id="fc" aria-label="Class"><option value="all">All classes</option>${classOpts.map(c => `<option value="${esc(c.id)}" ${ui.cls === String(c.id) ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select>
+      <select id="fp" aria-label="Group"><option value="all">All students</option><option value="reg" ${ui.grp === "reg" ? "selected" : ""}>On the inclusion register</option>${Object.entries(CAT).slice(0, 3).map(([k, v]) => `<option value="${k}" ${ui.grp === k ? "selected" : ""}>${v[0]}</option>`).join("")}</select>
+      <span class="note">${rows.length} shown</span></div>
+    ${rows.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th class="hide-sm">Number</th><th>Class</th><th>Groups</th></tr>${rows.slice(0, 500).map(s => { const r = regOf(s.id), c = cls(s.class_id);
+      return `<tr><td><button class="nm" data-id="${esc(s.id)}">${esc(s.full_name)}</button>${s.arabic_name ? `<br><span class="note" dir="rtl" lang="ar">${esc(s.arabic_name)}</span>` : ""}</td><td class="hide-sm">${esc(s.student_number || "")}</td><td>${esc(c.name || "")}${c.grade_id ? `<br><span class="note">${esc(gName(c.grade_id))}</span>` : ""}</td>
+        <td>${r ? (r.categories || []).map(k => CAT[k] ? `<span class="tag ${CAT[k][1]}">${CAT[k][0]}</span>` : "").join("") : ""}${(s.groups || []).filter(g => !["SEN", "G&T", "EAL"].includes(g)).map(g => `<span class="tag other">${esc(g)}</span>`).join("")}</td></tr>`; }).join("")}</table></div>${rows.length > 500 ? '<p class="note">Showing the first 500. Search or filter to narrow down.</p>' : ""}`
+      : `<p class="note" style="margin:0">${studs.length ? "No students match." : lead ? "No students yet. Add them in TwigNest → Classes and students." : "You don’t have a class linked in TwigNest yet."}</p>`}</div>`;
+  const q = document.getElementById("q"); q.oninput = () => { ui.q = q.value; clearTimeout(q.t); q.t = setTimeout(() => { list(); const n = document.getElementById("q"); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }, 250); };
+  const fg = document.getElementById("fg"); if (fg) fg.onchange = e => { ui.grade = e.target.value; ui.cls = "all"; list(); };
+  document.getElementById("fc").onchange = e => { ui.cls = e.target.value; list(); };
+  document.getElementById("fp").onchange = e => { ui.grp = e.target.value; list(); };
+  app.querySelectorAll("[data-id]").forEach(b => b.onclick = () => { history.pushState(null, "", "?id=" + b.dataset.id); profile(b.dataset.id); });
+  window.scrollTo(0, 0);
+}
+
+/* ---------- One student, everything in one place ---------- */
+async function profile(id){
+  const s = studs.find(x => String(x.id) === String(id));
+  if (!s) { app.innerHTML = '<div class="card"><p class="note">This student isn’t in your list.</p><button class="btn ghost" id="bk">← All students</button></div>'; document.getElementById("bk").onclick = back; return; }
+  const c = cls(s.class_id), r = regOf(s.id), on = school.modules || [];
+  app.innerHTML = `<div class="phead"><div><button class="btn ghost small" id="bk">← All students</button></div></div>
+    <div class="card"><div class="ph"><div class="av" aria-hidden="true">${esc(initials(s.full_name))}</div><div><h1 class="ptitle" style="margin:0">${esc(s.full_name)}</h1>
+      ${s.arabic_name ? `<p class="note" dir="rtl" lang="ar" style="margin:2px 0 0;font-size:17px">${esc(s.arabic_name)}</p>` : ""}
+      <p class="note" style="margin:4px 0 0">${esc([c.name, gName(c.grade_id), s.student_number ? "No. " + s.student_number : ""].filter(Boolean).join(" · "))}</p>
+      <p style="margin:6px 0 0">${r ? (r.categories || []).map(k => CAT[k] ? `<span class="tag ${CAT[k][1]}">${CAT[k][0]}</span>` : "").join("") : ""}${(s.groups || []).filter(g => !["SEN", "G&T", "EAL"].includes(g)).map(g => `<span class="tag other">${esc(g)}</span>`).join("")}</p></div></div><p class="note" id="tch" style="margin:10px 0 0"></p></div>
+    <div class="prof"><div class="cols">
+      ${on.includes("twignest") ? `<section class="card"><div class="row" style="justify-content:space-between"><h2>Attainment and progress</h2><a class="btn ghost small" href="twignest/">TwigNest →</a></div><div id="tw"><p class="note">Loading…</p></div></section>` : ""}
+      ${on.includes("inclusion") ? `<section class="card"><div class="row" style="justify-content:space-between"><h2>Inclusion</h2><a class="btn ghost small" href="inclusion.html${lead ? "#register" : ""}">Inclusion →</a></div><div id="inc"><p class="note">Loading…</p></div></section>` : ""}
+    </div><div class="cols">
+      ${on.includes("wellbeing") ? `<section class="card"><div class="row" style="justify-content:space-between"><h2>Wellbeing</h2><a class="btn ghost small" href="wellbeing.html">Wellbeing →</a></div><div id="wb"><p class="note">Loading…</p></div></section>` : ""}
+      <section class="card"><h2>Attendance</h2><p class="note" style="margin:0">Coming soon to the School hub.</p></section>
+    </div></div>`;
+  document.getElementById("bk").onclick = back; window.scrollTo(0, 0);
+  // teachers of the class
+  safe(async () => { const { data: ct } = await sb.from("class_teachers").select("teacher_id").eq("class_id", s.class_id); const ids = [...new Set((ct || []).map(x => x.teacher_id))]; if (!ids.length) return;
+    const { data: ps } = await sb.from("profiles").select("full_name").in("id", ids); document.getElementById("tch").textContent = "Teachers: " + (ps || []).map(x => x.full_name).filter(Boolean).join(", "); });
+  // TwigNest: each subject, latest term with data
+  if (on.includes("twignest")) safe(async () => {
+    const box = document.getElementById("tw"), T = await twigLoad(sb, school.id, [s.id]);
+    if (!T) { box.innerHTML = '<p class="note" style="margin:0">TwigNest isn’t set up for your school yet.</p>'; return; }
+    const st = T.studs[0] || s, terms = T.C.terms;
+    const rows = T.C.subjects.map(sub => { let k = -1, b = null, g = null; for (let t = terms.length - 1; t >= 0; t--) { b = T.avgBand(st, sub.strands, String(t)); if (b) { k = t; g = T.avgProg(st, sub.strands, t); break; } } return [sub.name, k, b, g, terms.map((_, t) => T.avgBand(st, sub.strands, String(t)))]; });
+    if (!rows.some(x => x[2])) { box.innerHTML = '<p class="note" style="margin:0">No results in TwigNest yet.</p>'; return; }
+    box.innerHTML = `<div class="tablewrap"><table class="reg"><tr><th>Subject</th><th>Attainment</th><th>Progress</th><th class="hide-sm">By term</th></tr>${rows.map(([n, k, b, g, all]) => `<tr><td><b>${esc(n)}</b>${k >= 0 ? `<br><span class="note">${esc(terms[k])}</span>` : ""}</td><td><span class="band ${b || "none"}">${b ? BAND[b] : "–"}</span></td><td><span class="band ${g || "none"}">${g ? PROGW[g] : "–"}</span></td>
+      <td class="hide-sm">${all.map((x, t) => `<span class="band ${x || "none"}" title="${esc(terms[t])}" style="margin-right:3px">${x ? BAND[x][0] : "·"}</span>`).join("")}</td></tr>`).join("")}</table></div><p class="note" style="margin:8px 0 0">Attainment is against curriculum standards; progress is since the baseline.</p>`;
+  }, null).catch(() => {});
+  // Inclusion: needs, plans, referrals
+  if (on.includes("inclusion")) safe(async () => {
+    const box = document.getElementById("inc");
+    const [{ data: full }, { data: pl }, { data: rf }] = await Promise.all([sb.from("inclusion_students").select("*").eq("student_id", s.id).maybeSingle(), sb.from("inclusion_plans").select("id,kind,title,status,review_date,version").eq("student_id", s.id).order("start_date", { ascending: false }), sb.from("inclusion_referrals").select("status,created_at,concerns").eq("student_id", s.id).order("created_at", { ascending: false })]);
+    const KIND = { iep: "IEP", alp: "ALP", lsp: "Language support plan", bsp: "Behaviour support plan", health: "Health care plan", other: "Plan" };
+    const parts = [];
+    if (full && full.active !== false) parts.push(`<p style="margin:0">${(full.categories || []).map(k => `<span class="tag ${CAT[k] ? CAT[k][1] : "other"}">${{ sod: "Student of determination", gt: "Gifted and talented", eal: "EAL", other: "Other need" }[k] || k}</span>`).join("")} ${full.support_level ? `<span class="note">· ${esc({ universal: "Universal", targeted: "Targeted", specialist: "Specialist" }[full.support_level] || full.support_level)} support</span>` : ""}</p>
+      ${(full.sod_needs || []).length ? `<p class="note" style="margin:6px 0 0"><b>Areas of need:</b> ${esc(full.sod_needs.join(", "))}</p>` : ""}${full.eal_stage ? `<p class="note" style="margin:6px 0 0"><b>English:</b> ${esc(full.eal_stage)}</p>` : ""}
+      ${full.summary ? `<p style="margin:8px 0 0"><b>What teachers should know:</b> ${esc(full.summary)}</p>` : ""}`);
+    else parts.push('<p class="note" style="margin:0">Not on the inclusion register.</p>');
+    (pl || []).filter(x => x.status === "active").forEach(x => parts.push(`<p style="margin:8px 0 0">📄 <b>${esc(x.title || KIND[x.kind] || "Plan")}</b> <span class="note">· review ${fmt(x.review_date)}${new Date(x.review_date) < new Date() ? ' <b style="color:var(--red)">(overdue)</b>' : ""}</span></p>`));
+    const openRef = (rf || []).find(x => !["closed", "declined"].includes(x.status));
+    if (openRef) parts.push(`<p class="note" style="margin:8px 0 0">🙋 Referral in progress (sent ${fmt(openRef.created_at.slice(0, 10))})</p>`);
+    box.innerHTML = parts.join("");
+  }, null);
+  // Wellbeing: last 30 days, and concerns this person can see
+  if (on.includes("wellbeing")) safe(async () => {
+    const box = document.getElementById("wb"), since = new Date(Date.now() - 29 * 864e5).toISOString().slice(0, 10);
+    const [{ data: ch }, { data: cs }] = await Promise.all([sb.from("wellbeing_checkins").select("day,mood,talk").eq("student_id", s.id).gte("day", since), sb.from("wellbeing_concerns").select("category,status,safeguarding,happened_on").eq("student_id", s.id).order("happened_on", { ascending: false })]);
+    const days = []; for (let k = 29; k >= 0; k--) days.push(new Date(Date.now() - k * 864e5).toISOString().slice(0, 10));
+    const avg = (ch || []).length ? (ch.reduce((a, x) => a + x.mood, 0) / ch.length).toFixed(1) : null, talks = (ch || []).filter(x => x.talk).length;
+    const open = (cs || []).filter(x => x.status !== "closed");
+    box.innerHTML = `<p class="note" style="margin:0 0 6px">Check-ins, last 30 days${avg ? ` · average ${avg} of 5` : ""}${talks ? ` · asked to talk ${talks} time${talks === 1 ? "" : "s"}` : ""}</p>
+      <div class="faces30">${days.map(d => { const x = (ch || []).find(y => y.day === d); return `<span title="${fmt(d)}${x ? (x.talk ? " · wanted to talk" : "") : ""}" style="opacity:${x ? 1 : .15}">${x ? FACES[x.mood] : "·"}</span>`; }).join("")}</div>
+      <p style="margin:10px 0 0">${open.length ? `📝 ${open.length} open concern${open.length === 1 ? "" : "s"}${open.some(x => x.safeguarding) ? " (including 🔒 safeguarding)" : ""}` : '<span class="note">No open concerns that you can see.</span>'}</p>`;
+  }, null);
+}
+function back(){ history.pushState(null, "", "students.html"); list(); }
+</script>
+</body>
+</html>

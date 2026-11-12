@@ -21,7 +21,7 @@
   // [id, label, link, module needed (null = always), soon]
   const NAV = [
     ["overview", "Overview", "index.html", null],
-    ["students", "Students", "students.html", "twignest", true],
+    ["students", "Students", "students.html", "twignest"],
     ["attendance", "Attendance", "attendance.html", null, true],
     ["planning", "Planning", "planning.html", "planning"],
     ["assessments", "Assessments", "twignest/", "twignest"],

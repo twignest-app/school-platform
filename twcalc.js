@@ -1,17 +1,18 @@
 /* Nestopia · TwigNest summary for the School hub overview.
    The calculations are copied from twignest/school.js: keep them the same. */
-async function twigSchoolSummary(sbc, schoolId){
+async function twigLoad(sbc, schoolId, onlyIds){
   const set = await sbc.from("school_setups").select("year,config").eq("school_id", schoolId).order("updated_at", { ascending: false }).limit(1);
   const C = set.data && set.data[0] ? set.data[0].config : null; const year = set.data && set.data[0] ? set.data[0].year : null;
   if (!C || !C.subjects || !C.terms) return null;
   let cq = sbc.from("classes").select("*").eq("school_id", schoolId); if (year) cq = cq.eq("year", year);
   const classes = (await cq).data || [];
   const all = async (t, cols, f0) => { const out = []; for (let f = 0; ; f += 1000) { let q = sbc.from(t).select(cols); if (f0) q = f0(q); const { data, error } = await q.range(f, f + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; } return out; };
-  const studs = await all("students", "id,class_id,archived", q => q.eq("school_id", schoolId).eq("archived", false));
+  const studs = onlyIds ? await all("students", "id,class_id,archived", q => q.in("id", onlyIds)) : await all("students", "id,class_id,archived", q => q.eq("school_id", schoolId).eq("archived", false));
+  const by = q => onlyIds ? q.in("student_id", onlyIds) : q;
   const sIds = new Set(studs.map(s => String(s.id))), R = {}, ST = {}, LV = {}, TG = {};
-  (await all("results", "student_id,col_id,term,value")).forEach(x => { if (!sIds.has(String(x.student_id))) return; const a = R[x.student_id] = R[x.student_id] || {}; (a[x.col_id] = a[x.col_id] || {})[x.term] = x.value; });
-  (await all("objective_status", "student_id,obj_id,status")).forEach(x => { if (sIds.has(String(x.student_id))) (ST[x.student_id] = ST[x.student_id] || {})[x.obj_id] = x.status; });
-  (await all("student_levels", "student_id,strand_id,term,level")).forEach(x => { if (!sIds.has(String(x.student_id))) return; const a = LV[x.student_id] = LV[x.student_id] || {}; (a[x.strand_id] = a[x.strand_id] || {})[x.term] = x.level; });
+  (await all("results", "student_id,col_id,term,value", by)).forEach(x => { if (!sIds.has(String(x.student_id))) return; const a = R[x.student_id] = R[x.student_id] || {}; (a[x.col_id] = a[x.col_id] || {})[x.term] = x.value; });
+  (await all("objective_status", "student_id,obj_id,status", by)).forEach(x => { if (sIds.has(String(x.student_id))) (ST[x.student_id] = ST[x.student_id] || {})[x.obj_id] = x.status; });
+  (await all("student_levels", "student_id,strand_id,term,level", by)).forEach(x => { if (!sIds.has(String(x.student_id))) return; const a = LV[x.student_id] = LV[x.student_id] || {}; (a[x.strand_id] = a[x.strand_id] || {})[x.term] = x.level; });
   (await all("taught", "class_id,obj_id")).forEach(x => (TG[x.class_id] = TG[x.class_id] || new Set()).add(x.obj_id));
   const esc_ = t => String(t ?? ""), clamp = n => Math.max(0, Math.min(1, n));
   const DEF_OS = [{ code: "s", label: "Secure", short: "✓", kind: "secure" }, { code: "n", label: "Not yet secure", short: "!", kind: "notyet" }, { code: "e", label: "Exceeding", short: "+", kind: "exceed" }];
@@ -57,6 +58,11 @@ async function twigSchoolSummary(sbc, schoolId){
   function avgProg(s, list, t) { const ps = list.map(st => progress(s, st, t)).filter(Boolean).map(p => ({ below: -1, inline: 0, above: 1 })[p.band]); if (!ps.length) return null; const b = ps.reduce((a, x) => a + x, 0) / ps.length; return b < -.33 ? "below" : b > .33 ? "above" : "inline"; }
 
 
+  return { C, classes, studs, strands, avgBand, avgProg };
+}
+async function twigSchoolSummary(sbc, schoolId){
+  const T = await twigLoad(sbc, schoolId); if (!T) return null;
+  const { C, studs, strands, avgBand, avgProg } = T;
   const sts = strands().map(p => p[1]);
   const terms = C.terms.map((name, k) => {
     let a = 0, an = 0, g = 0, gn = 0;
