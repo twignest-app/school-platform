@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parent portal · Nestopia</title>
+<style>
+:root{--ink:#2A2233;--muted:#6B6475;--line:#E6E0EE;--bg:#F7F4FA;--card:#fff;--plum:#462D5B;--plum-soft:#EDE6F5;--sage:#3F8A4B;--sage-soft:#E4F1E6;--red:#B4473A;--amber:#A86C12}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 18px;background:var(--card);border-bottom:1px solid var(--line)}
+.brand{font-weight:800;font-size:20px;color:var(--plum);text-decoration:none}
+main{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+h1{color:var(--plum);font-size:clamp(24px,5vw,32px);margin:4px 0 6px}
+h2{font-size:19px;margin:0 0 10px;color:var(--plum)}
+.ar{display:block;color:var(--muted);font-size:.92em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 20px;margin-bottom:14px}
+.btn{font:inherit;font-weight:800;border:0;border-radius:12px;padding:11px 18px;background:var(--plum);color:#fff;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--card);color:var(--plum);border:2px solid var(--line)}.btn.small{padding:7px 12px;font-size:14px}
+input,select{font:inherit;border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;background:#fff}
+label{display:grid;gap:4px;font-weight:700;margin-bottom:10px}
+.muted{color:var(--muted)}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ok{background:var(--sage-soft);color:var(--sage);border-radius:12px;padding:10px 14px;font-weight:700}.err{background:#F8E1DE;color:var(--red);border-radius:12px;padding:10px 14px;font-weight:700}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 14px}.tab{font:inherit;font-weight:800;border:2px solid var(--line);background:var(--card);border-radius:99px;padding:8px 14px;cursor:pointer;color:var(--ink)}.tab[aria-selected="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:15px}th{color:var(--muted);font-size:13px}
+.big{font-size:30px;font-weight:800}
+.chip{display:inline-block;font-size:13px;font-weight:800;border-radius:99px;padding:3px 10px;margin:2px;background:var(--sage-soft);color:var(--sage)}
+.chip.inc{background:#FBEBD5;color:#8A5A10}
+</style>
+</head>
+<body>
+<header><a class="brand" href="parent.html">Nestopia <span style="font-weight:500;font-size:14px;color:var(--muted)">· Parents · أولياء الأمور</span></a><div id="hr"></div></header>
+<main id="app"><p class="muted">Loading…</p></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const app = document.getElementById("app"), hr = document.getElementById("hr");
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const dshort = d => new Date(d + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+let kids = [], cur = null, view = null, tab = "reports", term = null;
+const msg = (t, ok) => t ? `<p class="${ok ? "ok" : "err"}">${esc(t)}</p>` : "";
+
+function authView(mode, m, ok){
+  hr.innerHTML = "";
+  const up = mode === "up";
+  app.innerHTML = `<h1>${up ? "Create a parent account" : "Parent portal"}<span class="ar" dir="rtl" lang="ar">${up ? "إنشاء حساب وليّ أمر" : "بوابة أولياء الأمور"}</span></h1>
+    <div class="card"><p class="muted" style="margin-top:0">See your child’s report cards, attendance, merits and school calendar.<span class="ar" dir="rtl" lang="ar">اطّلع على تقارير طفلك وحضوره ونقاطه وتقويم المدرسة.</span></p>${msg(m, ok)}
+      <form id="f">${up ? `<label>Your name · الاسم <input id="nm" required></label>` : ""}<label>Email · البريد الإلكتروني <input id="em" type="email" required autocomplete="email"></label>
+        <label>Password · كلمة المرور <input id="pw" type="password" required minlength="8" autocomplete="${up ? "new-password" : "current-password"}"></label>
+        <button class="btn">${up ? "Create account · إنشاء الحساب" : "Sign in · تسجيل الدخول"}</button></form>
+      <p class="row" style="margin:14px 0 0">${up ? `<a href="#" id="sw">I already have an account · لديّ حساب</a>` : `<a href="#" id="sw">Create a parent account · إنشاء حساب</a> · <a href="#" id="fg">Forgot password? · نسيت كلمة المرور؟</a>`}</p></div>
+    <p class="muted">School staff: please use <a href="./">nestopia.school</a>.</p>`;
+  document.getElementById("sw").onclick = e => { e.preventDefault(); authView(up ? "in" : "up"); };
+  const fg = document.getElementById("fg"); if (fg) fg.onclick = async e => { e.preventDefault(); const em = document.getElementById("em").value.trim(); if (!em) return authView("in", "Type your email first, then tap “Forgot password?”."); await sb.auth.resetPasswordForEmail(em, { redirectTo: location.origin + location.pathname }); authView("in", "We’ve emailed you a link to choose a new password. · أرسلنا لك رابطًا لتغيير كلمة المرور.", true); };
+  document.getElementById("f").onsubmit = async e => { e.preventDefault(); const em = document.getElementById("em").value.trim(), pw = document.getElementById("pw").value;
+    if (up) { const { data, error } = await sb.auth.signUp({ email: em, password: pw, options: { data: { full_name: document.getElementById("nm").value.trim(), account: "parent" }, emailRedirectTo: location.origin + location.pathname } });
+      if (error) return authView("up", error.message); if (!data.session) return authView("in", "Almost done: open the email we sent you and tap the link to confirm your account. · افتح البريد الذي أرسلناه لتأكيد حسابك.", true); return start(); }
+    const { error } = await sb.auth.signInWithPassword({ email: em, password: pw }); if (error) return authView("in", "That email or password isn’t right. · البريد أو كلمة المرور غير صحيحة."); start(); };
+}
+function newPassword(){
+  app.innerHTML = `<h1>Choose a new password<span class="ar" dir="rtl" lang="ar">اختر كلمة مرور جديدة</span></h1><div class="card"><form id="f"><label>New password · كلمة المرور الجديدة <input id="pw" type="password" minlength="8" required></label><button class="btn">Save · حفظ</button></form></div>`;
+  document.getElementById("f").onsubmit = async e => { e.preventDefault(); const { error } = await sb.auth.updateUser({ password: document.getElementById("pw").value }); if (error) return alert(error.message); start(); };
+}
+function linkView(m, ok){
+  app.innerHTML = `<h1>Add your child<span class="ar" dir="rtl" lang="ar">أضف طفلك</span></h1><div class="card">${msg(m, ok)}
+    <p class="muted" style="margin-top:0">Type the parent code your child’s school gave you (it starts with P). Add each child with their own code.<span class="ar" dir="rtl" lang="ar">اكتب رمز وليّ الأمر الذي أعطتك إياه المدرسة. لكل طفل رمز خاص.</span></p>
+    <form id="f"><label>Parent code · رمز وليّ الأمر <input id="cd" required maxlength="8" style="text-transform:uppercase;letter-spacing:.15em;font-weight:800;max-width:240px"></label>
+      <label>I am the child’s… · صلتي بالطفل <select id="rl"><option>Mother · الأم</option><option>Father · الأب</option><option>Guardian · وليّ الأمر</option><option>Other · أخرى</option></select></label>
+      <button class="btn">Add my child · أضف طفلي</button> ${kids.length ? '<button type="button" class="btn ghost" id="bk">Back · رجوع</button>' : ""}</form></div>`;
+  const bk = document.getElementById("bk"); if (bk) bk.onclick = () => show(cur);
+  document.getElementById("f").onsubmit = async e => { e.preventDefault(); const { data: { user } } = await sb.auth.getUser();
+    const { data, error } = await sb.rpc("parent_link_child", { p_code: document.getElementById("cd").value, p_name: (user.user_metadata || {}).full_name || "", p_rel: document.getElementById("rl").value.split(" · ")[0] });
+    if (error) return linkView(error.message); await loadKids(); const k = kids.find(x => x.name.split(" ")[0] === data) || kids[kids.length - 1]; show(k ? k.id : null, data + " has been added. · تمت إضافة " + data); };
+}
+async function loadKids(){ const { data } = await sb.rpc("parent_my_children"); kids = data || []; }
+async function show(id, note){
+  if (!kids.length) return linkView(note);
+  cur = id || kids[0].id; const { data, error } = await sb.rpc("parent_child_view", { p_student: String(cur) });
+  if (error) { app.innerHTML = `<div class="card">${msg(error.message)}</div>`; return; }
+  view = data; const S = view.show || {};
+  const tabs = [["reports", "Reports · التقارير", S.reports], ["attendance", "Attendance · الحضور", S.attendance], ["behaviour", "Merits · النقاط", S.merits || S.incidents], ["calendar", "Calendar · التقويم", S.calendar]].filter(t => t[2]);
+  if (!tabs.some(t => t[0] === tab)) tab = tabs[0] ? tabs[0][0] : null;
+  app.innerHTML = `${note ? msg(note, true) : ""}<div class="row" style="justify-content:space-between">${kids.length > 1 ? `<div class="row">${kids.map(k => `<button class="tab" aria-selected="${String(k.id) === String(cur)}" data-kid="${esc(k.id)}">${esc(k.name.split(" ")[0])}</button>`).join("")}</div>` : "<span></span>"}<button class="btn ghost small" id="add">+ Add another child · إضافة طفل</button></div>
+    <h1>${esc(view.name)}${view.arabic_name ? ` <span class="muted" dir="rtl" lang="ar" style="font-size:.7em">${esc(view.arabic_name)}</span>` : ""}</h1>
+    <p class="muted" style="margin:0 0 6px">${esc([view.class, view.school].filter(Boolean).join(" · "))}${(view.teachers || []).length ? " · " + esc(view.teachers.join(", ")) : ""}</p>
+    ${(view.conferences || []).length ? `<div class="card" style="border-left:5px solid var(--plum)"><b>📅 Parent–teacher conferences are open for booking.</b><span class="ar" dir="rtl" lang="ar">الحجز متاح للقاءات أولياء الأمور.</span>${view.conferences.map(c => `<p style="margin:8px 0 0"><a class="btn small" href="book.html?c=${esc(c.code)}">Book: ${esc(c.title)} · احجز</a></p>`).join("")}</div>` : ""}
+    ${tabs.length ? `<div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" aria-selected="${tab === k}" data-tab="${k}">${l}</button>`).join("")}</div><div id="pane"></div>` : '<div class="card"><p class="muted" style="margin:0">Your child’s school hasn’t shared anything here yet.</p></div>'}`;
+  app.querySelectorAll("[data-kid]").forEach(b => b.onclick = () => show(b.dataset.kid));
+  app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { tab = b.dataset.tab; show(cur); });
+  document.getElementById("add").onclick = () => linkView();
+  if (tab) ({ reports, attendance, behaviour, calendar })[tab]();
+}
+function reports(){
+  const p = document.getElementById("pane"), terms = view.terms || [], cms = view.comments || [];
+  const has = terms.map((t, k) => cms.some(c => String(c.term) === String(k)));
+  if (term == null || !has[term]) term = has.lastIndexOf(true);
+  if (term < 0) { p.innerHTML = '<div class="card"><p class="muted" style="margin:0">No report has been shared yet this year.<span class="ar" dir="rtl" lang="ar">لم يتم نشر أي تقرير بعد.</span></p></div>'; return; }
+  const lab = lv => lv == null ? "" : ((view.scale || [])[lv] ?? lv);
+  p.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Report · ${esc(terms[term])}</h2><div class="row">${terms.map((t, k) => has[k] ? `<button class="tab" aria-selected="${k === term}" data-term="${k}">${esc(t)}</button>` : "").join("")}<button class="btn ghost small" onclick="window.print()">🖨 Print</button></div></div>
+    <table style="margin-top:10px"><tr><th>Subject · المادة</th><th>Level · المستوى</th><th>Comment · التعليق</th></tr>${(view.subjects || []).map(sub => { const rows = (sub.strands || []).map(st => [st, cms.find(c => c.strand === st.id && String(c.term) === String(term))]).filter(x => x[1]);
+      return rows.length ? `<tr><td colspan="3" style="background:var(--plum-soft);font-weight:800">${esc(sub.name)}</td></tr>` + rows.map(([st, c]) => `<tr><td><b>${esc(st.name)}</b></td><td style="text-align:center">${esc(lab(c.level))}</td><td ${sub.lang === "ar" ? 'dir="rtl" lang="ar"' : ""}>${esc(c.text)}</td></tr>`).join("") : ""; }).join("")}</table></div>`;
+  p.querySelectorAll("[data-term]").forEach(b => b.onclick = () => { term = +b.dataset.term; reports(); });
+}
+function attendance(){
+  const p = document.getElementById("pane"), a = view.attendance || { days: 0 };
+  const pc = a.days ? Math.round(a.in / a.days * 100) : null;
+  p.innerHTML = `<div class="card"><h2>Attendance this school year · الحضور هذا العام</h2>${a.days ? `<p class="big" style="margin:0;color:${pc >= 95 ? "var(--sage)" : pc >= 90 ? "var(--amber)" : "var(--red)"}">${pc}%</p><p class="muted" style="margin:4px 0 0">${a.days - a.in} day${a.days - a.in === 1 ? "" : "s"} absent · late ${a.late} time${a.late === 1 ? "" : "s"} · out of ${a.days} school days</p>
+      ${(a.recent || []).length ? `<table style="margin-top:12px">${a.recent.map(r => `<tr><td>${dshort(r.day)}</td><td>${{ late: "Late · متأخر", absent: "Absent · غائب", excused: "Excused absence · غياب بعذر" }[r.status] || r.status}</td></tr>`).join("")}</table>` : ""}
+      <p class="muted" style="margin:12px 0 0">Every school day counts. 95% or more is the goal. · كل يوم دراسي مهم.</p>` : '<p class="muted" style="margin:0">No registers yet this year.</p>'}</div>`;
+}
+function behaviour(){
+  const p = document.getElementById("pane"), b = view.behaviour || [], m = b.filter(x => x.kind === "merit"), inc = b.filter(x => x.kind === "incident");
+  const pts = m.reduce((s, x) => s + (x.points || 1), 0), by = Object.entries(m.reduce((a, x) => (a[x.category] = (a[x.category] || 0) + (x.points || 1), a), {})).sort((a, c) => c[1] - a[1]);
+  p.innerHTML = `<div class="card"><h2>⭐ Merits this year · النقاط هذا العام</h2><p class="big" style="margin:0;color:var(--sage)">⭐ ${pts}</p>${by.length ? `<p style="margin:8px 0 0">${by.map(([k, n]) => `<span class="chip">${esc(k)} · ${n}</span>`).join("")}</p>` : '<p class="muted">No merits yet.</p>'}
+    ${m.length ? `<table style="margin-top:12px">${m.slice(0, 10).map(x => `<tr><td>${dshort(x.day)}</td><td>⭐ ${x.points || 1} · ${esc(x.category)}</td></tr>`).join("")}</table>` : ""}</div>
+    ${view.show && view.show.incidents ? `<div class="card"><h2>Incidents · المخالفات</h2>${inc.length ? `<table>${inc.slice(0, 10).map(x => `<tr><td>${dshort(x.day)}</td><td><span class="chip inc">${esc({ low: "Low", medium: "Medium", high: "High" }[x.level] || "")}</span> ${esc(x.category)}</td></tr>`).join("")}</table><p class="muted" style="margin:10px 0 0">If you have questions, please contact your child’s teacher.</p>` : '<p class="muted" style="margin:0">None this year. 🎉</p>'}</div>` : ""}`;
+}
+function calendar(){
+  const p = document.getElementById("pane"), ev = view.events || [];
+  p.innerHTML = `<div class="card"><h2>Coming up · القادم</h2>${ev.length ? `<table>${ev.map(e => `<tr><td style="white-space:nowrap">${dshort(e.start)}${e.end && e.end !== e.start ? " – " + dshort(e.end) : ""}</td><td><b>${esc(e.title)}</b>${e.time ? ` <span class="muted">· ${esc(e.time)}</span>` : ""}</td></tr>`).join("")}</table>` : '<p class="muted" style="margin:0">Nothing in the next two months.</p>'}</div>`;
+}
+async function start(){
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return authView("in");
+  hr.innerHTML = `<button class="btn ghost small" id="out">Sign out · خروج</button>`;
+  document.getElementById("out").onclick = async () => { await sb.auth.signOut(); authView("in"); };
+  await loadKids(); show();
+}
+sb.auth.onAuthStateChange(ev => { if (ev === "PASSWORD_RECOVERY") newPassword(); });
+start();
+</script>
+</body>
+</html>

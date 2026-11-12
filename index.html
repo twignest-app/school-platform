@@ -856,7 +856,8 @@ function chooseView(p){
       <div class="panel"><h2 class="serif" style="font-size:24px;color:var(--navy)">Join my school</h2><p class="note">For teachers. Ask your school leader for your school’s 8-character code.</p>
         <form id="joinF"><label for="jc">School code</label><input id="jc" type="text" maxlength="8" style="text-transform:uppercase;letter-spacing:.15em" required>
         <button class="btn full" id="joinB" type="submit">Join school</button></form><div id="joinM"></div></div>
-    </div>`;
+    </div>
+    <p class="note" style="text-align:center;margin-top:18px">Are you a parent? <a href="parent.html">Go to the parent portal</a> · <span dir="rtl" lang="ar">بوابة أولياء الأمور</span></p>`;
   document.getElementById("regF").onsubmit = e => { e.preventDefault(); busy(document.getElementById("regB"), async () => {
     const { error } = await sb.rpc("hub_register_school", { p_name: document.getElementById("sn").value, p_country: document.getElementById("sc").value });
     if (error) return show(document.getElementById("regM"), friendly(error), "err"); render(); }); };
@@ -1073,7 +1074,7 @@ async function render(){
     <button class="btn light full" id="out2">Sign out</button></div>`; document.getElementById("out2").onclick = async () => { await sb.auth.signOut(); render(); }; return; }
   topBar(p);
   if (p.platform_admin && (!p.school_id || adminTab === "schools")) return adminView();
-  if (!p.school_id) return chooseView(p);
+  if (!p.school_id) { try { const { data: kids } = await sb.rpc("parent_my_children"); if ((kids && kids.length) || (session.user.user_metadata || {}).account === "parent") { location.href = "parent.html"; return; } } catch (_) {} return chooseView(p); }
   const { data: school } = await sb.from("schools").select("*").eq("id", p.school_id).single();
   if (!school) return waitView("Almost there", "Your school couldn’t be found. Please get in touch with us.");
   if (school.status === "pending") return waitView(`${school.name} is waiting for approval`, "We’ll check your school soon. You can set it up as soon as it’s approved.");
