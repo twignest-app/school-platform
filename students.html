@@ -111,7 +111,7 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 <main id="app"><p class="note">Loading…</p></main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=3"></script>
+<script src="hub.js?v=4"></script>
 <script src="twcalc.js?v=2"></script>
 <script>
 /* Keep this the same as in index.html */
@@ -200,7 +200,7 @@ async function profile(id){
       ${on.includes("inclusion") ? `<section class="card"><div class="row" style="justify-content:space-between"><h2>Inclusion</h2><a class="btn ghost small" href="inclusion.html${lead ? "#register" : ""}">Inclusion →</a></div><div id="inc"><p class="note">Loading…</p></div></section>` : ""}
     </div><div class="cols">
       ${on.includes("wellbeing") ? `<section class="card"><div class="row" style="justify-content:space-between"><h2>Wellbeing</h2><a class="btn ghost small" href="wellbeing.html">Wellbeing →</a></div><div id="wb"><p class="note">Loading…</p></div></section>` : ""}
-      <section class="card"><h2>Attendance</h2><p class="note" style="margin:0">Coming soon to the School hub.</p></section>
+      <section class="card"><div class="row" style="justify-content:space-between"><h2>Attendance</h2><a class="btn ghost small" href="attendance.html">Attendance →</a></div><div id="att"><p class="note">Loading…</p></div></section>
     </div></div>`;
   document.getElementById("bk").onclick = back; window.scrollTo(0, 0);
   // teachers of the class
@@ -230,6 +230,16 @@ async function profile(id){
     const openRef = (rf || []).find(x => !["closed", "declined"].includes(x.status));
     if (openRef) parts.push(`<p class="note" style="margin:8px 0 0">🙋 Referral in progress (sent ${fmt(openRef.created_at.slice(0, 10))})</p>`);
     box.innerHTML = parts.join("");
+  }, null);
+  // Attendance: this year and recent absences
+  safe(async () => {
+    const box = document.getElementById("att"), now = new Date(), y0 = (now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1) + "-08-01";
+    const { data, error } = await sb.from("attendance_marks").select("day,status,reason,minutes_late").eq("student_id", s.id).gte("day", y0).order("day", { ascending: false });
+    if (error) { box.innerHTML = '<p class="note" style="margin:0">No attendance yet.</p>'; return; }
+    const n = data.length, a = data.filter(m => m.status === "present" || m.status === "late").length, p = n ? Math.round(a / n * 100) : null;
+    const away = data.filter(m => m.status !== "present").slice(0, 6), late = data.filter(m => m.status === "late").length;
+    box.innerHTML = n ? `<p style="margin:0"><b style="font-size:26px;color:${p >= 95 ? "var(--sage)" : p >= 90 ? "var(--amber)" : "var(--red)"}">${p}%</b> <span class="note">this school year · ${n - a} day${n - a === 1 ? "" : "s"} absent · ${late} late</span></p>
+      ${away.length ? `<ul class="note" style="margin:8px 0 0;padding-left:18px">${away.map(m => `<li>${new Date(m.day + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}: ${{ late: "Late" + (m.minutes_late ? " (" + m.minutes_late + " min)" : ""), absent: "Absent", excused: "Excused absence" }[m.status]}${m.reason ? " · " + esc(m.reason) : ""}</li>`).join("")}</ul>` : ""}` : '<p class="note" style="margin:0">No registers taken yet this year.</p>';
   }, null);
   // Wellbeing: last 30 days, and concerns this person can see
   if (on.includes("wellbeing")) safe(async () => {

@@ -22,7 +22,7 @@
   const NAV = [
     ["overview", "Overview", "index.html", null],
     ["students", "Students", "students.html", "twignest"],
-    ["attendance", "Attendance", "attendance.html", null, true],
+    ["attendance", "Attendance", "attendance.html", null],
     ["planning", "Planning", "planning.html", "planning"],
     ["assessments", "Assessments", "twignest/", "twignest"],
     ["grownest", "GrowNest", "grownest/app.html", "grownest"],

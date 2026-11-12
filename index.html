@@ -705,7 +705,7 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
 </template>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=3"></script>
+<script src="hub.js?v=4"></script>
 <script src="twcalc.js?v=2"></script>
 <script>
 document.documentElement.classList.add("js");
@@ -878,7 +878,7 @@ function homeView(p, school){
   const card = (label, id, sub, cls) => `<div class="ovcard"><span>${label}</span><b id="${id}">–</b><em class="${cls || ""}" id="${id}s">${sub}</em></div>`;
   app.innerHTML = `<div class="ovhead"><div><p class="kicker">Your connected school</p><h1 class="ovtitle">Welcome back, ${esc(first)}!</h1><p class="note" style="margin:0">${esc(school.name)}</p></div></div>
     <div class="ovcards">
-      ${card("Attendance today", "ovAtt", "Coming soon", "muted")}
+      ${card("Attendance today", "ovAtt", "Loading…", "muted")}
       ${card("Active students", "ovStu", "Across your school")}
       ${card(lead ? "Observations this year" : "My observations", "ovObs", on.includes("grownest") ? "In GrowNest" : "GrowNest is off", "lav")}
       ${card("Needs your attention", "ovTask", "From Inclusion and Wellbeing", "amber")}
@@ -904,6 +904,13 @@ function placeNote(b){ const box = document.getElementById("hubnotes"); if (box)
 async function overviewData(p, school, lead){
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
   try { const { count } = await sb.from("students").select("id", { count: "exact", head: true }).eq("school_id", school.id).eq("archived", false); set("ovStu", (count || 0).toLocaleString("en-GB")); } catch (_) {}
+  // Attendance today
+  try {
+    const d = new Date(), t = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    const { data, error } = await sb.from("attendance_marks").select("status").eq("school_id", school.id).eq("day", t);
+    if (!error) { const n = (data || []).length, a = (data || []).filter(m => m.status === "present" || m.status === "late").length;
+      set("ovAtt", n ? Math.round(a / n * 100) + "%" : "–"); set("ovAtts", n ? `${a} of ${n} marked in school` : "No registers yet today"); const el = document.getElementById("ovAtts"); if (el) el.className = n ? "green" : "muted"; }
+  } catch (_) {}
   // GrowNest observations this academic year (if this account can see them)
   try {
     const now = new Date(), y0 = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
