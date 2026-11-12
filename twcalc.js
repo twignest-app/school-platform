@@ -58,7 +58,7 @@ async function twigLoad(sbc, schoolId, onlyIds){
   function avgProg(s, list, t) { const ps = list.map(st => progress(s, st, t)).filter(Boolean).map(p => ({ below: -1, inline: 0, above: 1 })[p.band]); if (!ps.length) return null; const b = ps.reduce((a, x) => a + x, 0) / ps.length; return b < -.33 ? "below" : b > .33 ? "above" : "inline"; }
 
 
-  return { C, classes, studs, strands, avgBand, avgProg };
+  return { C, classes, studs, strands, avgBand, avgProg, level, progress, strandEval, objsFor, stat, isGap, isEx, clsOf };
 }
 async function twigSchoolSummary(sbc, schoolId){
   const T = await twigLoad(sbc, schoolId); if (!T) return null;

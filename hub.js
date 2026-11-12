@@ -27,7 +27,7 @@
     ["assessments", "Assessments", "twignest/", "twignest"],
     ["grownest", "GrowNest", "grownest/app.html", "grownest"],
     ["twignest", "TwigNest", "twignest/", "twignest"],
-    ["reports", "Reports", "reports.html", null, true],
+    ["reports", "Reports", "reports.html", "twignest"],
     ["calendar", "Calendar", "calendar.html", null],
     ["label", "Support"],
     ["inclusion", "Inclusion", "inclusion.html", "inclusion"],

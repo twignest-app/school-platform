@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reports · Nestopia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--plum:#462D5B;--plum-2:#6A4B85;--plum-soft:#EDE6F5;--sage:#5E8455;--sage-soft:#E6EFE2;--amber:#A86C12;--amber-soft:#FBF0DC;--red:#B4473A;--red-soft:#F8E4E1;--blue:#4E6FB8;--blue-soft:#E4EBF8;--bg:#F7F4FB;--card:#FFFFFF;--ink:#2E2140;--muted:#6F6680;--line:#E4DDEE;--empty:#ECE7F3;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--plum:#CDB9EA;--plum-2:#DCCCF2;--plum-soft:#352A45;--sage:#A7C59A;--sage-soft:#26331F;--amber:#E6B566;--amber-soft:#3A2E17;--red:#E8897C;--red-soft:#3D2220;--blue:#9DB4E8;--blue-soft:#1E2A40;--bg:#17131D;--card:#221C2B;--ink:#F1ECF7;--muted:#B2A8C2;--line:#382F45;--empty:#2C2536;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--plum-2);outline-offset:2px}
+h1,h2,h3,.btn,.brand{font-family:"Poppins","Nunito",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-weight:600;font-size:22px;color:var(--plum);text-decoration:none}
+header .who{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:14px;color:var(--muted);flex-wrap:wrap}
+main{max-width:1200px;margin:0 auto;padding:24px 20px 48px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px}
+.card h2{margin:0 0 8px;font-size:20px;color:var(--plum);font-weight:600}
+.btn{border:0;background:var(--plum);color:#fff;border-radius:999px;padding:10px 20px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--bg);color:var(--plum);border:1px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:13px}
+.note{color:var(--muted);font-size:14px}
+.msg{border-radius:12px;padding:10px 14px;margin-top:12px;font-weight:600;font-size:14px;background:var(--red-soft);color:var(--red)}
+.ptitle{margin:0 0 4px;font-weight:600;font-size:26px}
+.phead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.metric{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.metric span{display:block;font-size:13px;color:var(--muted);font-weight:700}
+.metric b{display:block;font-size:26px;color:var(--plum);font-family:Poppins,Nunito,sans-serif;font-weight:600;line-height:1.3}
+.tablewrap{overflow-x:auto}
+table.grid{border-collapse:separate;border-spacing:8px;min-width:100%}
+table.grid th{font-size:13px;color:var(--muted);text-align:left;font-weight:700;padding:4px}
+.cell{width:100%;min-width:150px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;cursor:pointer;display:block}
+.cell:hover{border-color:var(--plum-2)}
+.cell b{font-size:20px;font-family:Poppins,Nunito,sans-serif;font-weight:600;color:var(--plum)}
+.cell small{display:block;color:var(--muted);font-size:12.5px}
+.cell.none{cursor:default;color:var(--muted);background:var(--bg)}
+.cell.on{outline:3px solid var(--plum-2)}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--empty);margin:6px 0 4px}
+.bar i{display:block;height:100%}
+.bar .a{background:var(--sage)}.bar .t{background:var(--amber)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
+.obj{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.obj:last-child{border-bottom:0}
+.st{font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;justify-self:start}
+.st.n{background:var(--empty);color:var(--muted)}.st.p{background:var(--amber-soft);color:var(--amber)}.st.t{background:var(--blue-soft);color:var(--blue)}.st.a{background:var(--sage-soft);color:var(--sage)}
+.obj small{display:block;color:var(--muted);font-size:12.5px}
+.sec{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
+.sec b{display:block;font-size:16px;color:var(--ink)}
+@media (max-width:640px){.obj{grid-template-columns:1fr}.sec{text-align:left}}
+textarea,input{font:inherit;color:inherit}
+input[type=text],input[type=date],input[type=search],textarea{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;width:100%}
+label.f{display:grid;gap:4px;font-weight:700;font-size:14px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tab{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 16px;font-weight:700;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+table.reg{width:100%;border-collapse:collapse}
+table.reg th{font-size:13px;color:var(--muted);text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+table.reg td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14.5px}
+table.reg tr:hover td{background:var(--bg)}
+.nm{font-weight:800;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.nm:hover{color:var(--plum-2);text-decoration:underline}
+.tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;margin:2px 4px 2px 0}
+.tag.sod{background:var(--plum-soft);color:var(--plum)}.tag.gt{background:var(--amber-soft);color:var(--amber)}.tag.eal{background:var(--blue-soft);color:var(--blue)}.tag.other{background:var(--empty);color:var(--muted)}
+.lvl{font-size:12.5px;font-weight:800;border-radius:8px;padding:2px 8px}
+.lvl.u{background:var(--sage-soft);color:var(--sage)}.lvl.t{background:var(--amber-soft);color:var(--amber)}.lvl.s{background:var(--red-soft);color:var(--red)}
+.due{font-size:12.5px;font-weight:800}.due.late{color:var(--red)}.due.soon{color:var(--amber)}.due.ok{color:var(--muted)}
+dialog{border:0;border-radius:18px;padding:0;width:min(760px,96vw);max-height:92vh;background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(30,20,45,.45)}
+.dlg{padding:22px 24px;display:grid;gap:14px}
+.dlg h2{margin:0;color:var(--plum);font-size:21px}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px}
+.checks label{display:flex;gap:6px;align-items:center;font-weight:600;font-size:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.two{grid-template-columns:1fr}table.reg .hide-sm{display:none}}
+.box{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--bg)}
+.box h3{margin:0 0 6px;font-size:16px;color:var(--plum)}
+.target{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:8px 0;border-bottom:1px dashed var(--line)}
+.target:last-child{border-bottom:0}
+.pg{font-size:12.5px;font-weight:800;border-radius:999px;padding:2px 10px;border:1px solid var(--line);background:var(--card);cursor:pointer;white-space:nowrap}
+.pg.a{background:var(--sage-soft);color:var(--sage)}.pg.w{background:var(--amber-soft);color:var(--amber)}.pg.n{background:var(--empty);color:var(--muted)}
+.lock{font-size:12.5px;color:var(--red);font-weight:800}
+.empty{text-align:center;padding:30px 10px}
+.okmsg{border-radius:12px;padding:10px 14px;font-weight:600;font-size:14px;background:var(--sage-soft);color:var(--sage)}
+
+.cnt{font-size:12.5px;font-weight:800;border-radius:8px;padding:2px 8px;white-space:nowrap}
+.cnt.ok{background:var(--sage-soft);color:var(--sage)}.cnt.part{background:var(--amber-soft);color:var(--amber)}.cnt.none{background:var(--empty);color:var(--muted)}
+.prev{border:1px solid var(--line);border-radius:14px;padding:18px;background:#fff;color:#222;max-height:520px;overflow:auto}
+
+</style>
+</head>
+<body>
+<header><a class="brand" href="./" id="brand">Nestopia</a><div class="who" id="who"></div></header>
+<main id="app"><p class="note">Loading…</p></main>
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="hub.js?v=5"></script>
+<script>
+/* Keep this the same as in index.html */
+const PLATFORM = "Nestopia";
+const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const app = document.getElementById("app"), who = document.getElementById("who"), dlg = document.getElementById("dlg");
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2800); };
+let me, school, lead = false, C = null, year = null, classes = [], myClassIds = [], studs = [], cms = [], teachers = {}, ui = { tab: "cards", term: 0, cls: null, incl: "approved" };
+const cls = id => classes.find(c => String(c.id) === String(id)) || {};
+function fail(t){ app.innerHTML = `<div class="card"><div class="msg">${esc(t)}</div></div>`; }
+async function fetchAll(q){ const out = []; for (let f = 0; ; f += 1000) { const { data, error } = await q().range(f, f + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; } return out; }
+const strandsFor = c => (C.subjects || []).flatMap(sb => sb.strands.map(st => [sb, st]));
+
+(async function start(){
+  const { data: { session } } = await sb.auth.getSession(); if (!session) { location.href = "./"; return; }
+  const { data: p } = await sb.from("profiles").select("*").eq("id", session.user.id).single();
+  if (!p || !p.school_id) return fail("Your account isn’t linked to a school yet.");
+  me = p; who.innerHTML = `<span>${esc(p.full_name || p.email)}</span><a class="btn ghost small" href="./">← ${esc(PLATFORM)}</a>`;
+  const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single(); school = s;
+  if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
+  if (window.hubInit) hubInit("reports");
+  if (!(school.modules || []).includes("twignest")) return fail("Reports use TwigNest, which isn’t switched on for your school.");
+  lead = ["school_lead", "coordinator", "admin"].includes(p.role);
+  const set = await sb.from("school_setups").select("year,config").eq("school_id", school.id).order("updated_at", { ascending: false }).limit(1);
+  C = set.data && set.data[0] ? set.data[0].config : null; year = set.data && set.data[0] ? set.data[0].year : null;
+  if (!C || !C.subjects) return fail("Finish the school setup in TwigNest first.");
+  let cq = sb.from("classes").select("*").eq("school_id", school.id); if (year) cq = cq.eq("year", year);
+  classes = ((await cq).data || []).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
+  const { data: ct } = await sb.from("class_teachers").select("class_id,teacher_id").in("class_id", classes.map(c => c.id));
+  myClassIds = [...new Set((ct || []).filter(x => x.teacher_id === me.id).map(x => String(x.class_id)))];
+  const tids = [...new Set((ct || []).map(x => x.teacher_id))];
+  const { data: tp } = tids.length ? await sb.from("profiles").select("id,full_name").in("id", tids) : { data: [] };
+  (ct || []).forEach(x => { const n = ((tp || []).find(y => y.id === x.teacher_id) || {}).full_name; if (n) (teachers[x.class_id] = teachers[x.class_id] || new Set()).add(n); });
+  const mine = classes.filter(c => lead || myClassIds.includes(String(c.id)));
+  ui.cls = mine[0] ? String(mine[0].id) : null;
+  const ids = mine.map(c => c.id);
+  studs = ids.length ? await fetchAll(() => sb.from("students").select("id,full_name,arabic_name,student_number,class_id,archived").in("class_id", ids).eq("archived", false).order("full_name")) : [];
+  const sIds = studs.map(s => s.id);
+  cms = [];
+  for (let k = 0; k < sIds.length; k += 200) { const part = await fetchAll(() => sb.from("report_comments").select("student_id,strand_id,term,text,level,status").in("student_id", sIds.slice(k, k + 200))); cms.push(...part); }
+  ui.term = Math.max(0, C.terms.findIndex((t, k) => cms.some(c => String(c.term) === String(k))) === -1 ? 0 : Math.max(...cms.map(c => +c.term).filter(n => !isNaN(n))));
+  draw();
+})();
+const cmOf = (sid, stid, t) => cms.find(c => String(c.student_id) === String(sid) && c.strand_id === stid && String(c.term) === String(t));
+
+function draw(){
+  const tabs = [["cards", "Report cards"], ["progress", "Progress"]];
+  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Reports</h1><p class="note">${esc(school.name)} · Report cards made from the comments in TwigNest, ready to print or share.</p></div><a class="btn ghost" href="twignest/#sheets">✏️ Write comments in TwigNest</a></div>
+    <div class="row" style="margin-bottom:12px"><select id="tm" aria-label="Term">${C.terms.map((t, k) => `<option value="${k}" ${+ui.term === k ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></div>
+    <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}</button>`).join("")}</div><div id="pane"></div>`;
+  document.getElementById("tm").onchange = e => { ui.term = +e.target.value; draw(); };
+  app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; draw(); });
+  ui.tab === "cards" ? cardsPane() : progressPane();
+}
+const statusCount = (list, t) => { const sts = strandsFor(), out = { total: 0, approved: 0, ready: 0, draft: 0, none: 0 };
+  list.forEach(s => sts.forEach(([, st]) => { out.total++; const c = cmOf(s.id, st.id, t); if (!c || !c.text) out.none++; else if (c.status === "approved") out.approved++; else if (c.status === "ready") out.ready++; else out.draft++; })); return out; };
+
+function cardsPane(){
+  const pane = document.getElementById("pane"), choices = classes.filter(c => lead || myClassIds.includes(String(c.id)));
+  if (!choices.length) { pane.innerHTML = '<div class="card"><p class="note" style="margin:0">You don’t have a class linked in TwigNest yet.</p></div>'; return; }
+  const kids = studs.filter(s => String(s.class_id) === String(ui.cls)), t = ui.term;
+  pane.innerHTML = `<div class="card"><div class="row" style="margin-bottom:12px"><select id="rc" aria-label="Class">${choices.map(c => `<option value="${esc(c.id)}" ${String(c.id) === String(ui.cls) ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select>
+      <select id="inc" aria-label="Which comments"><option value="approved" ${ui.incl === "approved" ? "selected" : ""}>Approved comments only</option><option value="ready" ${ui.incl === "ready" ? "selected" : ""}>Approved and ready comments</option><option value="all" ${ui.incl === "all" ? "selected" : ""}>All comments (drafts too)</option></select>
+      <button class="btn" id="wordAll">⬇ Word: report cards for the class</button></div>
+    <div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Comments approved</th><th></th></tr>${kids.map(s => { const n = statusCount([s], t), cl = n.approved === n.total ? "ok" : n.approved ? "part" : "none";
+      return `<tr><td><b>${esc(s.full_name)}</b>${s.arabic_name ? ` <span class="note" dir="rtl" lang="ar">${esc(s.arabic_name)}</span>` : ""}</td><td><span class="cnt ${cl}">${n.approved} of ${n.total}</span>${n.ready ? ` <span class="note">· ${n.ready} ready to check</span>` : ""}${n.none ? ` <span class="note">· ${n.none} not written</span>` : ""}</td>
+        <td style="text-align:right"><button class="btn ghost small" data-prev="${esc(s.id)}">Preview</button> <button class="btn ghost small" data-one="${esc(s.id)}">⬇ Word</button></td></tr>`; }).join("")}</table></div>
+    <p class="note" style="margin:10px 0 0">Each report card has the student’s details, attendance this school year, and every subject with its level and comment. Comments are written and checked in TwigNest.</p></div>`;
+  document.getElementById("rc").onchange = e => { ui.cls = e.target.value; cardsPane(); };
+  document.getElementById("inc").onchange = e => { ui.incl = e.target.value; };
+  document.getElementById("wordAll").onclick = () => makeWord(kids);
+  pane.querySelectorAll("[data-one]").forEach(b => b.onclick = () => makeWord(kids.filter(s => String(s.id) === b.dataset.one)));
+  pane.querySelectorAll("[data-prev]").forEach(b => b.onclick = async () => { const s = kids.find(x => String(x.id) === b.dataset.prev), att = await attendance([s]);
+    dlg.innerHTML = `<div class="dlg"><div class="row" style="justify-content:space-between"><h2>Preview</h2><button class="btn ghost small" data-x>Close</button></div><div class="prev">${cardHtml(s, att[s.id])}</div></div>`; dlg.querySelector("[data-x]").onclick = () => dlg.close(); dlg.showModal(); });
+}
+function progressPane(){
+  const pane = document.getElementById("pane"), t = ui.term, list = classes.filter(c => lead || myClassIds.includes(String(c.id)));
+  pane.innerHTML = `<div class="card"><h2>How far each class has got · ${esc(C.terms[t])}</h2><div class="tablewrap"><table class="reg"><tr><th>Class</th><th>Teachers</th><th>Approved</th><th>Ready to check</th><th>Draft</th><th>Not written</th></tr>
+    ${list.map(c => { const kids = studs.filter(s => String(s.class_id) === String(c.id)), n = statusCount(kids, t), pct = n.total ? Math.round(n.approved / n.total * 100) : 0;
+      return `<tr><td><b>${esc(c.name)}</b></td><td>${esc([...(teachers[c.id] || [])].join(", "))}</td><td><span class="cnt ${pct === 100 ? "ok" : pct ? "part" : "none"}">${pct}%</span> <span class="note">${n.approved} of ${n.total}</span></td><td>${n.ready}</td><td>${n.draft}</td><td>${n.none}</td></tr>`; }).join("")}</table></div>
+    <p class="note" style="margin:10px 0 0">Buddy checkers approve comments in TwigNest. More detail is in <a href="twignest/#reports">TwigNest → Report progress</a>.</p></div>`;
+}
+
+/* ---------- Report cards ---------- */
+async function attendance(list){
+  const out = {}; try {
+    const now = new Date(), y0 = (now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1) + "-08-01";
+    const { data, error } = await sb.from("attendance_marks").select("student_id,status").in("student_id", list.map(s => s.id)).gte("day", y0);
+    if (error) return out;
+    (data || []).forEach(m => { const a = out[m.student_id] = out[m.student_id] || { n: 0, in: 0, late: 0 }; a.n++; if (m.status === "present" || m.status === "late") a.in++; if (m.status === "late") a.late++; });
+  } catch (_) {} return out;
+}
+const keep = c => c && c.text && (ui.incl === "all" || c.status === "approved" || (ui.incl === "ready" && c.status === "ready"));
+function cardHtml(s, att){
+  const t = ui.term, c = cls(s.class_id), lab = lv => lv == null ? "" : (C.scale && C.scale[lv] != null ? C.scale[lv] : lv);
+  const rows = (C.subjects || []).map(sub => { const ar = sub.lang === "ar", items = sub.strands.map(st => [st, cmOf(s.id, st.id, t)]).filter(([, cm]) => keep(cm)); if (!items.length) return "";
+    return `<tr><td colspan="3" style="background:#EDE6F5;font-weight:bold;padding:6px;border:1px solid #bbb">${esc(sub.name)}</td></tr>` + items.map(([st, cm]) => `<tr><td style="padding:6px;border:1px solid #bbb;width:22%;vertical-align:top"><b>${esc(st.name)}</b></td><td style="padding:6px;border:1px solid #bbb;width:10%;text-align:center;vertical-align:top">${esc(lab(cm.level))}</td><td style="padding:6px;border:1px solid #bbb;vertical-align:top" ${ar ? 'dir="rtl" lang="ar"' : ""}>${esc(cm.text)}</td></tr>`).join(""); }).join("");
+  const ap = att && att.n ? Math.round(att.in / att.n * 100) : null;
+  return `<div style="font-family:Arial,sans-serif;font-size:10.5pt;color:#222">
+    <table width="100%" cellspacing="0" cellpadding="0"><tr><td style="background:#462D5B;color:#fff;padding:10px 12px"><span style="font-size:17pt;font-weight:bold">${esc(school.name)}</span><br><span style="font-size:11pt">Report card · ${esc(C.terms[t])}${year ? " · " + esc(year) : ""}</span></td></tr></table>
+    <table width="100%" cellspacing="0" style="border-collapse:collapse;margin:10px 0"><tr><td style="padding:5px;border:1px solid #bbb"><b>Student:</b> ${esc(s.full_name)}${s.arabic_name ? ` <span dir="rtl" lang="ar">(${esc(s.arabic_name)})</span>` : ""}</td><td style="padding:5px;border:1px solid #bbb"><b>Class:</b> ${esc(c.name || "")}</td></tr>
+      <tr><td style="padding:5px;border:1px solid #bbb"><b>Teacher(s):</b> ${esc([...(teachers[s.class_id] || [])].join(", "))}</td><td style="padding:5px;border:1px solid #bbb"><b>Attendance this year:</b> ${ap == null ? "–" : ap + "%" + (att.late ? " · late " + att.late + " time" + (att.late === 1 ? "" : "s") : "")}</td></tr></table>
+    ${rows ? `<table width="100%" cellspacing="0" style="border-collapse:collapse"><tr><th style="background:#462D5B;color:#fff;padding:6px;border:1px solid #bbb;text-align:left">Subject</th><th style="background:#462D5B;color:#fff;padding:6px;border:1px solid #bbb">Level</th><th style="background:#462D5B;color:#fff;padding:6px;border:1px solid #bbb;text-align:left">Comment</th></tr>${rows}</table>` : '<p style="color:#888">No comments to show yet for this term.</p>'}
+    <table width="100%" cellspacing="0" style="border-collapse:collapse;margin-top:16px"><tr><td style="padding:6px;border:1px solid #bbb;width:25%"><b>Class teacher</b></td><td style="padding:6px;border:1px solid #bbb;height:30px"></td><td style="padding:6px;border:1px solid #bbb;width:25%"><b>Principal</b></td><td style="padding:6px;border:1px solid #bbb"></td></tr></table></div>`;
+}
+async function makeWord(list){
+  if (!list.length) return; toast("Making the report cards…");
+  const att = await attendance(list), c = cls(list[0].class_id);
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Report cards</title><style>@page{margin:1.6cm}body{margin:0}</style></head><body>${list.map((s, i) => (i ? '<br clear="all" style="page-break-before:always">' : "") + cardHtml(s, att[s.id])).join("")}</body></html>`;
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + html], { type: "application/msword" }));
+  a.download = `${list.length === 1 ? list[0].full_name : (c.name || "Class") + " report cards"} - ${C.terms[ui.term]}.doc`.replace(/[\\/:*?"<>|]/g, ""); document.body.appendChild(a); a.click(); a.remove();
+}
+</script>
+</body>
+</html>
