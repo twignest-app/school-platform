@@ -98,6 +98,7 @@ input[type=time],input[type=number]{border:1px solid var(--line);background:var(
 .dayrow{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px}
 .slotrow{display:grid;grid-template-columns:80px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
 .slotrow .t{font-weight:800;color:var(--plum)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:10px 18px;border-radius:999px;font-weight:700;opacity:0;transition:.2s;pointer-events:none;z-index:50}.toast.on{opacity:1}
 .band{font-size:12px;font-weight:800;border-radius:8px;padding:2px 8px}.band.below{background:var(--red-soft);color:var(--red)}.band.inline{background:var(--sage-soft);color:var(--sage)}.band.above{background:var(--plum-soft);color:var(--plum)}
 
 </style>
@@ -264,10 +265,13 @@ async function codesPane(c){
   const pane = document.getElementById("pane");
   const codes = (await sb.from("pc_codes").select("student_id,code").eq("conference_id", c.id)).data || [];
   const st = await getStudents(codes.map(x => x.student_id));
+  const rows0 = () => codes.map(x => { const s = st.find(y => String(y.id) === String(x.student_id)) || {}; return [s.full_name || "", cls(s.class_id).name || "", x.code, BOOK_URL + "?c=" + x.code]; }).sort((a, b) => a[1].localeCompare(b[1], undefined, { numeric: true }) || a[0].localeCompare(b[0]));
   pane.innerHTML = `<div class="card"><h2>Booking codes</h2><p class="note">Each student gets a 6-letter code. Parents type it at <b>${esc(BOOK_URL)}</b>, or open their personal link, to book. Families with more than one child add each child’s code on the same page.</p>
     <div class="row"><button class="btn" id="mk">${codes.length ? "Make codes for new students" : "Make the booking codes"}</button>${codes.length ? '<button class="btn ghost" id="slips">⬇ Word: printable slips</button><button class="btn ghost" id="csv">⬇ CSV: list with links</button>' : ""}</div>
-    <p class="note" style="margin:10px 0 0">${codes.length} code${codes.length === 1 ? "" : "s"} made.${c.open ? "" : " Remember to <b>Open booking</b> when you’re ready."}</p></div>`;
-  document.getElementById("mk").onclick = async () => { const { data, error } = await sb.rpc("pc_make_codes", { cid: c.id }); if (error) return toast(error.message); toast(data + " new code" + (data === 1 ? "" : "s") + " made"); codesPane(c); };
+    <p class="note" style="margin:10px 0 0">${codes.length} code${codes.length === 1 ? "" : "s"} made.${c.open ? "" : " Remember to <b>Open booking</b> when you’re ready."}</p></div>
+    ${codes.length ? `<div class="card"><h2>The codes</h2><div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Class</th><th>Code</th><th></th></tr>${rows0().map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td><b style="letter-spacing:.12em">${esc(r[2])}</b></td><td style="text-align:right"><button class="btn ghost small" data-copy="${esc(r[3])}">📋 Copy link</button></td></tr>`).join("")}</table></div></div>` : ""}`;
+  pane.querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); toast("Link copied. Paste it into WhatsApp or an email to the parent."); } catch (_) { prompt("Copy this link:", b.dataset.copy); } });
+  document.getElementById("mk").onclick = async () => { const { data, error } = await sb.rpc("pc_make_codes", { cid: c.id }); if (error) return toast(error.message); toast(data ? data + " new code" + (data === 1 ? "" : "s") + " made" : "Every student already has a code. Nothing new to make."); codesPane(c); };
   const row = x => { const s = st.find(y => String(y.id) === String(x.student_id)) || {}; return [s.full_name || "", cls(s.class_id).name || "", x.code, BOOK_URL + "?c=" + x.code]; };
   const rows = codes.map(row).sort((a, b) => a[1].localeCompare(b[1], undefined, { numeric: true }) || a[0].localeCompare(b[0]));
   const sl = document.getElementById("slips"); if (sl) sl.onclick = () => {

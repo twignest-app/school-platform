@@ -74,6 +74,7 @@ h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
 <div class="toast" id="toast" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="hub.js?v=6"></script>
+<script src="getstarted.js?v=1"></script>
 <script>
 const PLATFORM = "Nestopia";
 const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
@@ -93,6 +94,8 @@ const ALL = [["twignest", "TwigNest"], ["grownest", "GrowNest"], ["planning", "P
   if (!lead) { app.innerHTML = '<div class="card"><p class="note" style="margin:0">Settings are for school leaders and coordinators.</p></div>'; hubInit("settings"); return; }
   const c = (title, text, links) => `<section class="card"><h2>${title}</h2><p class="note" style="margin:0">${text}</p>${links.map(([h, l]) => `<a class="btn ghost small" href="${h}">${l} →</a>`).join(" ")}</section>`;
   app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Settings</h1><p class="note">${esc(s.name)} · Everything you set up for your school, in one place.</p></div></div>
+    <section class="card" id="start" style="margin-bottom:16px"><h2>🚀 Getting started</h2><p class="note" style="margin:0 0 4px">The steps to get your school ready. Each one ticks itself off when it’s done.</p><div id="gs"><p class="note">Checking…</p></div></section>
+    <section class="card" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Staff and roles</h2>${on.includes("twignest") ? '<a class="btn ghost small" href="twignest/#staff">Approve staff and change roles →</a>' : ""}</div><div id="staffList" style="margin-top:10px"><p class="note">Loading…</p></div></section>
     <div class="set">
       <section class="card"><h2>Your school</h2><p style="margin:0"><b>${esc(s.name)}</b>${s.country ? " · " + esc(s.country) : ""}</p>
         <p class="note" style="margin:12px 0 6px">Teachers join with this code:</p><button class="code" id="code" title="Copy the code">${esc(s.join_code || "")}</button>
@@ -104,6 +107,15 @@ const ALL = [["twignest", "TwigNest"], ["grownest", "GrowNest"], ["planning", "P
       ${on.includes("inclusion") ? c("Inclusion team", "Choose your inclusion head and the staff who manage the inclusion register.", [["inclusion.html", "Inclusion team (in Inclusion)"]]) : ""}
       ${on.includes("wellbeing") ? c("Wellbeing and safeguarding", "Choose your wellbeing team and your safeguarding lead(s). Only they, and school leaders, see safeguarding concerns.", [["wellbeing.html", "Wellbeing team (in Wellbeing)"]]) : ""}
     </div>`;
+  gsSteps(sb, s).then(st => { document.getElementById("gs").innerHTML = gsHtml(st, false); if (location.hash === "#start") document.getElementById("start").scrollIntoView(); }).catch(() => { document.getElementById("gs").innerHTML = '<p class="note">Couldn’t check the steps right now.</p>'; });
+  (async () => { const R = { school_lead: "School leader", coordinator: "Coordinator", teacher: "Teacher", checker: "Buddy checker", admin: "Admin" };
+    let r = await sb.from("profiles").select("full_name,email,role,active,inclusion_head,inclusion_lead,wellbeing_team,safeguarding_lead").eq("school_id", s.id);
+    if (r.error) r = await sb.from("profiles").select("full_name,email,role,active").eq("school_id", s.id);
+    const list = (r.data || []).sort((a, b) => (a.active === b.active ? 0 : a.active ? 1 : -1) || String(a.full_name).localeCompare(String(b.full_name)));
+    const tag = (on2, t) => on2 ? `<span class="mods"><span>${t}</span></span>` : "";
+    document.getElementById("staffList").innerHTML = list.length ? `<div class="tablewrap"><table class="reg" style="width:100%;border-collapse:collapse"><tr><th style="text-align:left">Name</th><th style="text-align:left">Role</th><th style="text-align:left">Teams</th><th style="text-align:left">Status</th></tr>${list.map(x => `<tr><td style="padding:8px 4px;border-top:1px solid var(--line)"><b>${esc(x.full_name || "")}</b><br><span class="note">${esc(x.email || "")}</span></td><td style="border-top:1px solid var(--line)">${esc(R[x.role] || x.role || "")}</td>
+      <td style="border-top:1px solid var(--line)"><div class="mods">${x.inclusion_head ? "<span>Inclusion head</span>" : x.inclusion_lead ? "<span>Inclusion team</span>" : ""}${x.safeguarding_lead ? "<span>🔒 Safeguarding lead</span>" : ""}${x.wellbeing_team ? "<span>Wellbeing team</span>" : ""}</div></td>
+      <td style="border-top:1px solid var(--line)">${x.active ? '<span class="note">Active</span>' : '<b style="color:#B07A1E">Waiting for approval</b>'}</td></tr>`).join("")}</table></div>` : '<p class="note">No staff yet.</p>'; })();
   document.getElementById("code").onclick = async () => { try { await navigator.clipboard.writeText(s.join_code); toast("Code copied"); } catch (_) {} };
   hubInit("settings");
 })();
