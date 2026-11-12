@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Evidence packs · Nestopia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--plum:#462D5B;--plum-2:#6A4B85;--plum-soft:#EDE6F5;--sage:#5E8455;--sage-soft:#E6EFE2;--amber:#A86C12;--amber-soft:#FBF0DC;--red:#B4473A;--red-soft:#F8E4E1;--blue:#4E6FB8;--blue-soft:#E4EBF8;--bg:#F7F4FB;--card:#FFFFFF;--ink:#2E2140;--muted:#6F6680;--line:#E4DDEE;--empty:#ECE7F3;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--plum:#CDB9EA;--plum-2:#DCCCF2;--plum-soft:#352A45;--sage:#A7C59A;--sage-soft:#26331F;--amber:#E6B566;--amber-soft:#3A2E17;--red:#E8897C;--red-soft:#3D2220;--blue:#9DB4E8;--blue-soft:#1E2A40;--bg:#17131D;--card:#221C2B;--ink:#F1ECF7;--muted:#B2A8C2;--line:#382F45;--empty:#2C2536;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--plum-2);outline-offset:2px}
+h1,h2,h3,.btn,.brand{font-family:"Poppins","Nunito",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-weight:600;font-size:22px;color:var(--plum);text-decoration:none}
+header .who{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:14px;color:var(--muted);flex-wrap:wrap}
+main{max-width:1200px;margin:0 auto;padding:24px 20px 48px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px}
+.card h2{margin:0 0 8px;font-size:20px;color:var(--plum);font-weight:600}
+.btn{border:0;background:var(--plum);color:#fff;border-radius:999px;padding:10px 20px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--bg);color:var(--plum);border:1px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:13px}
+.note{color:var(--muted);font-size:14px}
+.msg{border-radius:12px;padding:10px 14px;margin-top:12px;font-weight:600;font-size:14px;background:var(--red-soft);color:var(--red)}
+.ptitle{margin:0 0 4px;font-weight:600;font-size:26px}
+.phead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.metric{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.metric span{display:block;font-size:13px;color:var(--muted);font-weight:700}
+.metric b{display:block;font-size:26px;color:var(--plum);font-family:Poppins,Nunito,sans-serif;font-weight:600;line-height:1.3}
+.tablewrap{overflow-x:auto}
+table.grid{border-collapse:separate;border-spacing:8px;min-width:100%}
+table.grid th{font-size:13px;color:var(--muted);text-align:left;font-weight:700;padding:4px}
+.cell{width:100%;min-width:150px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;cursor:pointer;display:block}
+.cell:hover{border-color:var(--plum-2)}
+.cell b{font-size:20px;font-family:Poppins,Nunito,sans-serif;font-weight:600;color:var(--plum)}
+.cell small{display:block;color:var(--muted);font-size:12.5px}
+.cell.none{cursor:default;color:var(--muted);background:var(--bg)}
+.cell.on{outline:3px solid var(--plum-2)}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--empty);margin:6px 0 4px}
+.bar i{display:block;height:100%}
+.bar .a{background:var(--sage)}.bar .t{background:var(--amber)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
+.obj{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.obj:last-child{border-bottom:0}
+.st{font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;justify-self:start}
+.st.n{background:var(--empty);color:var(--muted)}.st.p{background:var(--amber-soft);color:var(--amber)}.st.t{background:var(--blue-soft);color:var(--blue)}.st.a{background:var(--sage-soft);color:var(--sage)}
+.obj small{display:block;color:var(--muted);font-size:12.5px}
+.sec{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
+.sec b{display:block;font-size:16px;color:var(--ink)}
+@media (max-width:640px){.obj{grid-template-columns:1fr}.sec{text-align:left}}
+textarea,input{font:inherit;color:inherit}
+input[type=text],input[type=date],input[type=search],textarea{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;width:100%}
+label.f{display:grid;gap:4px;font-weight:700;font-size:14px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tab{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 16px;font-weight:700;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+table.reg{width:100%;border-collapse:collapse}
+table.reg th{font-size:13px;color:var(--muted);text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+table.reg td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14.5px}
+table.reg tr:hover td{background:var(--bg)}
+.nm{font-weight:800;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.nm:hover{color:var(--plum-2);text-decoration:underline}
+.tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;margin:2px 4px 2px 0}
+.tag.sod{background:var(--plum-soft);color:var(--plum)}.tag.gt{background:var(--amber-soft);color:var(--amber)}.tag.eal{background:var(--blue-soft);color:var(--blue)}.tag.other{background:var(--empty);color:var(--muted)}
+.lvl{font-size:12.5px;font-weight:800;border-radius:8px;padding:2px 8px}
+.lvl.u{background:var(--sage-soft);color:var(--sage)}.lvl.t{background:var(--amber-soft);color:var(--amber)}.lvl.s{background:var(--red-soft);color:var(--red)}
+.due{font-size:12.5px;font-weight:800}.due.late{color:var(--red)}.due.soon{color:var(--amber)}.due.ok{color:var(--muted)}
+dialog{border:0;border-radius:18px;padding:0;width:min(760px,96vw);max-height:92vh;background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(30,20,45,.45)}
+.dlg{padding:22px 24px;display:grid;gap:14px}
+.dlg h2{margin:0;color:var(--plum);font-size:21px}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px}
+.checks label{display:flex;gap:6px;align-items:center;font-weight:600;font-size:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.two{grid-template-columns:1fr}table.reg .hide-sm{display:none}}
+.box{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--bg)}
+.box h3{margin:0 0 6px;font-size:16px;color:var(--plum)}
+.target{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:8px 0;border-bottom:1px dashed var(--line)}
+.target:last-child{border-bottom:0}
+.pg{font-size:12.5px;font-weight:800;border-radius:999px;padding:2px 10px;border:1px solid var(--line);background:var(--card);cursor:pointer;white-space:nowrap}
+.pg.a{background:var(--sage-soft);color:var(--sage)}.pg.w{background:var(--amber-soft);color:var(--amber)}.pg.n{background:var(--empty);color:var(--muted)}
+.lock{font-size:12.5px;color:var(--red);font-weight:800}
+.empty{text-align:center;padding:30px 10px}
+.okmsg{border-radius:12px;padding:10px 14px;font-weight:600;font-size:14px;background:var(--sage-soft);color:var(--sage)}
+
+.packs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.pk{border:1px solid var(--line);border-radius:16px;padding:16px;background:var(--card);cursor:pointer;text-align:left;font:inherit;color:inherit}
+.pk:hover{border-color:var(--plum-2)}
+.pk .ref{font-size:12px;font-weight:800;color:var(--plum);letter-spacing:.04em}
+.ev{display:grid;grid-template-columns:120px 1fr auto;gap:14px;align-items:start;border-bottom:1px solid var(--line);padding:12px 0}
+.ev:last-child{border-bottom:0}
+.thumb{width:120px;height:84px;border-radius:10px;background:var(--empty);object-fit:cover;display:grid;place-items:center;font-size:30px}
+@media(max-width:640px){.ev{grid-template-columns:1fr}.thumb{width:100%;height:150px}}
+.chk li{margin:4px 0}
+.chk li.ok{color:var(--sage)}
+
+</style>
+</head>
+<body>
+<header><a class="brand" href="./" id="brand">Nestopia</a><div class="who" id="who"></div></header>
+<main id="app"><p class="note">Loading…</p></main>
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script>
+/* Keep this the same as in index.html */
+const PLATFORM = "Nestopia";
+const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const app = document.getElementById("app"), who = document.getElementById("who"), dlg = document.getElementById("dlg");
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2800); };
+const fmt = d => d ? new Date(d + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "";
+
+/* UAE school inspection framework: standards and what inspectors usually look for */
+const FW = [
+  ["1.1", "Students’ attainment", ["Attainment data against curriculum standards, by subject and phase", "External and international assessment results", "Students’ work showing levels reached", "Comparison of groups (SoD, G&T, EAL, gender)"]],
+  ["1.2", "Students’ progress", ["Progress from starting points, by subject and phase", "Progress of different groups", "Students’ work over time showing improvement", "Lesson observations showing progress in lessons"]],
+  ["1.3", "Students’ learning skills", ["Engagement and responsibility for learning", "Collaboration and communication", "Making connections and applying learning to real life", "Enquiry, innovation, research and use of learning technologies (1.3.4)"]],
+  ["2.1", "Personal development", ["Attitudes and behaviour", "Relationships with staff and peers", "Healthy living and safe choices", "Attendance and punctuality"]],
+  ["2.2", "Understanding of Islamic values and awareness of Emirati and world cultures", ["Appreciation of Islamic values in daily life", "Knowledge of Emirati heritage and culture", "Awareness of world cultures"]],
+  ["2.3", "Social responsibility and innovation skills", ["Community involvement and volunteering", "Work ethic, enterprise and innovation", "Environmental awareness and sustainability"]],
+  ["3.1", "Teaching for effective learning", ["Lesson observation outcomes", "Planning that meets the needs of all learners", "Questioning and dialogue that deepen thinking", "Teaching that develops critical thinking and independence"]],
+  ["3.2", "Assessment", ["Assessment aligned to the curriculum", "Use of data to plan and track progress", "Feedback that helps students improve", "Students’ self- and peer-assessment"]],
+  ["4.1", "Curriculum design and implementation", ["Curriculum documents and coverage", "Progression and continuity across phases", "Cross-curricular links", "Choices and enrichment"]],
+  ["4.2", "Curriculum adaptation", ["Modifications for different groups of learners", "Enterprise, innovation and creativity", "Links to UAE culture and society"]],
+  ["5.1", "Health and safety, including safeguarding", ["Safeguarding policy and training", "Supervision, safety checks and records", "Promotion of healthy lifestyles"]],
+  ["5.2", "Care and support", ["Identification and support of students of determination", "Support for gifted and talented students", "Wellbeing, guidance and counselling", "Monitoring of attendance and wellbeing"]],
+  ["6.1", "Effectiveness of leadership", ["Vision and direction", "Impact of leaders on standards", "Distributed leadership and capacity"]],
+  ["6.2", "Self-evaluation and improvement planning", ["Self-evaluation using data and observations", "Improvement plans and their impact", "Monitoring of teaching and learning"]],
+  ["6.3", "Partnerships with parents and the community", ["Parent involvement and communication", "Reports to parents", "Community links"]],
+  ["6.4", "Governance", ["Governance structure and accountability", "Governors’ impact on improvement"]],
+  ["6.5", "Management, staffing, facilities and resources", ["Staffing and professional development", "Use of premises and resources", "Day-to-day management"]]
+];
+const fw = ref => FW.find(f => f[0] === ref) || [ref, "", []];
+const KINDS = { photo: "📷 Photo", file: "📄 Document", link: "🔗 Link", note: "📝 Write-up", data: "📊 Data" };
+
+let me, school, isLead = false, packs = [], items = [], urls = {};
+function fail(t){ app.innerHTML = `<div class="card"><div class="msg">${esc(t)}</div><p style="margin-top:14px"><a class="btn ghost" href="./">← Back to ${esc(PLATFORM)}</a></p></div>`; }
+
+async function start(){
+  const { data: { session } } = await sb.auth.getSession(); if (!session) { location.href = "./"; return; }
+  const { data: p } = await sb.from("profiles").select("*").eq("id", session.user.id).single();
+  if (!p) return fail("We couldn’t load your account. Please sign in again.");
+  me = p; who.innerHTML = `<span>${esc(p.full_name || p.email)}</span><a class="btn ghost small" href="./">← ${esc(PLATFORM)}</a>`;
+  if (!p.school_id) return fail("Your account isn’t linked to a school yet.");
+  const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single(); school = s;
+  if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
+  if (!(school.modules || []).includes("evidence")) return fail("Evidence packs aren’t switched on for your school yet.");
+  isLead = ["school_lead", "coordinator", "admin"].includes(p.role);
+  try { await load(); } catch (e) { return fail(/evidence_/.test(e.message || "") ? "Evidence packs need their database step first. Please run the Evidence packs update in Supabase." : "Evidence packs couldn’t load: " + (e.message || e)); }
+  route();
+}
+async function load(){
+  const p = await sb.from("evidence_packs").select("*").eq("school_id", school.id).order("standard"); if (p.error) throw p.error; packs = p.data || [];
+  const i = await sb.from("evidence_items").select("*").eq("school_id", school.id).order("position"); if (i.error) throw i.error; items = i.data || [];
+}
+function route(){ const id = new URLSearchParams(location.search).get("pack"); id ? packView(id) : home(); }
+const itemsOf = pid => items.filter(x => String(x.pack_id) === String(pid)).sort((a, b) => (a.position || 0) - (b.position || 0));
+async function signed(path){ if (!path) return null; if (urls[path]) return urls[path]; const { data } = await sb.storage.from("evidence").createSignedUrl(path, 3600); if (data) urls[path] = data.signedUrl; return urls[path] || null; }
+
+/* ---------- All packs ---------- */
+function home(){
+  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Evidence packs</h1><p class="note">${esc(school.name)} · Evidence for each standard of the school inspection framework, ready to share as PowerPoint or Word.</p></div>
+    ${isLead ? '<button class="btn" id="newPack">+ New evidence pack</button>' : ""}</div>
+    ${packs.length ? `<div class="packs">${packs.map(p => { const n = itemsOf(p.id).length; return `<button class="pk" data-pack="${esc(p.id)}"><span class="ref">SEF EVIDENCE: ${esc(p.standard)}</span><h3 style="margin:6px 0 4px">${esc(p.title || fw(p.standard)[1])}</h3><p class="note" style="margin:0">${n} piece${n === 1 ? "" : "s"} of evidence${p.year ? " · " + esc(p.year) : ""}</p></button>`; }).join("")}</div>`
+      : `<div class="card empty"><p class="note">No evidence packs yet.${isLead ? " Start one for the standard you’re working on." : " Your school leaders will start one."}</p></div>`}`;
+  app.querySelectorAll("[data-pack]").forEach(b => b.onclick = () => { history.pushState(null, "", "?pack=" + b.dataset.pack); packView(b.dataset.pack); });
+  const np = document.getElementById("newPack"); if (np) np.onclick = () => editPack(null);
+}
+window.onpopstate = route;
+
+function editPack(p){
+  const yr = new Date().getMonth() >= 7 ? new Date().getFullYear() + "–" + (new Date().getFullYear() + 1) : (new Date().getFullYear() - 1) + "–" + new Date().getFullYear();
+  dlg.innerHTML = `<form class="dlg"><h2>${p ? "Edit pack" : "New evidence pack"}</h2>
+    <label class="f">Standard <select name="s">${FW.map(f => `<option value="${f[0]}" ${p && p.standard === f[0] ? "selected" : ""}>${f[0]} ${esc(f[1])}</option>`).join("")}</select></label>
+    <label class="f">Focus (optional) <input type="text" name="t" value="${esc(p ? p.title || "" : "")}" placeholder="For example: Grade 5 PYP Exhibition, or Enquiry and research (1.3.4)"></label>
+    <label class="f">Academic year <input type="text" name="y" value="${esc(p ? p.year || "" : yr)}"></label>
+    <label class="f">Context (shown at the start of the pack) <textarea name="c" rows="4" placeholder="What was done, with whom, and why. Keep it about the students and the process.">${esc(p ? p.context || "" : "")}</textarea></label>
+    <p class="note" style="margin:0">The cover will be titled “SEF Evidence: <span id="refPrev">${esc(p ? p.standard : "1.1")}</span> …”. Packs never name staff, and describe what was done rather than a judgement.</p>
+    <div class="row" style="justify-content:space-between"><div>${p ? '<button type="button" class="btn ghost small" id="delPack">Delete pack</button>' : ""}</div><div class="row"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn">Save</button></div></div></form>`;
+  const f = dlg.querySelector("form"); dlg.querySelector("[data-x]").onclick = () => dlg.close();
+  f.s.onchange = () => document.getElementById("refPrev").textContent = f.s.value;
+  const dp = document.getElementById("delPack"); if (dp) dp.onclick = async () => { if (!confirm("Delete this pack and all its evidence? This can’t be undone.")) return; const paths = itemsOf(p.id).map(i => i.file_path).filter(Boolean); if (paths.length) await sb.storage.from("evidence").remove(paths); await sb.from("evidence_packs").delete().eq("id", p.id); dlg.close(); await load(); history.pushState(null, "", "evidence.html"); home(); };
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const row = { school_id: school.id, standard: f.s.value, title: f.t.value.trim() || null, year: f.y.value.trim() || null, context: f.c.value.trim() || null, updated_at: new Date().toISOString() };
+    const res = p ? await sb.from("evidence_packs").update(row).eq("id", p.id).select().single() : await sb.from("evidence_packs").insert(Object.assign(row, { created_by: me.id })).select().single();
+    if (res.error) return toast(res.error.message);
+    dlg.close(); await load(); history.pushState(null, "", "?pack=" + res.data.id); packView(res.data.id);
+  };
+  dlg.showModal();
+}
+
+/* ---------- One pack ---------- */
+async function packView(id){
+  const p = packs.find(x => String(x.id) === String(id)); if (!p) return home();
+  const F = fw(p.standard), its = itemsOf(p.id);
+  const covered = el => its.some(i => (i.elements || []).includes(el));
+  app.innerHTML = `<div class="phead"><div><button class="btn ghost small" id="back">← All packs</button>
+      <p class="ref" style="margin:12px 0 0;font-weight:800;color:var(--plum)">SEF EVIDENCE: ${esc(p.standard)}</p><h1 class="ptitle" style="margin-top:2px">${esc(p.title || F[1])}</h1><p class="note">${esc(F[1])}${p.year ? " · " + esc(p.year) : ""}</p></div>
+    <div class="row">${isLead ? '<button class="btn ghost" id="editP">Edit</button>' : ""}<button class="btn ghost" id="pptx">⬇ PowerPoint</button><button class="btn ghost" id="word">⬇ Word</button><button class="btn" id="addE">+ Add evidence</button></div></div>
+    ${p.context ? `<div class="card"><h2>Context</h2><p style="margin:0;white-space:pre-line">${esc(p.context)}</p></div>` : ""}
+    <div class="card"><h2>What inspectors usually look for</h2><ul class="chk" style="margin:0;padding-left:0;list-style:none">${F[2].map(el => `<li class="${covered(el) ? "ok" : ""}">${covered(el) ? "✅" : "⬜"} ${esc(el)}</li>`).join("")}</ul>
+      <p class="note" style="margin:8px 0 0">Tag each piece of evidence with what it shows, and this list fills in.</p></div>
+    <div class="card"><h2>Evidence <span class="note">(${its.length})</span></h2>${its.length ? its.map(evHtml).join("") : '<p class="note" style="margin:0">No evidence yet. Add photos of students’ work and learning, documents, links or a short write-up.</p>'}</div>`;
+  document.getElementById("back").onclick = () => { history.pushState(null, "", "evidence.html"); home(); };
+  const ep = document.getElementById("editP"); if (ep) ep.onclick = () => editPack(p);
+  document.getElementById("addE").onclick = () => editItem(p, null);
+  document.getElementById("pptx").onclick = () => exportPptx(p);
+  document.getElementById("word").onclick = () => exportWord(p);
+  app.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => editItem(p, items.find(x => String(x.id) === b.dataset.edit)));
+  app.querySelectorAll("[data-up],[data-down]").forEach(b => b.onclick = async () => { const list = its, k = list.findIndex(x => String(x.id) === (b.dataset.up || b.dataset.down)), j = b.dataset.up ? k - 1 : k + 1; if (j < 0 || j >= list.length) return;
+    await Promise.all([sb.from("evidence_items").update({ position: j }).eq("id", list[k].id), sb.from("evidence_items").update({ position: k }).eq("id", list[j].id)]); await load(); packView(p.id); });
+  for (const im of app.querySelectorAll("img[data-path]")) { const u = await signed(im.dataset.path); if (u) im.src = u; }
+  for (const a of app.querySelectorAll("a[data-path]")) { const u = await signed(a.dataset.path); if (u) a.href = u; }
+}
+const evHtml = (i) => `<div class="ev">${i.kind === "photo" && i.file_path ? `<img class="thumb" alt="" data-path="${esc(i.file_path)}">` : `<div class="thumb">${(KINDS[i.kind] || "📄").split(" ")[0]}</div>`}
+  <div><b>${esc(i.title)}</b>${i.evidence_date ? ` <span class="note">· ${fmt(i.evidence_date)}</span>` : ""}<p style="margin:4px 0 0">${esc(i.description || "")}</p>
+    ${(i.elements || []).length ? `<p style="margin:6px 0 0">${i.elements.map(e => `<span class="tag eal">${esc(e)}</span>`).join("")}</p>` : ""}
+    ${i.kind === "link" && i.url ? `<p class="note" style="margin:6px 0 0"><a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.url)}</a></p>` : ""}${i.kind === "file" && i.file_path ? `<p class="note" style="margin:6px 0 0"><a data-path="${esc(i.file_path)}" target="_blank" rel="noopener">Open the document</a></p>` : ""}</div>
+  <div class="row" style="flex-direction:column;gap:4px"><button class="btn ghost small" data-edit="${esc(i.id)}">Edit</button><button class="btn ghost small" data-up="${esc(i.id)}" aria-label="Move up">↑</button><button class="btn ghost small" data-down="${esc(i.id)}" aria-label="Move down">↓</button></div></div>`;
+
+function editItem(p, it){
+  const F = fw(p.standard), kind0 = it ? it.kind : "photo";
+  dlg.innerHTML = `<form class="dlg"><h2>${it ? "Edit evidence" : "Add evidence"}</h2>
+    <label class="f">Type <select name="k" ${it ? "disabled" : ""}>${Object.entries(KINDS).filter(([k]) => k !== "data").map(([k, v]) => `<option value="${k}" ${kind0 === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+    <label class="f" data-for="photo file" ${["photo", "file"].includes(kind0) ? "" : "hidden"}>${it && it.file_path ? "Replace the file (optional)" : "File"} <input type="file" name="fl" accept="${kind0 === "photo" ? "image/*" : ""}"></label>
+    <p class="lock" data-for="photo" ${kind0 === "photo" ? "" : "hidden"}>Only use photos of students that your school has permission to share.</p>
+    <label class="f" data-for="link" ${kind0 === "link" ? "" : "hidden"}>Link <input type="text" name="u" value="${esc(it ? it.url || "" : "")}" placeholder="https://…"></label>
+    <label class="f">Title <input type="text" name="t" required value="${esc(it ? it.title : "")}" placeholder="For example: Grade 5 students presenting their exhibition research"></label>
+    <label class="f">What it shows <textarea name="d" rows="3" placeholder="Describe what students did and learned. No staff names.">${esc(it ? it.description || "" : "")}</textarea></label>
+    <label class="f">Date <input type="date" name="dt" value="${esc(it ? it.evidence_date || "" : new Date().toISOString().slice(0, 10))}"></label>
+    <div><b>Shows</b> <span class="note">(tick what this evidence shows)</span><div class="checks">${F[2].map(el => `<label><input type="checkbox" name="el" value="${esc(el)}" ${it && (it.elements || []).includes(el) ? "checked" : ""}> ${esc(el)}</label>`).join("")}</div></div>
+    <div class="row" style="justify-content:space-between"><div>${it ? '<button type="button" class="btn ghost small" id="delI">Remove</button>' : ""}</div><div class="row"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn" id="saveI">Save</button></div></div></form>`;
+  const f = dlg.querySelector("form"); dlg.querySelector("[data-x]").onclick = () => dlg.close();
+  f.k.onchange = () => { f.querySelectorAll("[data-for]").forEach(x => x.hidden = !x.dataset.for.split(" ").includes(f.k.value)); f.fl.accept = f.k.value === "photo" ? "image/*" : ""; };
+  const di = document.getElementById("delI"); if (di) di.onclick = async () => { if (!confirm("Remove this evidence?")) return; if (it.file_path) await sb.storage.from("evidence").remove([it.file_path]); await sb.from("evidence_items").delete().eq("id", it.id); dlg.close(); await load(); packView(p.id); };
+  f.onsubmit = async e => {
+    e.preventDefault(); const kind = it ? it.kind : f.k.value, file = f.fl.files[0], btn = document.getElementById("saveI");
+    if (!it && ["photo", "file"].includes(kind) && !file) return toast("Choose a file to upload.");
+    if (file && file.size > 15 * 1024 * 1024) return toast("Please choose a file smaller than 15 MB.");
+    btn.disabled = true; btn.textContent = file ? "Uploading…" : "Saving…";
+    let path = it ? it.file_path : null;
+    if (file) { path = `${school.id}/${p.id}/${Date.now()}-${file.name.replace(/[^\w.\-]+/g, "_")}`; const up = await sb.storage.from("evidence").upload(path, file); if (up.error) { btn.disabled = false; btn.textContent = "Save"; return toast(up.error.message); } if (it && it.file_path) sb.storage.from("evidence").remove([it.file_path]); }
+    const row = { school_id: school.id, pack_id: p.id, kind, title: f.t.value.trim(), description: f.d.value.trim() || null, evidence_date: f.dt.value || null, url: kind === "link" ? f.u.value.trim() : null, file_path: path, elements: [...f.querySelectorAll("input[name=el]:checked")].map(x => x.value), updated_at: new Date().toISOString() };
+    const res = it ? await sb.from("evidence_items").update(row).eq("id", it.id) : await sb.from("evidence_items").insert(Object.assign(row, { added_by: me.id, position: itemsOf(p.id).length }));
+    if (res.error) { btn.disabled = false; btn.textContent = "Save"; return toast(res.error.message); }
+    dlg.close(); await load(); packView(p.id); toast("Saved");
+  };
+  dlg.showModal();
+}
+
+/* ---------- Export: PowerPoint and Word (cover titled with the indicator reference; no staff names) ---------- */
+async function imgData(path){ try { const u = await signed(path); const b = await (await fetch(u)).blob(); return await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(b); }); } catch (_) { return null; } }
+function imgSize(data){ return new Promise(r => { const im = new Image(); im.onload = () => r([im.naturalWidth, im.naturalHeight]); im.onerror = () => r([4, 3]); im.src = data; }); }
+async function exportPptx(p){
+  if (typeof PptxGenJS === "undefined") return toast("PowerPoint export couldn’t load. Check your internet connection.");
+  toast("Making the PowerPoint…");
+  const F = fw(p.standard), its = itemsOf(p.id), P = new PptxGenJS(); P.layout = "LAYOUT_WIDE";
+  const PL = "462D5B", INK = "2A2233", MUT = "6B6475";
+  const cover = P.addSlide(); cover.background = { color: PL };
+  cover.addText(`SEF Evidence: ${p.standard} ${F[1]}`, { x: 0.7, y: 2.2, w: 11.9, h: 1.6, fontSize: 38, bold: true, color: "FFFFFF", fontFace: "Arial" });
+  cover.addText([p.title, school.name, p.year].filter(Boolean).join("  ·  "), { x: 0.7, y: 3.9, w: 11.9, h: 0.6, fontSize: 18, color: "E8DFF2", fontFace: "Arial" });
+  if (p.context) { const s = P.addSlide(); s.addText("Context", { x: 0.6, y: 0.4, w: 12, h: 0.7, fontSize: 28, bold: true, color: PL, fontFace: "Arial" }); s.addText(p.context, { x: 0.6, y: 1.3, w: 12.1, h: 5.6, fontSize: 18, color: INK, valign: "top", fontFace: "Arial" }); }
+  const ov = P.addSlide(); ov.addText(`${p.standard} ${F[1]}: what the evidence shows`, { x: 0.6, y: 0.4, w: 12, h: 0.7, fontSize: 26, bold: true, color: PL, fontFace: "Arial" });
+  ov.addText(F[2].map(el => ({ text: el + (its.some(i => (i.elements || []).includes(el)) ? "" : "  (evidence to add)"), options: { bullet: true, color: its.some(i => (i.elements || []).includes(el)) ? INK : MUT } })), { x: 0.8, y: 1.4, w: 11.8, h: 5.2, fontSize: 20, valign: "top", fontFace: "Arial" });
+  for (const i of its) {
+    const s = P.addSlide(), hasImg = i.kind === "photo" && i.file_path;
+    s.addText(i.title, { x: 0.6, y: 0.35, w: 12.1, h: 0.8, fontSize: 24, bold: true, color: PL, fontFace: "Arial" });
+    const txt = [i.description || "", (i.elements || []).length ? "\nShows: " + i.elements.join("; ") : "", i.kind === "link" && i.url ? "\n" + i.url : "", i.evidence_date ? "\n" + fmt(i.evidence_date) : ""].join("");
+    if (hasImg) {
+      const d = await imgData(i.file_path);
+      if (d) { const [w, h] = await imgSize(d), maxW = 7.2, maxH = 5.6, k = Math.min(maxW / w, maxH / h); s.addImage({ data: d, x: 0.6, y: 1.3, w: w * k, h: h * k }); }
+      s.addText(txt, { x: 8.1, y: 1.3, w: 4.6, h: 5.6, fontSize: 15, color: INK, valign: "top", fontFace: "Arial" });
+    } else s.addText(txt, { x: 0.6, y: 1.3, w: 12.1, h: 5.6, fontSize: 18, color: INK, valign: "top", fontFace: "Arial" });
+    s.addText(`SEF Evidence: ${p.standard}`, { x: 0.6, y: 7.0, w: 6, h: 0.3, fontSize: 10, color: MUT, fontFace: "Arial" });
+  }
+  await P.writeFile({ fileName: `SEF Evidence ${p.standard} ${p.title || F[1]}.pptx`.replace(/[\\/:*?"<>|]/g, "") });
+}
+async function exportWord(p){
+  toast("Making the Word document…");
+  const F = fw(p.standard), its = itemsOf(p.id);
+  const parts = [];
+  for (const i of its) {
+    let img = ""; if (i.kind === "photo" && i.file_path) { const d = await imgData(i.file_path); if (d) img = `<p><img src="${d}" style="max-width:15cm;max-height:10cm"></p>`; }
+    parts.push(`<h2>${esc(i.title)}</h2>${img}<p>${esc(i.description || "")}</p>${(i.elements || []).length ? `<p><b>Shows:</b> ${esc(i.elements.join("; "))}</p>` : ""}${i.kind === "link" && i.url ? `<p>${esc(i.url)}</p>` : ""}${i.evidence_date ? `<p style="color:#6B6475">${fmt(i.evidence_date)}</p>` : ""}`);
+  }
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>SEF Evidence ${esc(p.standard)}</title><style>body{font-family:Arial,sans-serif;font-size:11pt;color:#2A2233}h1{color:#462D5B;font-size:24pt}h2{color:#462D5B;font-size:14pt;border-bottom:2px solid #462D5B;padding-bottom:3px;margin-top:20px}</style></head><body>
+    <h1>SEF Evidence: ${esc(p.standard)} ${esc(F[1])}</h1><p><b>${esc([p.title, school.name, p.year].filter(Boolean).join(" · "))}</b></p>
+    ${p.context ? `<h2>Context</h2><p>${esc(p.context).replace(/\n/g, "<br>")}</p>` : ""}
+    <h2>What the evidence shows</h2><ul>${F[2].map(el => `<li>${esc(el)}${its.some(i => (i.elements || []).includes(el)) ? "" : " (evidence to add)"}</li>`).join("")}</ul>${parts.join("")}</body></html>`;
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + html], { type: "application/msword" }));
+  a.download = `SEF Evidence ${p.standard} ${p.title || F[1]}.doc`.replace(/[\\/:*?"<>|]/g, ""); document.body.appendChild(a); a.click(); a.remove();
+}
+start();
+</script>
+</body>
+</html>
