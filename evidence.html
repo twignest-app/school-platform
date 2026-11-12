@@ -113,6 +113,7 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 <dialog id="dlg"></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="hub.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <script>
 /* Keep this the same as in index.html */
@@ -163,6 +164,7 @@ async function start(){
   isLead = ["school_lead", "coordinator", "admin"].includes(p.role);
   try { await load(); } catch (e) { return fail(/evidence_/.test(e.message || "") ? "Evidence packs need their database step first. Please run the Evidence packs update in Supabase." : "Evidence packs couldn’t load: " + (e.message || e)); }
   route();
+  if (window.hubInit) hubInit("evidence");
 }
 async function load(){
   const p = await sb.from("evidence_packs").select("*").eq("school_id", school.id).order("standard"); if (p.error) throw p.error; packs = p.data || [];

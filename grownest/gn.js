@@ -57,6 +57,7 @@ function headerButtons(links){ // replaces the header button with Dashboard/othe
   const hb = document.querySelector("header.top .btn"); const box = document.createElement("div"); box.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center";
   hb.replaceWith(box);
   if (window.gnAppLang) { const sw = document.createElement("button"); sw.type = "button"; sw.className = "langsw notr"; sw.textContent = gnLang() === "ar" ? "English" : "العربية"; box.append(sw); }
+  { const hub = document.createElement("a"); hub.className = "btn ghost small"; hub.href = "../"; hub.textContent = "← School hub"; box.append(hub); }
   links.forEach(([href, text]) => { const a = document.createElement("a"); a.className = "btn ghost small"; a.href = href; a.textContent = text; box.append(a); });
   const so = document.createElement("a"); so.className = "btn ghost small"; so.href = "#"; so.textContent = "Sign out"; so.onclick = e => { e.preventDefault(); signOut(); }; box.append(so);
 }

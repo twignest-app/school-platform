@@ -129,6 +129,7 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 <dialog id="dlg"></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="hub.js?v=1"></script>
 <script src="wellbeing-concerns.js?v=1"></script>
 <script>
 /* Keep this the same as in index.html */
@@ -167,6 +168,7 @@ async function start(){
   isTeam = isLead || p.role === "coordinator" || !!p.wellbeing_team;
   try { await load(); } catch (e) { return fail(/wellbeing_/.test(e.message || "") ? "Wellbeing needs its database step first. Please run the Wellbeing update in Supabase." : "Wellbeing couldn’t load: " + (e.message || e)); }
   render();
+  if (window.hubInit) hubInit("wellbeing");
 }
 async function load(){
   const sid = school.id;

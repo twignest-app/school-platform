@@ -356,6 +356,34 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
 .toggle input:checked::after{transform:translateX(18px)}
 .saved{font-size:13px;font-weight:700;color:var(--muted);min-height:18px;margin-top:8px}
 @media (max-width:640px){.shead{grid-template-columns:auto 1fr}.sact{grid-column:1/-1;justify-content:flex-start}}
+
+/* School hub overview */
+.kicker{font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.ovtitle{font-size:clamp(28px,4vw,38px);margin:0 0 4px;color:var(--ink)}
+.ovhead{margin-bottom:22px}
+.ovcards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:18px}
+.ovcard{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px 20px;display:grid;gap:8px}
+.ovcard span{color:var(--muted);font-size:15px}
+.ovcard b{font-size:34px;color:var(--ink)}
+.ovcard em{font-style:normal;font-weight:700;font-size:14.5px;color:var(--muted)}
+.ovcard em.lav{color:#7A62C4}.ovcard em.amber{color:#B07A1E}.ovcard em.green{color:#3F8A5B}
+.ovgrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px}
+.ovcol{display:grid;gap:18px;align-content:start}
+.ovpanel{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 22px}
+.ovpanel h2{font-size:21px;margin:0 0 12px;color:var(--ink)}
+.ovph{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.ovlegend{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;color:var(--muted);margin-top:6px}
+.ovlegend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.ovev{display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none}
+.ovev:last-child{border-bottom:0}
+.ovdate{display:grid;justify-items:center;min-width:44px;font-size:12px;color:var(--muted);text-transform:uppercase}
+.ovdate b{font-size:20px;color:var(--ink)}
+.ovnote{padding:10px 0;border-bottom:1px solid var(--line)}
+.ovnote:last-child{border-bottom:0}
+.ovnote p{margin:0 !important}
+.ovnote .btn{padding:6px 12px;font-size:14px;margin-top:6px}
+@media (max-width:1000px){.ovcards{grid-template-columns:repeat(2,minmax(0,1fr))}.ovgrid{grid-template-columns:1fr}}
+@media (max-width:520px){.ovcards{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -677,6 +705,8 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
 </template>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="hub.js?v=1"></script>
+<script src="twcalc.js?v=1"></script>
 <script>
 document.documentElement.classList.add("js");
 const PLATFORM = "Nestopia";
@@ -843,16 +873,72 @@ function waitView(title, text){
 
 function homeView(p, school){
   const on = school.modules || [];
-  const ready = MODULES.filter(m => on.includes(m.id) && m.url), later = MODULES.filter(m => on.includes(m.id) && !m.url);
-  const first = (p.full_name || "").split(" ")[0], hr = new Date().getHours();
-  const greet = hr < 12 ? "Good morning" : hr < 17 ? "Good afternoon" : "Good evening";
-  app.innerHTML = `<div class="phead"><div><h1 class="ptitle serif">${greet}, ${esc(first)}</h1><p class="note">${esc(school.name)}</p></div></div>
-    ${ready.length ? `<div class="open">${ready.map(m => `<div class="openmod" style="--tint:${m.tint}"><div class="ico" style="color:${m.colour}"><svg><use href="#${m.icon}"/></svg></div>
-        <h3 class="serif">${esc(m.name)}</h3><p>${esc(m.desc)}</p><a class="btn" href="${esc(m.url)}">Open ${esc(m.name)} <svg aria-hidden="true"><use href="#i-arrow"/></svg></a></div>`).join("")}</div>`
-      : `<div class="panel"><p class="note" style="margin:0">No parts of Nestopia are switched on for your school yet.</p></div>`}
-    ${later.length ? `<div class="later"><h2>Coming soon for your school</h2><ul>${later.map(m => `<li>${esc(m.name)}</li>`).join("")}</ul></div>` : ""}`;
-  inclusionReminder(p, school);
-  wellbeingReminder(p, school);
+  const first = (p.full_name || "").split(" ")[0];
+  const lead = ["school_lead", "coordinator", "admin"].includes(p.role);
+  const card = (label, id, sub, cls) => `<div class="ovcard"><span>${label}</span><b id="${id}">–</b><em class="${cls || ""}" id="${id}s">${sub}</em></div>`;
+  app.innerHTML = `<div class="ovhead"><div><p class="kicker">Your connected school</p><h1 class="ovtitle">Welcome back, ${esc(first)}!</h1><p class="note" style="margin:0">${esc(school.name)}</p></div></div>
+    <div class="ovcards">
+      ${card("Attendance today", "ovAtt", "Coming soon", "muted")}
+      ${card("Active students", "ovStu", "Across your school")}
+      ${card(lead ? "Observations this year" : "My observations", "ovObs", on.includes("grownest") ? "In GrowNest" : "GrowNest is off", "lav")}
+      ${card("Needs your attention", "ovTask", "From Inclusion and Wellbeing", "amber")}
+    </div>
+    <div class="ovgrid">
+      <section class="ovpanel"><div class="ovph"><h2>Student progress</h2><span class="note" id="ovProgNote">From TwigNest</span></div><div id="ovChart"><p class="note">Loading…</p></div></section>
+      <div class="ovcol">
+        <section class="ovpanel"><h2>Coming up</h2><div id="ovEvents"><p class="note" style="margin:0">Loading…</p></div></section>
+        <section class="ovpanel"><h2>Recent notifications</h2><div id="hubnotes"></div><p class="note" id="ovNoNotes" style="margin:0">Nothing needs you right now. 🎉</p></section>
+      </div>
+    </div>`;
+  if (window.hubInit) hubInit("overview");
+  overviewData(p, school, lead);
+  Promise.all([inclusionReminder(p, school), wellbeingReminder(p, school)]).then(() => {
+    const n = document.querySelectorAll("#hubnotes > div").length;
+    const t = document.getElementById("ovTask"); if (t) t.textContent = n;
+    const e = document.getElementById("ovNoNotes"); if (e) e.hidden = n > 0;
+  });
+}
+// a reminder goes into the Recent notifications panel (or above the page on other layouts)
+function placeNote(b){ const box = document.getElementById("hubnotes"); if (box) { b.className = "ovnote"; b.style.cssText = ""; box.append(b); } else { placeNote(b); } }
+
+async function overviewData(p, school, lead){
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  try { const { count } = await sb.from("students").select("id", { count: "exact", head: true }).eq("school_id", school.id).eq("archived", false); set("ovStu", (count || 0).toLocaleString("en-GB")); } catch (_) {}
+  // GrowNest observations this academic year (if this account can see them)
+  try {
+    const now = new Date(), y0 = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+    let q = sb.from("observations").select("id", { count: "exact", head: true }).gte("observed_on", y0 + "-08-01");
+    const { count, error } = await q; if (!error) set("ovObs", count || 0); else set("ovObss", "Open GrowNest");
+  } catch (_) {}
+  // Coming up: inclusion observations and meetings, and plan reviews
+  try {
+    const t = new Date().toISOString(), soon = new Date(Date.now() + 21 * 864e5).toISOString();
+    const [ev, pl] = await Promise.all([
+      sb.from("inclusion_events").select("kind,starts_at,status").eq("school_id", school.id).gte("starts_at", t).lte("starts_at", soon).neq("status", "cancelled").order("starts_at").limit(5),
+      lead ? sb.from("inclusion_plans").select("review_date").eq("school_id", school.id).eq("status", "active").gte("review_date", t.slice(0, 10)).lte("review_date", soon.slice(0, 10)).order("review_date").limit(5) : Promise.resolve({ data: [] })]);
+    const rows = [...(ev.data || []).map(e => [e.starts_at, (e.kind === "parent_meeting" ? "Parent meeting" : "Inclusion observation") + (e.status === "proposed" ? " (to confirm)" : ""), "inclusion.html"]),
+      ...(pl.data || []).map(x => [x.review_date + "T08:00:00", "Support plan review", "inclusion.html#reviews"])].sort((a, b) => a[0].localeCompare(b[0])).slice(0, 6);
+    const box = document.getElementById("ovEvents");
+    if (box) box.innerHTML = rows.length ? rows.map(r => `<a class="ovev" href="${r[2]}"><span class="ovdate"><b>${new Date(r[0]).getDate()}</b>${new Date(r[0]).toLocaleDateString("en-GB", { month: "short" })}</span><span>${esc(r[1])}<br><small class="note">${new Date(r[0]).toLocaleDateString("en-GB", { weekday: "long" })}</small></span></a>`).join("")
+      : '<p class="note" style="margin:0">Nothing in the next three weeks. The school calendar is coming soon.</p>';
+  } catch (_) { const box = document.getElementById("ovEvents"); if (box) box.innerHTML = '<p class="note" style="margin:0">Nothing coming up.</p>'; }
+  // Student progress from TwigNest, term by term
+  const ch = document.getElementById("ovChart");
+  try {
+    if (typeof twigSchoolSummary !== "function") throw new Error("x");
+    const S = await twigSchoolSummary(sb, school.id);
+    const pts = S ? S.terms.filter(t => t.attainment != null || t.progress != null) : [];
+    if (!pts.length) { ch.innerHTML = '<p class="note">Progress appears here once TwigNest has results for at least one term.</p>'; return; }
+    const W = 640, H = 220, pad = 34, xs = k => pts.length === 1 ? W / 2 : pad + k * (W - pad * 2) / (pts.length - 1), ys = v => H - pad - (v / 100) * (H - pad * 2);
+    const line = (key, col) => { const ok = pts.map((t, k) => [k, t[key]]).filter(x => x[1] != null); if (!ok.length) return "";
+      const d = ok.map(([k, v], i) => (i ? "L" : "M") + xs(k).toFixed(1) + " " + ys(v).toFixed(1)).join(" ");
+      return `<path d="${d}" fill="none" stroke="${col}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>` + ok.map(([k, v]) => `<circle cx="${xs(k)}" cy="${ys(v)}" r="5" fill="${col}"><title>${v}%</title></circle><text x="${xs(k)}" y="${ys(v) - 11}" text-anchor="middle" font-size="12" font-weight="700" fill="${col}">${v}%</text>`).join(""); };
+    ch.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Student progress by term">
+      ${[25, 50, 75].map(v => `<line x1="${pad}" x2="${W - pad}" y1="${ys(v)}" y2="${ys(v)}" stroke="var(--line)"/>`).join("")}
+      ${line("attainment", "#6E9BD8")}${line("progress", "#8BCFA8")}
+      ${pts.map((t, k) => `<text x="${xs(k)}" y="${H - 8}" text-anchor="middle" font-size="12" fill="var(--muted)">${esc(t.name)}</text>`).join("")}</svg>
+      <div class="ovlegend"><span><i style="background:#6E9BD8"></i>In line or above standards</span><span><i style="background:#8BCFA8"></i>Expected progress or better</span></div>`;
+  } catch (_) { ch.innerHTML = '<p class="note">Progress appears here once TwigNest is set up for your school.</p>'; }
 }
 
 // Wellbeing: students who asked to talk today and haven't been followed up yet
@@ -867,14 +953,14 @@ async function wellbeingReminder(p, school){
         const sg = cs.filter(c => c.safeguarding).length, other = cs.length - sg, urg = cs.filter(c => c.urgent).length;
         const b2 = document.createElement("div"); b2.className = "panel"; b2.style.cssText = "margin-bottom:16px;border-left:5px solid " + (sg || urg ? "#B4473A" : "#A86C12");
         b2.innerHTML = `<p style="margin:0;font-weight:700">📝 Wellbeing: ${[sg ? `${sg} new safeguarding concern${sg === 1 ? "" : "s"} 🔒` : "", other ? `${other} new concern${other === 1 ? "" : "s"}` : ""].filter(Boolean).join(" and ")}${urg ? ` (${urg} urgent)` : ""}.</p><p style="margin:8px 0 0"><a class="btn" href="wellbeing.html">Open Wellbeing</a></p>`;
-        const hd2 = app.querySelector(".phead"); if (hd2) hd2.after(b2); else app.prepend(b2);
+        placeNote(b2);
       }
     } catch (_) {}
     const { data, error } = await sb.from("wellbeing_checkins").select("id").eq("school_id", school.id).eq("day", t).eq("talk", true).is("followed_up_at", null);
     if (error || !data || !data.length) return;
     const b = document.createElement("div"); b.className = "panel"; b.style.cssText = "margin-bottom:16px;border-left:5px solid #B4473A";
     b.innerHTML = `<p style="margin:0;font-weight:700">🙋 Wellbeing: ${data.length} student${data.length === 1 ? " has" : "s have"} asked to talk to someone today.</p><p style="margin:8px 0 0"><a class="btn" href="wellbeing.html">See who</a></p>`;
-    const hd = app.querySelector(".phead"); if (hd) hd.after(b); else app.prepend(b);
+    placeNote(b);
   } catch (_) {}
 }
 
@@ -893,7 +979,7 @@ async function inclusionReminder(p, school){
       if (n) {
         const b = document.createElement("div"); b.className = "panel"; b.style.cssText = "margin-bottom:16px;border-left:5px solid #A86C12";
         b.innerHTML = `<p style="margin:0;font-weight:700">🙋 Inclusion referrals: ${n} thing${n === 1 ? "" : "s"} waiting for you.</p><p style="margin:8px 0 0"><a class="btn" href="inclusion.html">Open Inclusion</a></p>`;
-        const hd = app.querySelector(".phead"); if (hd) hd.after(b); else app.prepend(b);
+        placeNote(b);
       }
     } catch (_) {}
     if (!(["school_lead", "coordinator", "admin"].includes(p.role) || p.inclusion_lead || p.inclusion_head)) return;
@@ -905,7 +991,7 @@ async function inclusionReminder(p, school){
     box.className = "panel"; box.style.cssText = "margin-bottom:16px;border-left:5px solid " + (late ? "#B4473A" : "#A86C12");
     box.innerHTML = `<p style="margin:0;font-weight:700">💜 Inclusion: ${late ? `<span style="color:#B4473A">${late} plan review${late === 1 ? " is" : "s are"} overdue</span>` : ""}${late && due ? " and " : ""}${due ? `${due} ${due === 1 ? "is" : "are"} due in the next 2 weeks` : ""}.</p>
       <p style="margin:8px 0 0"><a class="btn" href="inclusion.html#reviews">See reviews due</a></p>`;
-    const head = app.querySelector(".phead"); if (head) head.after(box); else app.prepend(box);
+    placeNote(box);
   } catch (_) {}
 }
 

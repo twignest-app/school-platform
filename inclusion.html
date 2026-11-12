@@ -114,6 +114,7 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="hub.js?v=1"></script>
 <script src="inclusion-referrals.js?v=1"></script>
 <script>
 /* Keep this the same as in index.html */
@@ -171,6 +172,7 @@ async function start(){
   app.innerHTML = `<p class="note">Loading the inclusion register…</p>`;
   try { await load(); } catch (e) { return fail(/inclusion_/.test(e.message || "") ? "Inclusion needs its database step first. Please run the Inclusion update in Supabase." : "Inclusion couldn’t load: " + (e.message || e)); }
   render();
+  if (window.hubInit) hubInit("inclusion");
 }
 
 async function load(){

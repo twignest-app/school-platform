@@ -66,6 +66,7 @@ h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
 <main id="app"><p class="note">Loading…</p></main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="hub.js?v=1"></script>
 <script>
 /* Keep this the same as in index.html */
 const PLATFORM = "Nestopia";
@@ -109,6 +110,7 @@ async function start(){
   app.innerHTML = `<p class="note">Checking every objective… this can take a few seconds.</p>`;
   try { await load(); } catch (e) { return fail("The coverage map couldn’t load: " + (e.message || e)); }
   render();
+  if (window.hubInit) hubInit("planning");
 }
 
 async function load(){
