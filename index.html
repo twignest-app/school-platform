@@ -851,6 +851,38 @@ function homeView(p, school){
         <h3 class="serif">${esc(m.name)}</h3><p>${esc(m.desc)}</p><a class="btn" href="${esc(m.url)}">Open ${esc(m.name)} <svg aria-hidden="true"><use href="#i-arrow"/></svg></a></div>`).join("")}</div>`
       : `<div class="panel"><p class="note" style="margin:0">No parts of Nestopia are switched on for your school yet.</p></div>`}
     ${later.length ? `<div class="later"><h2>Coming soon for your school</h2><ul>${later.map(m => `<li>${esc(m.name)}</li>`).join("")}</ul></div>` : ""}`;
+  inclusionReminder(p, school);
+}
+
+// Inclusion team: plan reviews that are overdue or due in the next 14 days
+async function inclusionReminder(p, school){
+  try {
+    if (!(school.modules || []).includes("inclusion")) return;
+    // referral tasks for everyone (teachers, team members, the inclusion head)
+    try {
+      const head = ["school_lead", "admin"].includes(p.role) || p.inclusion_head;
+      const [{ data: rf }, { data: ev }] = await Promise.all([sb.from("inclusion_referrals").select("status,teacher_id,assigned_to").eq("school_id", school.id).not("status", "in", "(closed,declined)"),
+        sb.from("inclusion_events").select("status,teacher_id,staff_id,proposed_by").eq("school_id", school.id).in("status", ["proposed", "reschedule"])]);
+      let n = 0;
+      (rf || []).forEach(r => { if (head && ["submitted", "observed"].includes(r.status)) n++; if (r.assigned_to === p.id && r.status === "assigned") n++; if (r.teacher_id === p.id && r.status === "more_info") n++; });
+      (ev || []).forEach(e => { if (e.teacher_id === p.id && e.status === "proposed" && e.proposed_by !== p.id) n++; if (e.staff_id === p.id && e.status === "reschedule") n++; });
+      if (n) {
+        const b = document.createElement("div"); b.className = "panel"; b.style.cssText = "margin-bottom:16px;border-left:5px solid #A86C12";
+        b.innerHTML = `<p style="margin:0;font-weight:700">🙋 Inclusion referrals: ${n} thing${n === 1 ? "" : "s"} waiting for you.</p><p style="margin:8px 0 0"><a class="btn" href="inclusion.html">Open Inclusion</a></p>`;
+        const hd = app.querySelector(".phead"); if (hd) hd.after(b); else app.prepend(b);
+      }
+    } catch (_) {}
+    if (!(["school_lead", "coordinator", "admin"].includes(p.role) || p.inclusion_lead || p.inclusion_head)) return;
+    const soon = new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10), today = new Date().toISOString().slice(0, 10);
+    const { data, error } = await sb.from("inclusion_plans").select("review_date").eq("school_id", school.id).eq("status", "active").lte("review_date", soon);
+    if (error || !data || !data.length) return;
+    const late = data.filter(x => x.review_date < today).length, due = data.length - late;
+    const box = document.createElement("div");
+    box.className = "panel"; box.style.cssText = "margin-bottom:16px;border-left:5px solid " + (late ? "#B4473A" : "#A86C12");
+    box.innerHTML = `<p style="margin:0;font-weight:700">💜 Inclusion: ${late ? `<span style="color:#B4473A">${late} plan review${late === 1 ? " is" : "s are"} overdue</span>` : ""}${late && due ? " and " : ""}${due ? `${due} ${due === 1 ? "is" : "are"} due in the next 2 weeks` : ""}.</p>
+      <p style="margin:8px 0 0"><a class="btn" href="inclusion.html#reviews">See reviews due</a></p>`;
+    const head = app.querySelector(".phead"); if (head) head.after(box); else app.prepend(box);
+  } catch (_) {}
 }
 
 async function adminView(){

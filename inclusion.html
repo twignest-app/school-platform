@@ -94,6 +94,14 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 .lock{font-size:12.5px;color:var(--red);font-weight:800}
 .empty{text-align:center;padding:30px 10px}
 .okmsg{border-radius:12px;padding:10px 14px;font-weight:600;font-size:14px;background:var(--sage-soft);color:var(--sage)}
+.calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:10px}
+.calhead{font-size:12px;font-weight:800;color:var(--muted);text-align:center;padding:4px}
+.calcell{min-height:86px;border:1px solid var(--line);border-radius:10px;padding:4px;background:var(--card);display:flex;flex-direction:column;gap:3px;overflow:hidden}
+.calcell.empty{background:transparent;border:0}.calcell.today{outline:2px solid var(--plum-2)}
+.calcell b{font-size:12px;color:var(--muted)}
+.calev{font:inherit;font-size:11.5px;font-weight:700;text-align:left;border:0;border-radius:6px;padding:2px 5px;cursor:pointer;background:var(--blue-soft);color:var(--blue);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.calev.parent_meeting{background:var(--plum-soft);color:var(--plum)}.calev.proposed,.calev.reschedule{background:var(--amber-soft);color:var(--amber)}.calev.done{opacity:.6}
+@media (max-width:640px){.calcell{min-height:60px}.calev{font-size:10px}}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:10px 18px;border-radius:999px;font-weight:700;opacity:0;transition:.2s;pointer-events:none;z-index:50}
 .toast.on{opacity:1}
 
@@ -106,6 +114,7 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="inclusion-referrals.js?v=1"></script>
 <script>
 /* Keep this the same as in index.html */
 const PLATFORM = "Nestopia";
@@ -130,7 +139,7 @@ const IEP_AREAS = ["Literacy", "Numeracy", "Communication and language", "Social
 
 let me, school, isMgr = false, isLead = false, staff = [], classes = [], studs = [], reg = [], plans = [], targets = [], conf = {}, meetings = [], notes = [], versions = [], acks = [], feedback = [], cteach = [];
 const MEET_KINDS = { review: "Plan review meeting", update: "Progress update", concern: "A concern raised", start: "New plan agreed", other: "Other" };
-let ui = { tab: location.hash === "#reviews" ? "reviews" : "register", cat: "all", grade: "all", q: "" };
+let ui = { tab: location.hash === "#reviews" ? "reviews" : location.hash === "#register" ? "register" : "referrals", cat: "all", grade: "all", q: "" };
 
 function fail(text){ app.innerHTML = `<div class="card"><div class="msg">${esc(text)}</div><p style="margin-top:14px"><a class="btn ghost" href="./">← Back to ${esc(PLATFORM)}</a></p></div>`; }
 async function fetchAll(q){ const out = []; for (let f = 0; ; f += 1000) { const { data, error } = await q().range(f, f + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; } return out; }
@@ -158,7 +167,7 @@ async function start(){
   if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
   if (!(school.modules || []).includes("inclusion")) return fail("Inclusion isn’t switched on for your school yet.");
   isLead = p.role === "school_lead" || p.role === "admin";
-  isMgr = isLead || p.role === "coordinator" || !!p.inclusion_lead;
+  isMgr = isLead || p.role === "coordinator" || !!p.inclusion_lead || !!p.inclusion_head;
   app.innerHTML = `<p class="note">Loading the inclusion register…</p>`;
   try { await load(); } catch (e) { return fail(/inclusion_/.test(e.message || "") ? "Inclusion needs its database step first. Please run the Inclusion update in Supabase." : "Inclusion couldn’t load: " + (e.message || e)); }
   render();
@@ -171,7 +180,8 @@ async function load(){
   window.SETUP = set.data && set.data[0] ? set.data[0].config : null;
   let cq = sb.from("classes").select("*").eq("school_id", sid); if (year) cq = cq.eq("year", year);
   const c = await cq; if (c.error) throw c.error; classes = c.data || [];
-  const st = await sb.from("profiles").select("id,full_name,email,role,active,inclusion_lead").eq("school_id", sid);
+  let st = await sb.from("profiles").select("id,full_name,email,role,active,inclusion_lead,inclusion_head").eq("school_id", sid);
+  if (st.error) st = await sb.from("profiles").select("id,full_name,email,role,active,inclusion_lead").eq("school_id", sid);
   staff = (st.data || []).filter(x => x.active);
   if (isMgr) studs = await fetchAll(() => sb.from("students").select("id,full_name,arabic_name,student_number,class_id,groups,archived").eq("school_id", sid).eq("archived", false).order("full_name"));
   else {
@@ -189,6 +199,7 @@ async function load(){
   versions = await fetchAll(() => sb.from("inclusion_plan_versions").select("id,plan_id,version,created_at,created_by,snapshot").eq("school_id", sid).order("version", { ascending: false })).catch(() => []);
   acks = await fetchAll(() => sb.from("inclusion_acks").select("*").eq("school_id", sid)).catch(() => []);
   feedback = await fetchAll(() => sb.from("inclusion_target_feedback").select("*").eq("school_id", sid).order("created_at", { ascending: false })).catch(() => []);
+  if (typeof refLoad === "function") await refLoad();
   cteach = isMgr ? await fetchAll(() => sb.from("class_teachers").select("class_id,teacher_id").in("class_id", classes.map(c => c.id))).catch(() => []) : [];
 }
 
@@ -209,11 +220,11 @@ function render(){
       <div class="metric"><span>Reviews due in 14 days</span><b style="color:${due ? "var(--amber)" : "var(--plum)"}">${due}</b></div>
       <div class="metric"><span>SoD without an active plan</span><b style="color:${noPlan ? "var(--red)" : "var(--plum)"}">${noPlan}</b></div>
     </div>
-    <div class="tabs" role="tablist">${[["register", "Register"], ["reviews", "Reviews due"], ["groups", "Progress by group"], ...(isLead ? [["team", "Inclusion team"]] : [])].map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}</button>`).join("")}</div>
+    <div class="tabs" role="tablist">${[["referrals", "Referrals" + (typeof myTasks === "function" && myTasks().length ? " (" + myTasks().length + ")" : "")], ["register", "Register"], ["reviews", "Reviews due"], ["calendar", "Calendar"], ["groups", "Progress by group"], ...(isLead ? [["team", "Inclusion team"]] : [])].map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}</button>`).join("")}</div>
     <div id="pane"></div>`;
   document.getElementById("add").onclick = () => openEntry(null);
   app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; render(); });
-  ({ register: registerPane, reviews: reviewsPane, groups: groupsPane, team: teamPane })[ui.tab]();
+  ({ referrals: () => refPane(), register: registerPane, reviews: reviewsPane, calendar: () => calPane(), groups: groupsPane, team: teamPane })[ui.tab]();
 }
 
 function registerPane(){
@@ -257,10 +268,17 @@ function reviewsPane(){
 function teamPane(){
   const pane = document.getElementById("pane");
   pane.innerHTML = `<div class="card"><h2>Inclusion team</h2><p class="note">School leaders and coordinators can always manage the register. Tick anyone else who should manage it too, such as your SENCO, inclusion teachers or the EAL lead. Class teachers see only their own students’ needs and strategies.</p>
-    <div class="tablewrap"><table class="reg"><tr><th>Name</th><th>Role</th><th>Manages inclusion</th></tr>
+    <div class="tablewrap"><table class="reg"><tr><th>Name</th><th>Role</th><th>Inclusion team</th><th>Inclusion head</th></tr>
     ${staff.slice().sort((a, b) => (a.full_name || "").localeCompare(b.full_name || "")).map(p => { const always = ["school_lead", "coordinator", "admin"].includes(p.role);
       return `<tr><td>${esc(p.full_name || p.email)}</td><td>${esc({ school_lead: "School leader", coordinator: "Coordinator", teacher: "Teacher", checker: "Buddy checker", admin: "Admin" }[p.role] || p.role)}</td>
-      <td>${always ? '<span class="note">Always</span>' : `<label style="display:flex;gap:6px;align-items:center;font-weight:600"><input type="checkbox" data-lead="${p.id}" ${p.inclusion_lead ? "checked" : ""}> Inclusion team</label>`}</td></tr>`; }).join("")}</table></div></div>`;
+      <td>${always ? '<span class="note">Always</span>' : `<label style="display:flex;gap:6px;align-items:center;font-weight:600"><input type="checkbox" data-lead="${p.id}" ${p.inclusion_lead ? "checked" : ""}> Team</label>`}</td>
+      <td><label style="display:flex;gap:6px;align-items:center;font-weight:600"><input type="checkbox" data-head="${p.id}" ${p.inclusion_head ? "checked" : ""}> Head</label></td></tr>`; }).join("")}</table></div>
+    <p class="note" style="margin-top:10px">The <b>inclusion head</b> reviews teachers’ referrals, assigns them to the team and decides the next steps after an observation. Until you choose one, school leaders do this.</p></div>`;
+  pane.querySelectorAll("[data-head]").forEach(cb => cb.onchange = async () => {
+    const { error } = await sb.rpc("set_inclusion_head", { pid: cb.dataset.head, on: cb.checked });
+    if (error) { cb.checked = !cb.checked; return toast(/set_inclusion_head/.test(error.message) ? "Please run the referrals database step first." : error.message); }
+    const p = staff.find(x => x.id === cb.dataset.head) || {}; p.inclusion_head = cb.checked; if (cb.checked) p.inclusion_lead = true; toast("Saved"); teamPane();
+  });
   pane.querySelectorAll("[data-lead]").forEach(cb => cb.onchange = async () => {
     const { error } = await sb.rpc("set_inclusion_lead", { pid: cb.dataset.lead, on: cb.checked });
     if (error) { cb.checked = !cb.checked; return toast(error.message); }
@@ -269,9 +287,10 @@ function teamPane(){
 }
 
 /* ---------- Add or edit a register entry ---------- */
-function openEntry(sid){
+function openEntry(sid, preStudent){
+  const pre = window.REF_PREFILL; window.REF_PREFILL = null;
   const r = sid ? regOf(sid) || {} : {}, c = sid ? conf[sid] || {} : {};
-  const cats = r.categories || [], on = (arr, v) => (arr || []).includes(v) ? "checked" : "";
+  const cats = (r.categories && r.categories.length ? r.categories : null) || (pre ? pre.categories : []), on = (arr, v) => (arr || []).includes(v) ? "checked" : "";
   const choices = studs.filter(s => sid ? String(s.id) === String(sid) : !regOf(s.id) || regOf(s.id).active === false);
   dlg.innerHTML = `<form class="dlg" id="ef"><h2>${sid ? "Edit " + esc(stud(sid).full_name) : "Add a student to the register"}</h2>
     ${sid ? "" : `<label class="f">Student <input type="search" id="pickQ" placeholder="Type a name or student number" autocomplete="off"><select id="pick" size="6" required>${choices.map(s => `<option value="${esc(s.id)}">${esc(s.full_name)}${s.student_number ? " · " + esc(s.student_number) : ""}${cls(s.class_id) ? " · " + esc(cls(s.class_id).name) : ""}</option>`).join("")}</select></label>`}
@@ -292,6 +311,7 @@ function openEntry(sid){
   const f = dlg.querySelector("form");
   f.querySelectorAll('input[name=cat]').forEach(cb => cb.onchange = () => f.querySelectorAll(`[data-show="${cb.value}"]`).forEach(x => x.hidden = !cb.checked));
   dlg.querySelector("[data-x]").onclick = () => dlg.close();
+  if (preStudent && document.getElementById("pick")) { const ps = document.getElementById("pick"); ps.value = String(preStudent); }
   const pq = document.getElementById("pickQ");
   if (pq) pq.oninput = () => { const t = pq.value.toLowerCase(); [...document.getElementById("pick").options].forEach(o => o.hidden = !o.text.toLowerCase().includes(t)); };
   const rm = document.getElementById("remove");
@@ -310,7 +330,8 @@ function openEntry(sid){
     if (error) { err.textContent = error.message; err.hidden = false; return; }
     const cn = f.conf.value.trim();
     if (cn || conf[studentId]) { const { error: ce } = await sb.from("inclusion_confidential").upsert({ school_id: school.id, student_id: studentId, notes: cn || null, updated_by: me.id }, { onConflict: "student_id" }); if (ce) { err.textContent = ce.message; err.hidden = false; return; } }
-    dlg.close(); await load(); render(); toast("Saved"); if (!sid) openStudent(studentId);
+    dlg.close(); if (pre && pre.after) await pre.after(); await load(); render(); toast("Saved");
+    if (pre) openPlan(studentId, null); else if (!sid) openStudent(studentId);
   };
   dlg.showModal();
 }
@@ -729,12 +750,17 @@ function teacherView(){
       ${ap.length ? `<div class="row" style="margin-top:8px">${ap.map(p => { const read = acks.some(a => String(a.plan_id) === String(p.id) && a.teacher_id === me.id && a.version === (p.version || 1));
         return `<button class="btn small ${read ? "ghost" : ""}" data-iep="${esc(p.id)}">📄 ${esc(p.title || PLAN_KINDS[p.kind].split(" (")[0])} ${read ? "· ✅ Read" : "· Please read"}</button>`; }).join("")}</div>` : ""}
       ${ap.length ? `<p class="note" style="margin:6px 0 0"><b>Current targets:</b> ${esc(ap.flatMap(p => targets.filter(t => String(t.plan_id) === String(p.id) && t.progress !== "a").map(t => t.target)).join("; ") || "all achieved")}</p>` : ""}</div>`; };
-  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Inclusion</h1><p class="note">Students in your classes who need extra support or challenge, and how to help them in class. Please keep this information private.</p></div>
+  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Inclusion</h1><p class="note">Refer a student you’re worried about, and see the needs and strategies for students in your classes. Please keep this information private.</p></div>
       ${mine.length ? '<button class="btn ghost" id="print">🖨 Print a class summary</button>' : ""}</div>
+    ${typeof refTeacherHtml === "function" ? refTeacherHtml() : ""}
+    ${typeof calPane === "function" && events.some(e => e.teacher_id === me.id && e.status !== "cancelled") ? '<div id="tcal"></div>' : ""}
+    <h2 class="ptitle" style="font-size:20px;margin:22px 0 10px">My students with additional needs</h2>
     ${mine.length ? Object.entries(byClass).map(([cid, rs]) => `<div class="card"><h2>${esc((cls(cid) || {}).name || "My students")} <span class="note">(${rs.length})</span></h2>${rs.sort((a, b) => stud(a.student_id).full_name.localeCompare(stud(b.student_id).full_name)).map(card).join("")}</div>`).join("")
       : '<div class="card"><p class="note" style="margin:0">None of your students are on the inclusion register.</p></div>'}`;
   app.querySelectorAll("[data-open]").forEach(b => b.onclick = () => openStudent(b.dataset.open));
   app.querySelectorAll("[data-iep]").forEach(b => b.onclick = () => openIEP(b.dataset.iep));
+  if (typeof refBind === "function") refBind(app);
+  const tc = document.getElementById("tcal"); if (tc) calPane(tc);
   const pr = document.getElementById("print");
   if (pr) pr.onclick = () => {
     const w = window.open("", "_blank"); if (!w) return window.print();
