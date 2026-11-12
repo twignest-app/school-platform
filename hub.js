@@ -17,6 +17,7 @@
     evidence: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 13l2 2 4-4"/>',
     conferences: '<circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2.5 19c.6-3 2.8-4.5 5.5-4.5S12.9 16 13.5 19M10.5 19c.6-3 2.8-4.5 5.5-4.5s4.9 1.5 5.5 4.5"/>',
     behaviour: '<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>',
+    messages: '<path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/>',
     settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>'
   };
   // [id, label, link, module needed (null = always), soon]
@@ -29,6 +30,7 @@
     ["assessments", "Assessments", "twignest/", "twignest"],
     ["grownest", "GrowNest", "grownest/app.html", "grownest"],
     ["twignest", "TwigNest", "twignest/", "twignest"],
+    ["messages", "Messages", "messages.html", null],
     ["reports", "Reports", "reports.html", "twignest"],
     ["calendar", "Calendar", "calendar.html", null],
     ["label", "Support"],

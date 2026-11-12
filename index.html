@@ -705,7 +705,7 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
 </template>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=8"></script>
+<script src="hub.js?v=9"></script>
 <script src="twcalc.js?v=3"></script>
 <script src="getstarted.js?v=1"></script>
 <script>
@@ -896,11 +896,23 @@ function homeView(p, school){
   if (window.hubInit) hubInit("overview");
   overviewData(p, school, lead);
   if (["school_lead", "admin"].includes(p.role) && typeof gsSteps === "function") gsSteps(sb, school).then(steps => { const b = document.getElementById("gsBox"); if (b && steps.some(s => !s[2])) { b.innerHTML = gsHtml(steps, true); b.hidden = false; } }).catch(() => {});
-  Promise.all([inclusionReminder(p, school), wellbeingReminder(p, school), behaviourReminder(p, school)]).then(() => {
+  Promise.all([inclusionReminder(p, school), wellbeingReminder(p, school), behaviourReminder(p, school), messagesReminder(p, school)]).then(() => {
     const n = document.querySelectorAll("#hubnotes > div").length;
     const t = document.getElementById("ovTask"); if (t) t.textContent = n;
     const e = document.getElementById("ovNoNotes"); if (e) e.hidden = n > 0;
   });
+}
+// Parent messages waiting for a reply
+async function messagesReminder(p, school){
+  try {
+    const lead = ["school_lead", "coordinator", "admin"].includes(p.role);
+    const { data, error } = await sb.from("pm_threads").select("teacher_id,staff_unread").eq("school_id", school.id).gt("staff_unread", 0);
+    if (error || !data) return;
+    const n = data.filter(t => t.teacher_id === p.id || (!t.teacher_id && lead)).length; if (!n) return;
+    const b = document.createElement("div");
+    b.innerHTML = `<p style="margin:0;font-weight:700">💬 ${n} parent message${n === 1 ? "" : "s"} waiting for a reply.</p><p style="margin:8px 0 0"><a class="btn" href="messages.html">Open Messages</a></p>`;
+    placeNote(b);
+  } catch (_) {}
 }
 // Behaviour: open high-level incidents for leaders
 async function behaviourReminder(p, school){

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Messages · Nestopia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--plum:#462D5B;--plum-2:#6A4B85;--plum-soft:#EDE6F5;--sage:#5E8455;--sage-soft:#E6EFE2;--amber:#A86C12;--amber-soft:#FBF0DC;--red:#B4473A;--red-soft:#F8E4E1;--blue:#4E6FB8;--blue-soft:#E4EBF8;--bg:#F7F4FB;--card:#FFFFFF;--ink:#2E2140;--muted:#6F6680;--line:#E4DDEE;--empty:#ECE7F3;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--plum:#CDB9EA;--plum-2:#DCCCF2;--plum-soft:#352A45;--sage:#A7C59A;--sage-soft:#26331F;--amber:#E6B566;--amber-soft:#3A2E17;--red:#E8897C;--red-soft:#3D2220;--blue:#9DB4E8;--blue-soft:#1E2A40;--bg:#17131D;--card:#221C2B;--ink:#F1ECF7;--muted:#B2A8C2;--line:#382F45;--empty:#2C2536;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--plum-2);outline-offset:2px}
+h1,h2,h3,.btn,.brand{font-family:"Poppins","Nunito",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-weight:600;font-size:22px;color:var(--plum);text-decoration:none}
+header .who{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:14px;color:var(--muted);flex-wrap:wrap}
+main{max-width:1200px;margin:0 auto;padding:24px 20px 48px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px}
+.card h2{margin:0 0 8px;font-size:20px;color:var(--plum);font-weight:600}
+.btn{border:0;background:var(--plum);color:#fff;border-radius:999px;padding:10px 20px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--bg);color:var(--plum);border:1px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:13px}
+.note{color:var(--muted);font-size:14px}
+.msg{border-radius:12px;padding:10px 14px;margin-top:12px;font-weight:600;font-size:14px;background:var(--red-soft);color:var(--red)}
+.ptitle{margin:0 0 4px;font-weight:600;font-size:26px}
+.phead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.metric{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.metric span{display:block;font-size:13px;color:var(--muted);font-weight:700}
+.metric b{display:block;font-size:26px;color:var(--plum);font-family:Poppins,Nunito,sans-serif;font-weight:600;line-height:1.3}
+.tablewrap{overflow-x:auto}
+table.grid{border-collapse:separate;border-spacing:8px;min-width:100%}
+table.grid th{font-size:13px;color:var(--muted);text-align:left;font-weight:700;padding:4px}
+.cell{width:100%;min-width:150px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;cursor:pointer;display:block}
+.cell:hover{border-color:var(--plum-2)}
+.cell b{font-size:20px;font-family:Poppins,Nunito,sans-serif;font-weight:600;color:var(--plum)}
+.cell small{display:block;color:var(--muted);font-size:12.5px}
+.cell.none{cursor:default;color:var(--muted);background:var(--bg)}
+.cell.on{outline:3px solid var(--plum-2)}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--empty);margin:6px 0 4px}
+.bar i{display:block;height:100%}
+.bar .a{background:var(--sage)}.bar .t{background:var(--amber)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
+.obj{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.obj:last-child{border-bottom:0}
+.st{font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;justify-self:start}
+.st.n{background:var(--empty);color:var(--muted)}.st.p{background:var(--amber-soft);color:var(--amber)}.st.t{background:var(--blue-soft);color:var(--blue)}.st.a{background:var(--sage-soft);color:var(--sage)}
+.obj small{display:block;color:var(--muted);font-size:12.5px}
+.sec{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
+.sec b{display:block;font-size:16px;color:var(--ink)}
+@media (max-width:640px){.obj{grid-template-columns:1fr}.sec{text-align:left}}
+textarea,input{font:inherit;color:inherit}
+input[type=text],input[type=date],input[type=search],textarea{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;width:100%}
+label.f{display:grid;gap:4px;font-weight:700;font-size:14px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tab{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 16px;font-weight:700;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+table.reg{width:100%;border-collapse:collapse}
+table.reg th{font-size:13px;color:var(--muted);text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+table.reg td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14.5px}
+table.reg tr:hover td{background:var(--bg)}
+.nm{font-weight:800;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.nm:hover{color:var(--plum-2);text-decoration:underline}
+.tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;margin:2px 4px 2px 0}
+.tag.sod{background:var(--plum-soft);color:var(--plum)}.tag.gt{background:var(--amber-soft);color:var(--amber)}.tag.eal{background:var(--blue-soft);color:var(--blue)}.tag.other{background:var(--empty);color:var(--muted)}
+.lvl{font-size:12.5px;font-weight:800;border-radius:8px;padding:2px 8px}
+.lvl.u{background:var(--sage-soft);color:var(--sage)}.lvl.t{background:var(--amber-soft);color:var(--amber)}.lvl.s{background:var(--red-soft);color:var(--red)}
+.due{font-size:12.5px;font-weight:800}.due.late{color:var(--red)}.due.soon{color:var(--amber)}.due.ok{color:var(--muted)}
+dialog{border:0;border-radius:18px;padding:0;width:min(760px,96vw);max-height:92vh;background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(30,20,45,.45)}
+.dlg{padding:22px 24px;display:grid;gap:14px}
+.dlg h2{margin:0;color:var(--plum);font-size:21px}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px}
+.checks label{display:flex;gap:6px;align-items:center;font-weight:600;font-size:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.two{grid-template-columns:1fr}table.reg .hide-sm{display:none}}
+.box{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--bg)}
+.box h3{margin:0 0 6px;font-size:16px;color:var(--plum)}
+.target{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:8px 0;border-bottom:1px dashed var(--line)}
+.target:last-child{border-bottom:0}
+.pg{font-size:12.5px;font-weight:800;border-radius:999px;padding:2px 10px;border:1px solid var(--line);background:var(--card);cursor:pointer;white-space:nowrap}
+.pg.a{background:var(--sage-soft);color:var(--sage)}.pg.w{background:var(--amber-soft);color:var(--amber)}.pg.n{background:var(--empty);color:var(--muted)}
+.lock{font-size:12.5px;color:var(--red);font-weight:800}
+.empty{text-align:center;padding:30px 10px}
+.okmsg{border-radius:12px;padding:10px 14px;font-weight:600;font-size:14px;background:var(--sage-soft);color:var(--sage)}
+
+.thr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.thr:hover{background:var(--bg)}
+.bub{max-width:80%;padding:10px 14px;border-radius:16px;margin:6px 0;white-space:pre-line}.bub.parent{background:var(--plum-soft);border-bottom-left-radius:4px}.bub.staff{margin-left:auto;background:var(--plum);color:#fff;border-bottom-right-radius:4px}
+.bub small{display:block;opacity:.75;font-size:12px;margin-top:4px}
+.dot{display:inline-block;min-width:20px;padding:0 6px;border-radius:99px;background:var(--red);color:#fff;font-size:12px;font-weight:800;text-align:center}
+.news{border-bottom:1px solid var(--line);padding:12px 0}.news p{white-space:pre-line;margin:6px 0 0}
+
+</style>
+</head>
+<body>
+<header><a class="brand" href="./" id="brand">Nestopia</a><div class="who" id="who"></div></header>
+<main id="app"><p class="note">Loading…</p></main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="hub.js?v=9"></script>
+<script>
+/* Keep this the same as in index.html */
+const PLATFORM = "Nestopia";
+const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const app = document.getElementById("app"), who = document.getElementById("who");
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2600); };
+const ago = d => new Date(d).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+let me, school, lead = false, grades = [], classes = [], myClassIds = [], staffN = {}, ui = { tab: "messages", open: null, filter: "mine" };
+const cls = id => classes.find(c => String(c.id) === String(id)) || {};
+function fail(t){ app.innerHTML = `<div class="card"><div class="msg">${esc(t)}</div></div>`; }
+
+(async function start(){
+  const { data: { session } } = await sb.auth.getSession(); if (!session) { location.href = "./"; return; }
+  const { data: p } = await sb.from("profiles").select("*").eq("id", session.user.id).single();
+  if (!p || !p.school_id) return fail("Your account isn’t linked to a school yet.");
+  me = p; who.innerHTML = `<span>${esc(p.full_name || p.email)}</span><a class="btn ghost small" href="./">← ${esc(PLATFORM)}</a>`;
+  const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single(); school = s;
+  if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
+  lead = ["school_lead", "coordinator", "admin"].includes(p.role); ui.filter = lead ? "all" : "mine";
+  if (window.hubInit) hubInit("messages");
+  const set = await sb.from("school_setups").select("year,config").eq("school_id", school.id).order("updated_at", { ascending: false }).limit(1);
+  const year = set.data && set.data[0] ? set.data[0].year : null; grades = (set.data && set.data[0] && set.data[0].config && set.data[0].config.grades) || [];
+  let cq = sb.from("classes").select("*").eq("school_id", school.id); if (year) cq = cq.eq("year", year);
+  classes = ((await cq).data || []).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
+  const { data: ct } = await sb.from("class_teachers").select("class_id").eq("teacher_id", me.id); myClassIds = [...new Set((ct || []).map(x => String(x.class_id)))];
+  const { data: st } = await sb.from("profiles").select("id,full_name").eq("school_id", school.id); (st || []).forEach(x => staffN[x.id] = x.full_name);
+  draw();
+})();
+function draw(){
+  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Messages</h1><p class="note">${esc(school.name)} · Messages from parents, and news for families.</p></div><a class="btn ghost" href="settings.html#pp">👪 Invite parents</a></div>
+    <div class="tabs" role="tablist">${[["messages", "💬 Parent messages"], ["news", "📢 School news"]].map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}</button>`).join("")}</div><div id="pane"><p class="note">Loading…</p></div>`;
+  app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; ui.open = null; draw(); });
+  ui.tab === "messages" ? (ui.open ? thread(ui.open) : inbox()) : newsPane();
+}
+async function inbox(){
+  const pane = document.getElementById("pane");
+  const r = await sb.from("pm_threads").select("*").eq("school_id", school.id).order("last_at", { ascending: false }).limit(200);
+  if (r.error) { pane.innerHTML = `<div class="card"><div class="msg">${/pm_/.test(r.error.message) ? "Messages need their database step first. Please run the Parent communication update in Supabase." : esc(r.error.message)}</div></div>`; return; }
+  let list = r.data || [];
+  if (ui.filter === "mine") list = list.filter(t => t.teacher_id === me.id); else if (ui.filter === "office") list = list.filter(t => !t.teacher_id);
+  const ids = [...new Set(list.map(t => t.student_id))], names = {};
+  if (ids.length) { const { data } = await sb.from("students").select("id,full_name,class_id").in("id", ids); (data || []).forEach(s => names[s.id] = s); }
+  pane.innerHTML = `<div class="card">${lead ? `<div class="row" style="margin-bottom:8px">${[["all", "All conversations"], ["office", "School office"], ["mine", "Mine"]].map(([k, l]) => `<button class="btn ${ui.filter === k ? "" : "ghost"} small" data-f="${k}">${l}</button>`).join("")}<span class="note">School leaders can see every conversation, to keep children and staff safe.</span></div>` : ""}
+    ${list.length ? list.map(t => { const s = names[t.student_id] || {}; return `<div class="thr" data-t="${t.id}"><div><b>${esc(t.subject)}</b> ${t.status === "closed" ? '<span class="tag other">Closed</span>' : ""}<br><span class="note">${esc(t.parent_name || "Parent")} · about ${esc(s.full_name || "")} (${esc(cls(s.class_id).name || "")}) · to ${esc(t.teacher_id ? staffN[t.teacher_id] || "a teacher" : "School office")} · ${ago(t.last_at)}</span></div><div>${t.staff_unread ? `<span class="dot">${t.staff_unread}</span>` : ""}</div></div>`; }).join("")
+      : `<p class="note" style="margin:0">No messages yet. Parents can write to you from their portal once they’ve joined. <a href="settings.html#pp">Invite parents</a></p>`}</div>`;
+  pane.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { ui.filter = b.dataset.f; inbox(); });
+  pane.querySelectorAll("[data-t]").forEach(d => d.onclick = () => { ui.open = d.dataset.t; thread(ui.open); });
+}
+async function thread(id){
+  const pane = document.getElementById("pane");
+  const [{ data: t }, { data: ms }] = await Promise.all([sb.from("pm_threads").select("*").eq("id", id).single(), sb.from("pm_messages").select("*").eq("thread_id", id).order("created_at")]);
+  if (!t) { ui.open = null; return inbox(); }
+  const { data: s } = await sb.from("students").select("id,full_name,class_id").eq("id", t.student_id).maybeSingle();
+  if (t.staff_unread && (t.teacher_id === me.id || (!t.teacher_id && lead))) await sb.from("pm_threads").update({ staff_unread: 0 }).eq("id", id);
+  const canReply = t.teacher_id === me.id || lead;
+  pane.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between"><button class="btn ghost small" id="bk">← All messages</button>${canReply ? `<button class="btn ghost small" id="cl">${t.status === "closed" ? "Reopen" : "Mark as closed"}</button>` : ""}</div>
+    <h2 style="margin:12px 0 2px">${esc(t.subject)}</h2><p class="note" style="margin:0 0 10px">${esc(t.parent_name || "Parent")} · about <a href="students.html?id=${esc(t.student_id)}">${esc(s ? s.full_name : "the student")}</a> · to ${esc(t.teacher_id ? staffN[t.teacher_id] || "a teacher" : "School office")}</p>
+    ${(ms || []).map(m => `<div class="bub ${m.sender}">${esc(m.body)}<small>${esc(m.sender === "parent" ? (m.sender_name || "Parent") : (m.sender_name || "Staff"))} · ${ago(m.created_at)}</small></div>`).join("")}
+    ${canReply ? `<form id="rf" style="margin-top:12px"><textarea id="rb" rows="3" required placeholder="Write a reply. The parent gets an email."></textarea><p style="margin:8px 0 0"><button class="btn">Send reply</button></p></form>` : '<p class="note">Only the teacher in this conversation, or a school leader, can reply.</p>'}</div>`;
+  document.getElementById("bk").onclick = () => { ui.open = null; inbox(); };
+  const cl = document.getElementById("cl"); if (cl) cl.onclick = async () => { await sb.from("pm_threads").update({ status: t.status === "closed" ? "open" : "closed" }).eq("id", id); thread(id); };
+  const rf = document.getElementById("rf"); if (rf) rf.onsubmit = async e => { e.preventDefault(); const { error } = await sb.rpc("staff_reply", { p_thread: id, p_body: document.getElementById("rb").value });
+    if (error) return toast(error.message); if (window.nestMail) nestMail("pmsg", id); toast("Sent. The parent will get an email."); thread(id); };
+}
+async function newsPane(){
+  const pane = document.getElementById("pane");
+  const r = await sb.from("school_news").select("*").eq("school_id", school.id).order("pinned", { ascending: false }).order("created_at", { ascending: false }).limit(50);
+  if (r.error) { pane.innerHTML = `<div class="card"><div class="msg">${/school_news/.test(r.error.message) ? "News needs its database step first. Please run the Parent communication update in Supabase." : esc(r.error.message)}</div></div>`; return; }
+  const myCls = classes.filter(c => lead || myClassIds.includes(String(c.id)));
+  const aud = n => n.audience === "all" ? "Whole school" : n.audience === "grades" ? (n.grades || []).map(g => (grades.find(x => x.id === g) || { name: g }).name).join(", ") : (n.class_ids || []).map(c => cls(c).name || "").join(", ");
+  pane.innerHTML = `${myCls.length || lead ? `<form class="card" id="nf"><h2>Post news for parents</h2>
+      <label class="f">Title <input type="text" name="t" required maxlength="150" placeholder="For example: Sports day on Thursday"></label>
+      <label class="f">Message <textarea name="b" rows="4" required placeholder="What families need to know. You can write in English and Arabic."></textarea></label>
+      <div class="two"><label class="f">For <select name="a">${lead ? '<option value="all">The whole school</option><option value="grades">Chosen grades</option>' : ""}<option value="classes">Chosen classes</option></select></label><div></div></div>
+      ${lead ? `<div data-for="grades" hidden><b>Grades</b><div class="checks">${grades.map(g => `<label><input type="checkbox" name="g" value="${esc(g.id)}"> ${esc(g.name)}</label>`).join("")}</div></div>` : ""}
+      <div data-for="classes" ${lead ? "hidden" : ""}><b>Classes</b><div class="checks">${myCls.map(c => `<label><input type="checkbox" name="c" value="${esc(c.id)}"> ${esc(c.name)}</label>`).join("")}</div></div>
+      <div class="checks" style="margin-top:8px"><label><input type="checkbox" name="em"> Also email it to parents</label>${lead ? '<label><input type="checkbox" name="pin"> 📌 Pin to the top</label>' : ""}</div>
+      <p style="margin:10px 0 0"><button class="btn">Post</button></p></form>` : ""}
+    <div class="card"><h2>Posted</h2>${(r.data || []).length ? r.data.map(n => `<div class="news"><div class="row" style="justify-content:space-between"><b>${n.pinned ? "📌 " : ""}${esc(n.title)}</b>${lead || n.created_by === me.id ? `<button class="btn ghost small" data-del="${n.id}">Delete</button>` : ""}</div><span class="note">${esc(aud(n))} · ${ago(n.created_at)} · ${esc(staffN[n.created_by] || "")}${n.email_parents ? " · emailed" : ""}</span><p>${esc(n.body)}</p></div>`).join("") : '<p class="note" style="margin:0">Nothing posted yet.</p>'}</div>`;
+  const f = document.getElementById("nf");
+  if (f) { const sync = () => f.querySelectorAll("[data-for]").forEach(x => x.hidden = x.dataset.for !== f.a.value); f.a.onchange = sync; sync();
+    f.onsubmit = async e => { e.preventDefault();
+      const row = { school_id: school.id, title: f.t.value.trim(), body: f.b.value.trim(), audience: f.a.value, grades: [...f.querySelectorAll("input[name=g]:checked")].map(x => x.value), class_ids: [...f.querySelectorAll("input[name=c]:checked")].map(x => x.value), email_parents: f.em.checked, pinned: f.pin ? f.pin.checked : false, created_by: me.id };
+      if (row.audience === "grades" && !row.grades.length) return toast("Choose at least one grade."); if (row.audience === "classes" && !row.class_ids.length) return toast("Choose at least one class.");
+      const { data, error } = await sb.from("school_news").insert(row).select("id").single(); if (error) return toast(error.message);
+      if (row.email_parents && window.nestMail) nestMail("news", data.id); toast(row.email_parents ? "Posted, and emailing parents." : "Posted. Parents see it in their portal."); newsPane(); }; }
+  pane.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => { if (!confirm("Delete this post?")) return; await sb.from("school_news").delete().eq("id", b.dataset.del); newsPane(); });
+}
+</script>
+</body>
+</html>

@@ -24,6 +24,11 @@ table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px so
 .big{font-size:30px;font-weight:800}
 .chip{display:inline-block;font-size:13px;font-weight:800;border-radius:99px;padding:3px 10px;margin:2px;background:var(--sage-soft);color:var(--sage)}
 .chip.inc{background:#FBEBD5;color:#8A5A10}
+.news{border-bottom:1px solid var(--line);padding:12px 0}.news:last-child{border-bottom:0}.news p{white-space:pre-line;margin:6px 0 0}
+.bub{max-width:85%;padding:10px 14px;border-radius:16px;margin:6px 0;white-space:pre-line}.bub.me{margin-left:auto;background:var(--plum);color:#fff;border-bottom-right-radius:4px}.bub.them{background:var(--plum-soft);border-bottom-left-radius:4px}
+.bub small{display:block;opacity:.75;font-size:12px;margin-top:4px}
+textarea{font:inherit;border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;background:#fff}
+.dot{display:inline-block;min-width:20px;padding:0 6px;border-radius:99px;background:var(--red);color:#fff;font-size:12px;font-weight:800;text-align:center}
 </style>
 </head>
 <body>
@@ -37,14 +42,17 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const app = document.getElementById("app"), hr = document.getElementById("hr");
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const dshort = d => new Date(d + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
-let kids = [], cur = null, view = null, tab = "reports", term = null;
+let kids = [], cur = null, view = null, tab = "news", term = null, pend = null;
+{ const c = new URLSearchParams(location.search).get("code"); if (c) { try { localStorage.setItem("nest_pcode", c.toUpperCase()); } catch (_) {} history.replaceState(null, "", location.pathname); } try { pend = localStorage.getItem("nest_pcode"); } catch (_) {} }
 const msg = (t, ok) => t ? `<p class="${ok ? "ok" : "err"}">${esc(t)}</p>` : "";
 
 function authView(mode, m, ok){
   hr.innerHTML = "";
   const up = mode === "up";
+  const inv = window.INVITE;
   app.innerHTML = `<h1>${up ? "Create a parent account" : "Parent portal"}<span class="ar" dir="rtl" lang="ar">${up ? "إنشاء حساب وليّ أمر" : "بوابة أولياء الأمور"}</span></h1>
-    <div class="card"><p class="muted" style="margin-top:0">See your child’s report cards, attendance, merits and school calendar.<span class="ar" dir="rtl" lang="ar">اطّلع على تقارير طفلك وحضوره ونقاطه وتقويم المدرسة.</span></p>${msg(m, ok)}
+    ${inv ? `<div class="card" style="border-left:5px solid var(--plum)"><b>👋 ${esc(inv.school)} has invited you to follow ${esc(inv.child)}’s learning.</b><span class="ar" dir="rtl" lang="ar">دعتك المدرسة لمتابعة تعلّم ${esc(inv.child)}.</span><p class="muted" style="margin:6px 0 0">${up ? "Create your account below. " + esc(inv.child) + " will be added automatically." : "Sign in, or create an account if you don’t have one yet. " + esc(inv.child) + " will be added automatically."}</p></div>` : ""}
+    <div class="card"><p class="muted" style="margin-top:0">News from school, messages with teachers, report cards, attendance and merits.<span class="ar" dir="rtl" lang="ar">أخبار المدرسة، والرسائل مع المعلمين، والتقارير، والحضور، والنقاط.</span></p>${msg(m, ok)}
       <form id="f">${up ? `<label>Your name · الاسم <input id="nm" required></label>` : ""}<label>Email · البريد الإلكتروني <input id="em" type="email" required autocomplete="email"></label>
         <label>Password · كلمة المرور <input id="pw" type="password" required minlength="8" autocomplete="${up ? "new-password" : "current-password"}"></label>
         <button class="btn">${up ? "Create account · إنشاء الحساب" : "Sign in · تسجيل الدخول"}</button></form>
@@ -78,7 +86,7 @@ async function show(id, note){
   cur = id || kids[0].id; const { data, error } = await sb.rpc("parent_child_view", { p_student: String(cur) });
   if (error) { app.innerHTML = `<div class="card">${msg(error.message)}</div>`; return; }
   view = data; const S = view.show || {};
-  const tabs = [["reports", "Reports · التقارير", S.reports], ["attendance", "Attendance · الحضور", S.attendance], ["behaviour", "Merits · النقاط", S.merits || S.incidents], ["calendar", "Calendar · التقويم", S.calendar]].filter(t => t[2]);
+  const tabs = [["news", "📢 News · الأخبار", true], ["messages", "💬 Messages · الرسائل", true], ["reports", "Reports · التقارير", S.reports], ["attendance", "Attendance · الحضور", S.attendance], ["behaviour", "Merits · النقاط", S.merits || S.incidents], ["calendar", "Calendar · التقويم", S.calendar]].filter(t => t[2]);
   if (!tabs.some(t => t[0] === tab)) tab = tabs[0] ? tabs[0][0] : null;
   app.innerHTML = `${note ? msg(note, true) : ""}<div class="row" style="justify-content:space-between">${kids.length > 1 ? `<div class="row">${kids.map(k => `<button class="tab" aria-selected="${String(k.id) === String(cur)}" data-kid="${esc(k.id)}">${esc(k.name.split(" ")[0])}</button>`).join("")}</div>` : "<span></span>"}<button class="btn ghost small" id="add">+ Add another child · إضافة طفل</button></div>
     <h1>${esc(view.name)}${view.arabic_name ? ` <span class="muted" dir="rtl" lang="ar" style="font-size:.7em">${esc(view.arabic_name)}</span>` : ""}</h1>
@@ -88,7 +96,38 @@ async function show(id, note){
   app.querySelectorAll("[data-kid]").forEach(b => b.onclick = () => show(b.dataset.kid));
   app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { tab = b.dataset.tab; show(cur); });
   document.getElementById("add").onclick = () => linkView();
-  if (tab) ({ reports, attendance, behaviour, calendar })[tab]();
+  if (tab) ({ news, messages, reports, attendance, behaviour, calendar })[tab]();
+}
+async function news(){
+  const p = document.getElementById("pane"); p.innerHTML = '<div class="card"><p class="muted">Loading…</p></div>';
+  const { data, error } = await sb.rpc("parent_news", { p_student: String(cur) });
+  if (error) { p.innerHTML = '<div class="card"><p class="muted" style="margin:0">News isn’t available yet.</p></div>'; return; }
+  p.innerHTML = `<div class="card"><h2>📢 News from school · أخبار المدرسة</h2>${(data || []).length ? data.map(n => `<div class="news"><b>${n.pinned ? "📌 " : ""}${esc(n.title)}</b><span class="muted" style="font-size:13px"> · ${new Date(n.at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}${n.by ? " · " + esc(n.by) : ""}</span><p>${esc(n.body)}</p></div>`).join("") : '<p class="muted" style="margin:0">No news yet. · لا توجد أخبار بعد.</p>'}</div>`;
+}
+async function messages(open){
+  const p = document.getElementById("pane"); p.innerHTML = '<div class="card"><p class="muted">Loading…</p></div>';
+  const { data, error } = await sb.rpc("parent_threads", { p_student: String(cur) });
+  if (error) { p.innerHTML = '<div class="card"><p class="muted" style="margin:0">Messages aren’t available yet.</p></div>'; return; }
+  const th = data.threads || [], tch = data.teachers || [];
+  if (open) {
+    const { data: t } = await sb.rpc("parent_thread", { p_thread: open });
+    p.innerHTML = `<div class="card"><button class="btn ghost small" id="bk">← All messages · كل الرسائل</button><h2 style="margin:12px 0 6px">${esc(t.subject)}</h2>
+      ${t.messages.map(m => `<div class="bub ${m.from === "parent" ? "me" : "them"}">${esc(m.body)}<small>${esc(m.from === "parent" ? "You" : m.name || "School")} · ${new Date(m.at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</small></div>`).join("")}
+      <form id="rf" style="margin-top:12px"><textarea id="rb" rows="3" placeholder="Write a reply · اكتب ردًا" required></textarea><p style="margin:8px 0 0"><button class="btn">Send · إرسال</button></p></form></div>`;
+    document.getElementById("bk").onclick = () => messages();
+    document.getElementById("rf").onsubmit = async e => { e.preventDefault(); const { error: er } = await sb.rpc("parent_send", { p_student: String(cur), p_thread: open, p_teacher: null, p_subject: null, p_body: document.getElementById("rb").value });
+      if (er) return alert(er.message); sb.functions.invoke("nestopia-mail", { body: { action: "pmsg", id: open } }).catch(() => {}); messages(open); };
+    return;
+  }
+  p.innerHTML = `<div class="card"><h2>💬 Messages · الرسائل</h2><p class="muted" style="margin-top:0">Write to your child’s teacher or to the school office. You’ll get an email when they reply.<span class="ar" dir="rtl" lang="ar">راسل معلّم طفلك أو إدارة المدرسة. سيصلك بريد عند الرد.</span></p>
+      <form id="nf"><label>To · إلى <select id="to">${tch.map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join("")}<option value="">School office · إدارة المدرسة</option></select></label>
+        <label>Subject · الموضوع <input id="sj" maxlength="150" placeholder="For example: Homework question · سؤال عن الواجب"></label>
+        <label>Message · الرسالة <textarea id="bd" rows="4" required></textarea></label><button class="btn">Send · إرسال</button></form></div>
+    ${th.length ? `<div class="card"><h2>Your conversations · محادثاتك</h2><table>${th.map(t => `<tr><td><a href="#" data-th="${esc(t.id)}"><b>${esc(t.subject)}</b></a><br><span class="muted">With ${esc(t.with)} · ${new Date(t.last).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span></td><td style="text-align:right">${t.unread ? `<span class="dot">${t.unread}</span>` : ""}</td></tr>`).join("")}</table></div>` : ""}`;
+  p.querySelectorAll("[data-th]").forEach(a => a.onclick = e => { e.preventDefault(); messages(a.dataset.th); });
+  document.getElementById("nf").onsubmit = async e => { e.preventDefault(); const to = document.getElementById("to").value;
+    const { data: tid, error: er } = await sb.rpc("parent_send", { p_student: String(cur), p_thread: null, p_teacher: to || null, p_subject: document.getElementById("sj").value, p_body: document.getElementById("bd").value });
+    if (er) return alert(er.message); sb.functions.invoke("nestopia-mail", { body: { action: "pmsg", id: tid } }).catch(() => {}); messages(tid); };
 }
 function reports(){
   const p = document.getElementById("pane"), terms = view.terms || [], cms = view.comments || [];
@@ -120,11 +159,17 @@ function calendar(){
   p.innerHTML = `<div class="card"><h2>Coming up · القادم</h2>${ev.length ? `<table>${ev.map(e => `<tr><td style="white-space:nowrap">${dshort(e.start)}${e.end && e.end !== e.start ? " – " + dshort(e.end) : ""}</td><td><b>${esc(e.title)}</b>${e.time ? ` <span class="muted">· ${esc(e.time)}</span>` : ""}</td></tr>`).join("")}</table>` : '<p class="muted" style="margin:0">Nothing in the next two months.</p>'}</div>`;
 }
 async function start(){
+  if (pend && !window.INVITE) { try { const { data } = await sb.rpc("parent_code_info", { p_code: pend }); if (data) window.INVITE = data; } catch (_) {} }
   const { data: { session } } = await sb.auth.getSession();
-  if (!session) return authView("in");
+  if (!session) return authView(window.INVITE ? "up" : "in");
   hr.innerHTML = `<button class="btn ghost small" id="out">Sign out · خروج</button>`;
   document.getElementById("out").onclick = async () => { await sb.auth.signOut(); authView("in"); };
-  await loadKids(); show();
+  await loadKids();
+  // linked automatically from an invite link
+  if (pend) { const { data: { user } } = await sb.auth.getUser(); const { data: nm, error } = await sb.rpc("parent_link_child", { p_code: pend, p_name: (user.user_metadata || {}).full_name || "", p_rel: "" });
+    try { localStorage.removeItem("nest_pcode"); } catch (_) {} pend = null; window.INVITE = null;
+    if (!error) { await loadKids(); const k = kids.find(x => x.name.split(" ")[0] === nm); return show(k ? k.id : null, nm + " has been added. · تمت إضافة " + nm); } }
+  show();
 }
 sb.auth.onAuthStateChange(ev => { if (ev === "PASSWORD_RECOVERY") newPassword(); });
 start();
