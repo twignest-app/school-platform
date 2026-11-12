@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Inclusion · Nestopia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--plum:#462D5B;--plum-2:#6A4B85;--plum-soft:#EDE6F5;--sage:#5E8455;--sage-soft:#E6EFE2;--amber:#A86C12;--amber-soft:#FBF0DC;--red:#B4473A;--red-soft:#F8E4E1;--blue:#4E6FB8;--blue-soft:#E4EBF8;--bg:#F7F4FB;--card:#FFFFFF;--ink:#2E2140;--muted:#6F6680;--line:#E4DDEE;--empty:#ECE7F3;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--plum:#CDB9EA;--plum-2:#DCCCF2;--plum-soft:#352A45;--sage:#A7C59A;--sage-soft:#26331F;--amber:#E6B566;--amber-soft:#3A2E17;--red:#E8897C;--red-soft:#3D2220;--blue:#9DB4E8;--blue-soft:#1E2A40;--bg:#17131D;--card:#221C2B;--ink:#F1ECF7;--muted:#B2A8C2;--line:#382F45;--empty:#2C2536;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--plum-2);outline-offset:2px}
+h1,h2,h3,.btn,.brand{font-family:"Poppins","Nunito",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-weight:600;font-size:22px;color:var(--plum);text-decoration:none}
+header .who{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:14px;color:var(--muted);flex-wrap:wrap}
+main{max-width:1200px;margin:0 auto;padding:24px 20px 48px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px}
+.card h2{margin:0 0 8px;font-size:20px;color:var(--plum);font-weight:600}
+.btn{border:0;background:var(--plum);color:#fff;border-radius:999px;padding:10px 20px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--bg);color:var(--plum);border:1px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:13px}
+.note{color:var(--muted);font-size:14px}
+.msg{border-radius:12px;padding:10px 14px;margin-top:12px;font-weight:600;font-size:14px;background:var(--red-soft);color:var(--red)}
+.ptitle{margin:0 0 4px;font-weight:600;font-size:26px}
+.phead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.metric{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.metric span{display:block;font-size:13px;color:var(--muted);font-weight:700}
+.metric b{display:block;font-size:26px;color:var(--plum);font-family:Poppins,Nunito,sans-serif;font-weight:600;line-height:1.3}
+.tablewrap{overflow-x:auto}
+table.grid{border-collapse:separate;border-spacing:8px;min-width:100%}
+table.grid th{font-size:13px;color:var(--muted);text-align:left;font-weight:700;padding:4px}
+.cell{width:100%;min-width:150px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;cursor:pointer;display:block}
+.cell:hover{border-color:var(--plum-2)}
+.cell b{font-size:20px;font-family:Poppins,Nunito,sans-serif;font-weight:600;color:var(--plum)}
+.cell small{display:block;color:var(--muted);font-size:12.5px}
+.cell.none{cursor:default;color:var(--muted);background:var(--bg)}
+.cell.on{outline:3px solid var(--plum-2)}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--empty);margin:6px 0 4px}
+.bar i{display:block;height:100%}
+.bar .a{background:var(--sage)}.bar .t{background:var(--amber)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
+.obj{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.obj:last-child{border-bottom:0}
+.st{font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;justify-self:start}
+.st.n{background:var(--empty);color:var(--muted)}.st.p{background:var(--amber-soft);color:var(--amber)}.st.t{background:var(--blue-soft);color:var(--blue)}.st.a{background:var(--sage-soft);color:var(--sage)}
+.obj small{display:block;color:var(--muted);font-size:12.5px}
+.sec{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
+.sec b{display:block;font-size:16px;color:var(--ink)}
+@media (max-width:640px){.obj{grid-template-columns:1fr}.sec{text-align:left}}
+
+textarea,input{font:inherit;color:inherit}
+input[type=text],input[type=date],input[type=search],textarea{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;width:100%}
+label.f{display:grid;gap:4px;font-weight:700;font-size:14px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tab{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 16px;font-weight:700;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+table.reg{width:100%;border-collapse:collapse}
+table.reg th{font-size:13px;color:var(--muted);text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+table.reg td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14.5px}
+table.reg tr:hover td{background:var(--bg)}
+.nm{font-weight:800;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.nm:hover{color:var(--plum-2);text-decoration:underline}
+.tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;margin:2px 4px 2px 0}
+.tag.sod{background:var(--plum-soft);color:var(--plum)}.tag.gt{background:var(--amber-soft);color:var(--amber)}.tag.eal{background:var(--blue-soft);color:var(--blue)}.tag.other{background:var(--empty);color:var(--muted)}
+.lvl{font-size:12.5px;font-weight:800;border-radius:8px;padding:2px 8px}
+.lvl.u{background:var(--sage-soft);color:var(--sage)}.lvl.t{background:var(--amber-soft);color:var(--amber)}.lvl.s{background:var(--red-soft);color:var(--red)}
+.due{font-size:12.5px;font-weight:800}.due.late{color:var(--red)}.due.soon{color:var(--amber)}.due.ok{color:var(--muted)}
+dialog{border:0;border-radius:18px;padding:0;width:min(760px,96vw);max-height:92vh;background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(30,20,45,.45)}
+.dlg{padding:22px 24px;display:grid;gap:14px}
+.dlg h2{margin:0;color:var(--plum);font-size:21px}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px}
+.checks label{display:flex;gap:6px;align-items:center;font-weight:600;font-size:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.two{grid-template-columns:1fr}table.reg .hide-sm{display:none}}
+.box{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--bg)}
+.box h3{margin:0 0 6px;font-size:16px;color:var(--plum)}
+.target{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:8px 0;border-bottom:1px dashed var(--line)}
+.target:last-child{border-bottom:0}
+.pg{font-size:12.5px;font-weight:800;border-radius:999px;padding:2px 10px;border:1px solid var(--line);background:var(--card);cursor:pointer}
+.pg.a{background:var(--sage-soft);color:var(--sage)}.pg.w{background:var(--amber-soft);color:var(--amber)}.pg.n{background:var(--empty);color:var(--muted)}
+.lock{font-size:12.5px;color:var(--red);font-weight:800}
+.empty{text-align:center;padding:30px 10px}
+.okmsg{border-radius:12px;padding:10px 14px;font-weight:600;font-size:14px;background:var(--sage-soft);color:var(--sage)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:10px 18px;border-radius:999px;font-weight:700;opacity:0;transition:.2s;pointer-events:none;z-index:50}
+.toast.on{opacity:1}
+
+</style>
+</head>
+<body>
+<header><a class="brand" href="./" id="brand">Nestopia</a><div class="who" id="who"></div></header>
+<main id="app"><p class="note">Loading…</p></main>
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+/* Keep this the same as in index.html */
+const PLATFORM = "Nestopia";
+const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const app = document.getElementById("app"), who = document.getElementById("who"), dlg = document.getElementById("dlg");
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2600); };
+document.title = "Inclusion · " + PLATFORM; document.getElementById("brand").textContent = PLATFORM;
+
+/* ---------- Lists (UAE framework wording) ---------- */
+const CATS = { sod: "Student of determination", gt: "Gifted and talented", eal: "EAL", other: "Other need" };
+const CAT_SHORT = { sod: "SoD", gt: "G&T", eal: "EAL", other: "Other" };
+const SOD_NEEDS = ["Specific learning difficulty (e.g. dyslexia)", "Communication and interaction", "Autism spectrum", "ADHD", "Intellectual disability", "Social, emotional and mental health", "Physical disability", "Hearing impairment", "Visual impairment", "Medical or health condition", "Speech and language", "Other"];
+const GT_AREAS = ["Academic: English", "Academic: Maths", "Academic: Science", "Academic: Arabic", "Creative and arts", "Music", "Sport and physical", "Leadership", "Technology and innovation", "Other"];
+const EAL_STAGES = ["New to English", "Early acquisition", "Developing competence", "Competent", "Fluent"];
+const LEVELS = { universal: ["u", "Universal (in class)"], targeted: ["t", "Targeted (small group)"], specialist: ["s", "Specialist (individual)"] };
+const PLAN_KINDS = { iep: "IEP (individual education plan)", alp: "ALP (advanced learning plan)", lsp: "Language support plan (EAL)", bsp: "Behaviour support plan", health: "Health care plan", other: "Other plan" };
+const PROG = { n: "Not started", w: "Working towards", a: "Achieved" };
+
+let me, school, isMgr = false, isLead = false, staff = [], classes = [], studs = [], reg = [], plans = [], targets = [], conf = {};
+let ui = { tab: "register", cat: "all", grade: "all", q: "" };
+
+function fail(text){ app.innerHTML = `<div class="card"><div class="msg">${esc(text)}</div><p style="margin-top:14px"><a class="btn ghost" href="./">← Back to ${esc(PLATFORM)}</a></p></div>`; }
+async function fetchAll(q){ const out = []; for (let f = 0; ; f += 1000) { const { data, error } = await q().range(f, f + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; } return out; }
+const today = () => new Date().toISOString().slice(0, 10);
+const dayDiff = d => Math.round((new Date(d + "T00:00:00") - new Date(today() + "T00:00:00")) / 864e5);
+const fmt = d => d ? new Date(d + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "";
+const stud = id => studs.find(s => String(s.id) === String(id));
+const cls = id => classes.find(c => String(c.id) === String(id));
+const staffName = id => (staff.find(p => p.id === id) || {}).full_name || "";
+const regOf = sid => reg.find(r => String(r.student_id) === String(sid));
+const plansOf = sid => plans.filter(p => String(p.student_id) === String(sid));
+const nextReview = sid => plansOf(sid).filter(p => p.status === "active" && p.review_date).map(p => p.review_date).sort()[0] || null;
+function dueTag(d){ if (!d) return '<span class="due ok">No review date</span>'; const n = dayDiff(d); return n < 0 ? `<span class="due late">Review overdue (${fmt(d)})</span>` : n <= 14 ? `<span class="due soon">Review in ${n} day${n === 1 ? "" : "s"}</span>` : `<span class="due ok">Review ${fmt(d)}</span>`; }
+
+async function start(){
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { location.href = "./"; return; }
+  const { data: p } = await sb.from("profiles").select("*").eq("id", session.user.id).single();
+  if (!p) return fail("We couldn’t load your account. Please go back and sign in again.");
+  me = p;
+  who.innerHTML = `<span>${esc(p.full_name || p.email)}</span><a class="btn ghost small" href="./">← ${esc(PLATFORM)}</a>`;
+  if (!p.school_id) return fail("Your account isn’t linked to a school yet.");
+  const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single();
+  school = s;
+  if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
+  if (!(school.modules || []).includes("inclusion")) return fail("Inclusion isn’t switched on for your school yet.");
+  isLead = p.role === "school_lead" || p.role === "admin";
+  isMgr = isLead || p.role === "coordinator" || !!p.inclusion_lead;
+  app.innerHTML = `<p class="note">Loading the inclusion register…</p>`;
+  try { await load(); } catch (e) { return fail(/inclusion_/.test(e.message || "") ? "Inclusion needs its database step first. Please run the Inclusion update in Supabase." : "Inclusion couldn’t load: " + (e.message || e)); }
+  render();
+}
+
+async function load(){
+  const sid = school.id;
+  const set = await sb.from("school_setups").select("year,config").eq("school_id", sid).order("updated_at", { ascending: false }).limit(1);
+  const year = set.data && set.data[0] ? set.data[0].year : null;
+  window.SETUP = set.data && set.data[0] ? set.data[0].config : null;
+  let cq = sb.from("classes").select("*").eq("school_id", sid); if (year) cq = cq.eq("year", year);
+  const c = await cq; if (c.error) throw c.error; classes = c.data || [];
+  const st = await sb.from("profiles").select("id,full_name,email,role,active,inclusion_lead").eq("school_id", sid);
+  staff = (st.data || []).filter(x => x.active);
+  if (isMgr) studs = await fetchAll(() => sb.from("students").select("id,full_name,arabic_name,student_number,class_id,groups,archived").eq("school_id", sid).eq("archived", false).order("full_name"));
+  else {
+    const { data: ct } = await sb.from("class_teachers").select("class_id").eq("teacher_id", me.id);
+    const ids = [...new Set((ct || []).map(x => x.class_id))];
+    studs = ids.length ? await fetchAll(() => sb.from("students").select("id,full_name,arabic_name,student_number,class_id,groups,archived").in("class_id", ids).eq("archived", false).order("full_name")) : [];
+  }
+  reg = await fetchAll(() => sb.from("inclusion_students").select("*").eq("school_id", sid));
+  plans = await fetchAll(() => sb.from("inclusion_plans").select("*").eq("school_id", sid));
+  targets = plans.length ? await fetchAll(() => sb.from("inclusion_targets").select("*").eq("school_id", sid).order("position")) : [];
+  conf = {};
+  if (isMgr) (await fetchAll(() => sb.from("inclusion_confidential").select("*").eq("school_id", sid))).forEach(x => conf[x.student_id] = x);
+}
+
+/* ---------- Page ---------- */
+function render(){
+  if (!isMgr) return teacherView();
+  const active = reg.filter(r => r.active !== false && stud(r.student_id));
+  const by = k => active.filter(r => (r.categories || []).includes(k)).length;
+  const due = active.filter(r => { const d = nextReview(r.student_id); return d && dayDiff(d) <= 14; }).length;
+  const noPlan = active.filter(r => (r.categories || []).includes("sod") && !plansOf(r.student_id).some(p => p.status === "active")).length;
+  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Inclusion</h1><p class="note">${esc(school.name)} · Students of determination, gifted and talented, EAL and other needs, with their support plans.</p></div>
+      <div class="row"><button class="btn" id="add">+ Add a student to the register</button></div></div>
+    <div class="metrics">
+      <div class="metric"><span>On the register</span><b>${active.length}</b></div>
+      <div class="metric"><span>Students of determination</span><b>${by("sod")}</b></div>
+      <div class="metric"><span>Gifted and talented</span><b>${by("gt")}</b></div>
+      <div class="metric"><span>EAL</span><b>${by("eal")}</b></div>
+      <div class="metric"><span>Reviews due in 14 days</span><b style="color:${due ? "var(--amber)" : "var(--plum)"}">${due}</b></div>
+      <div class="metric"><span>SoD without an active plan</span><b style="color:${noPlan ? "var(--red)" : "var(--plum)"}">${noPlan}</b></div>
+    </div>
+    <div class="tabs" role="tablist">${[["register", "Register"], ["reviews", "Reviews due"], ...(isLead ? [["team", "Inclusion team"]] : [])].map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}</button>`).join("")}</div>
+    <div id="pane"></div>`;
+  document.getElementById("add").onclick = () => openEntry(null);
+  app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; render(); });
+  ({ register: registerPane, reviews: reviewsPane, team: teamPane })[ui.tab]();
+}
+
+function registerPane(){
+  const pane = document.getElementById("pane");
+  const grades = [...new Set(classes.map(c => c.grade_id))].filter(Boolean);
+  const gName = g => { const G = window.SETUP && (window.SETUP.grades || []).find(x => x.id === g); return G ? G.name : g; };
+  let rows = reg.filter(r => r.active !== false && stud(r.student_id));
+  if (ui.cat !== "all") rows = rows.filter(r => (r.categories || []).includes(ui.cat));
+  if (ui.grade !== "all") rows = rows.filter(r => (cls(stud(r.student_id).class_id) || {}).grade_id === ui.grade);
+  if (ui.q) rows = rows.filter(r => (stud(r.student_id).full_name || "").toLowerCase().includes(ui.q.toLowerCase()));
+  rows.sort((a, b) => (stud(a.student_id).full_name || "").localeCompare(stud(b.student_id).full_name || ""));
+  pane.innerHTML = `<div class="card">
+    <div class="row" style="margin-bottom:12px"><select id="fCat" aria-label="Need"><option value="all">All needs</option>${Object.entries(CATS).map(([k, v]) => `<option value="${k}" ${ui.cat === k ? "selected" : ""}>${v}</option>`).join("")}</select>
+      <select id="fGrade" aria-label="Grade"><option value="all">All grades</option>${grades.map(g => `<option value="${esc(g)}" ${ui.grade === g ? "selected" : ""}>${esc(gName(g))}</option>`).join("")}</select>
+      <input type="search" id="fQ" placeholder="Search a name" value="${esc(ui.q)}" style="max-width:240px"></div>
+    ${rows.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th class="hide-sm">Class</th><th>Needs</th><th class="hide-sm">Support</th><th class="hide-sm">Key staff</th><th>Plan</th></tr>
+      ${rows.map(r => { const s = stud(r.student_id), c = cls(s.class_id) || {}, L = LEVELS[r.support_level], ap = plansOf(r.student_id).filter(p => p.status === "active");
+        return `<tr><td><button class="nm" data-open="${esc(r.student_id)}">${esc(s.full_name)}</button>${s.student_number ? `<br><span class="note">${esc(s.student_number)}</span>` : ""}</td>
+        <td class="hide-sm">${esc(c.name || "")}</td>
+        <td>${(r.categories || []).map(k => `<span class="tag ${k}">${CAT_SHORT[k]}</span>`).join("")}</td>
+        <td class="hide-sm">${L ? `<span class="lvl ${L[0]}">${L[1].split(" (")[0]}</span>` : ""}</td>
+        <td class="hide-sm">${(r.key_staff || []).map(staffName).filter(Boolean).map(esc).join(", ")}</td>
+        <td>${ap.length ? ap.map(p => esc(PLAN_KINDS[p.kind].split(" (")[0])).join(", ") + "<br>" + dueTag(nextReview(r.student_id)) : '<span class="note">No active plan</span>'}</td></tr>`; }).join("")}</table></div>`
+      : `<div class="empty"><p class="note">${reg.length ? "No students match these filters." : "The register is empty."}</p>${reg.length ? "" : `<button class="btn ghost" id="sample">Add sample students for testing</button>`}</div>`}
+  </div>`;
+  document.getElementById("fCat").onchange = e => { ui.cat = e.target.value; registerPane(); };
+  document.getElementById("fGrade").onchange = e => { ui.grade = e.target.value; registerPane(); };
+  const q = document.getElementById("fQ"); q.oninput = e => { ui.q = e.target.value; clearTimeout(q.t); q.t = setTimeout(() => { registerPane(); const n = document.getElementById("fQ"); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }, 250); };
+  pane.querySelectorAll("[data-open]").forEach(b => b.onclick = () => openStudent(b.dataset.open));
+  const sm = document.getElementById("sample"); if (sm) sm.onclick = addSamples;
+}
+
+function reviewsPane(){
+  const pane = document.getElementById("pane");
+  const list = plans.filter(p => p.status === "active" && stud(p.student_id)).sort((a, b) => (a.review_date || "9999").localeCompare(b.review_date || "9999"));
+  pane.innerHTML = `<div class="card"><h2>Plan reviews</h2><p class="note">Every active plan, the soonest review first. Plans past their review date are shown in red.</p>
+    ${list.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Plan</th><th>Review</th></tr>${list.map(p => `<tr><td><button class="nm" data-open="${esc(p.student_id)}">${esc(stud(p.student_id).full_name)}</button></td><td>${esc(p.title || PLAN_KINDS[p.kind])}</td><td>${dueTag(p.review_date)}</td></tr>`).join("")}</table></div>` : '<p class="note">No active plans yet.</p>'}</div>`;
+  pane.querySelectorAll("[data-open]").forEach(b => b.onclick = () => openStudent(b.dataset.open));
+}
+
+function teamPane(){
+  const pane = document.getElementById("pane");
+  pane.innerHTML = `<div class="card"><h2>Inclusion team</h2><p class="note">School leaders and coordinators can always manage the register. Tick anyone else who should manage it too, such as your SENCO, inclusion teachers or the EAL lead. Class teachers see only their own students’ needs and strategies.</p>
+    <div class="tablewrap"><table class="reg"><tr><th>Name</th><th>Role</th><th>Manages inclusion</th></tr>
+    ${staff.slice().sort((a, b) => (a.full_name || "").localeCompare(b.full_name || "")).map(p => { const always = ["school_lead", "coordinator", "admin"].includes(p.role);
+      return `<tr><td>${esc(p.full_name || p.email)}</td><td>${esc({ school_lead: "School leader", coordinator: "Coordinator", teacher: "Teacher", checker: "Buddy checker", admin: "Admin" }[p.role] || p.role)}</td>
+      <td>${always ? '<span class="note">Always</span>' : `<label style="display:flex;gap:6px;align-items:center;font-weight:600"><input type="checkbox" data-lead="${p.id}" ${p.inclusion_lead ? "checked" : ""}> Inclusion team</label>`}</td></tr>`; }).join("")}</table></div></div>`;
+  pane.querySelectorAll("[data-lead]").forEach(cb => cb.onchange = async () => {
+    const { error } = await sb.rpc("set_inclusion_lead", { pid: cb.dataset.lead, on: cb.checked });
+    if (error) { cb.checked = !cb.checked; return toast(error.message); }
+    (staff.find(p => p.id === cb.dataset.lead) || {}).inclusion_lead = cb.checked; toast("Saved");
+  });
+}
+
+/* ---------- Add or edit a register entry ---------- */
+function openEntry(sid){
+  const r = sid ? regOf(sid) || {} : {}, c = sid ? conf[sid] || {} : {};
+  const cats = r.categories || [], on = (arr, v) => (arr || []).includes(v) ? "checked" : "";
+  const choices = studs.filter(s => sid ? String(s.id) === String(sid) : !regOf(s.id) || regOf(s.id).active === false);
+  dlg.innerHTML = `<form class="dlg" id="ef"><h2>${sid ? "Edit " + esc(stud(sid).full_name) : "Add a student to the register"}</h2>
+    ${sid ? "" : `<label class="f">Student <input type="search" id="pickQ" placeholder="Type a name or student number" autocomplete="off"><select id="pick" size="6" required>${choices.map(s => `<option value="${esc(s.id)}">${esc(s.full_name)}${s.student_number ? " · " + esc(s.student_number) : ""}${cls(s.class_id) ? " · " + esc(cls(s.class_id).name) : ""}</option>`).join("")}</select></label>`}
+    <div><b>Needs</b><div class="checks">${Object.entries(CATS).map(([k, v]) => `<label><input type="checkbox" name="cat" value="${k}" ${on(cats, k)}> ${v}</label>`).join("")}</div></div>
+    <div class="box" data-show="sod" ${cats.includes("sod") ? "" : "hidden"}><h3>Student of determination: areas of need</h3><div class="checks">${SOD_NEEDS.map(v => `<label><input type="checkbox" name="sod" value="${esc(v)}" ${on(r.sod_needs, v)}> ${esc(v)}</label>`).join("")}</div></div>
+    <div class="box" data-show="gt" ${cats.includes("gt") ? "" : "hidden"}><h3>Gifted and talented: areas</h3><div class="checks">${GT_AREAS.map(v => `<label><input type="checkbox" name="gt" value="${esc(v)}" ${on(r.gt_areas, v)}> ${esc(v)}</label>`).join("")}</div></div>
+    <div class="box" data-show="eal" ${cats.includes("eal") ? "" : "hidden"}><h3>EAL: stage of English</h3><select name="eal">${["", ...EAL_STAGES].map(v => `<option ${r.eal_stage === v ? "selected" : ""} value="${esc(v)}">${v || "Choose…"}</option>`).join("")}</select></div>
+    <label class="f" data-show="other" ${cats.includes("other") ? "" : "hidden"}>Other need <input type="text" name="other" value="${esc(r.other_need || "")}" placeholder="For example: young carer, medical, attendance"></label>
+    <div class="two"><label class="f">Level of support <select name="lvl">${["", ...Object.keys(LEVELS)].map(k => `<option value="${k}" ${r.support_level === k ? "selected" : ""}>${k ? LEVELS[k][1] : "Choose…"}</option>`).join("")}</select></label>
+      <label class="f">Date added to the register <input type="date" name="added" value="${esc(r.added_on || today())}"></label></div>
+    <div><b>Key staff</b> <span class="note">(for example the SENCO, a learning support assistant or the EAL teacher)</span><div class="checks">${staff.map(p => `<label><input type="checkbox" name="ks" value="${p.id}" ${on(r.key_staff, p.id)}> ${esc(p.full_name || p.email)}</label>`).join("")}</div></div>
+    <label class="f">What teachers should know <textarea name="summary" rows="3" placeholder="A short, practical summary that the student’s teachers will see. Keep it strength-based.">${esc(r.summary || "")}</textarea></label>
+    <label class="f">Confidential notes <span class="lock">🔒 Only the inclusion team sees this</span><textarea name="conf" rows="3" placeholder="Diagnoses, external reports, medical details, family context">${esc(c.notes || "")}</textarea></label>
+    <div class="checks"><label><input type="checkbox" name="consent" ${r.parent_consent ? "checked" : ""}> Parents know about and agree to this support</label></div>
+    <div class="msg" id="eerr" hidden></div>
+    <div class="row" style="justify-content:space-between"><div>${sid && r.id ? `<button type="button" class="btn ghost small" id="remove">Remove from the register</button>` : ""}</div>
+      <div class="row"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn">Save</button></div></div></form>`;
+  const f = dlg.querySelector("form");
+  f.querySelectorAll('input[name=cat]').forEach(cb => cb.onchange = () => f.querySelectorAll(`[data-show="${cb.value}"]`).forEach(x => x.hidden = !cb.checked));
+  dlg.querySelector("[data-x]").onclick = () => dlg.close();
+  const pq = document.getElementById("pickQ");
+  if (pq) pq.oninput = () => { const t = pq.value.toLowerCase(); [...document.getElementById("pick").options].forEach(o => o.hidden = !o.text.toLowerCase().includes(t)); };
+  const rm = document.getElementById("remove");
+  if (rm) rm.onclick = async () => { if (!confirm("Remove this student from the register? Their plans stay saved, and you can add them back later.")) return; const { error } = await sb.from("inclusion_students").update({ active: false }).eq("id", r.id); if (error) return toast(error.message); dlg.close(); await load(); render(); toast("Removed from the register"); };
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const err = document.getElementById("eerr"); err.hidden = true;
+    const studentId = sid || (document.getElementById("pick") || {}).value;
+    const vals = n => [...f.querySelectorAll(`input[name=${n}]:checked`)].map(x => x.value);
+    const categories = vals("cat");
+    if (!studentId) { err.textContent = "Choose a student."; err.hidden = false; return; }
+    if (!categories.length) { err.textContent = "Tick at least one need."; err.hidden = false; return; }
+    const row = { school_id: school.id, student_id: studentId, categories, sod_needs: vals("sod"), gt_areas: vals("gt"), eal_stage: f.eal.value || null, other_need: f.other.value.trim() || null,
+      support_level: f.lvl.value || null, key_staff: vals("ks"), summary: f.summary.value.trim() || null, parent_consent: f.consent.checked, added_on: f.added.value || today(), active: true, updated_by: me.id };
+    const { error } = await sb.from("inclusion_students").upsert(row, { onConflict: "student_id" });
+    if (error) { err.textContent = error.message; err.hidden = false; return; }
+    const cn = f.conf.value.trim();
+    if (cn || conf[studentId]) { const { error: ce } = await sb.from("inclusion_confidential").upsert({ school_id: school.id, student_id: studentId, notes: cn || null, updated_by: me.id }, { onConflict: "student_id" }); if (ce) { err.textContent = ce.message; err.hidden = false; return; } }
+    dlg.close(); await load(); render(); toast("Saved"); if (!sid) openStudent(studentId);
+  };
+  dlg.showModal();
+}
+
+/* ---------- One student: needs and plans ---------- */
+function openStudent(sid){
+  const s = stud(sid), r = regOf(sid) || {}, c = conf[sid] || {}, cl = cls(s.class_id) || {};
+  const ps = plansOf(sid).sort((a, b) => (b.status === "active") - (a.status === "active") || (b.start_date || "").localeCompare(a.start_date || ""));
+  dlg.innerHTML = `<div class="dlg"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h2>${esc(s.full_name)}${s.arabic_name ? ` <span dir="rtl" lang="ar" class="note">${esc(s.arabic_name)}</span>` : ""}</h2>
+      <p class="note" style="margin:2px 0 0">${esc([cl.name, s.student_number].filter(Boolean).join(" · "))}</p></div><button class="btn ghost small" data-x>Close</button></div>
+    <div class="box"><div class="row" style="justify-content:space-between"><h3>Needs</h3>${isMgr ? '<button class="btn ghost small" id="edit">Edit</button>' : ""}</div>
+      <p style="margin:0">${(r.categories || []).map(k => `<span class="tag ${k}">${CATS[k]}</span>`).join("")} ${LEVELS[r.support_level] ? `<span class="lvl ${LEVELS[r.support_level][0]}">${LEVELS[r.support_level][1]}</span>` : ""}</p>
+      ${(r.sod_needs || []).length ? `<p class="note" style="margin:6px 0 0"><b>Areas of need:</b> ${esc(r.sod_needs.join(", "))}</p>` : ""}
+      ${(r.gt_areas || []).length ? `<p class="note" style="margin:6px 0 0"><b>Gifted and talented in:</b> ${esc(r.gt_areas.join(", "))}</p>` : ""}
+      ${r.eal_stage ? `<p class="note" style="margin:6px 0 0"><b>English:</b> ${esc(r.eal_stage)}</p>` : ""}
+      ${r.other_need ? `<p class="note" style="margin:6px 0 0"><b>Other:</b> ${esc(r.other_need)}</p>` : ""}
+      ${(r.key_staff || []).length ? `<p class="note" style="margin:6px 0 0"><b>Key staff:</b> ${esc(r.key_staff.map(staffName).filter(Boolean).join(", "))}</p>` : ""}
+      ${r.summary ? `<p style="margin:10px 0 0"><b>What teachers should know:</b> ${esc(r.summary)}</p>` : ""}
+      ${isMgr && c.notes ? `<p style="margin:10px 0 0"><span class="lock">🔒 Confidential:</span> ${esc(c.notes)}</p>` : ""}
+      <p class="note" style="margin:8px 0 0">${r.parent_consent ? "✅ Parents know and agree" : "⚠️ Parents’ agreement not recorded yet"} · On the register since ${fmt(r.added_on)}</p></div>
+    <div class="row" style="justify-content:space-between"><h3 style="margin:0;color:var(--plum)">Support plans</h3>${isMgr ? '<button class="btn small" id="newplan">+ New plan</button>' : ""}</div>
+    ${ps.length ? ps.map(planHtml).join("") : '<p class="note">No plans yet.</p>'}</div>`;
+  dlg.querySelector("[data-x]").onclick = () => dlg.close();
+  const ed = document.getElementById("edit"); if (ed) ed.onclick = () => openEntry(sid);
+  const np = document.getElementById("newplan"); if (np) np.onclick = () => openPlan(sid, null);
+  dlg.querySelectorAll("[data-plan]").forEach(b => b.onclick = () => openPlan(sid, b.dataset.plan));
+  dlg.querySelectorAll("[data-prog]").forEach(b => b.onclick = async () => {
+    if (!isMgr) return;
+    const t = targets.find(x => String(x.id) === b.dataset.prog), order = ["n", "w", "a"], nx = order[(order.indexOf(t.progress || "n") + 1) % 3];
+    const { error } = await sb.from("inclusion_targets").update({ progress: nx, updated_at: new Date().toISOString() }).eq("id", t.id);
+    if (error) return toast(error.message);
+    t.progress = nx; openStudent(sid);
+  });
+  if (!dlg.open) dlg.showModal();
+}
+function planHtml(p){
+  const ts = targets.filter(t => String(t.plan_id) === String(p.id)), done = ts.filter(t => t.progress === "a").length;
+  return `<div class="box"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h3>${esc(p.title || PLAN_KINDS[p.kind])}</h3>
+      <p class="note" style="margin:0">${esc(PLAN_KINDS[p.kind])} · ${p.status === "active" ? "Active" : "Closed"} · from ${fmt(p.start_date)} · ${p.status === "active" ? dueTag(p.review_date) : "reviewed " + fmt(p.review_date)}${ts.length ? ` · ${done} of ${ts.length} targets achieved` : ""}</p></div>
+      ${isMgr ? `<button class="btn ghost small" data-plan="${esc(p.id)}">Edit</button>` : ""}</div>
+    ${ts.length ? ts.map(t => `<div class="target"><div><b>${esc(t.target)}</b>${t.success_criteria ? `<br><span class="note">Success looks like: ${esc(t.success_criteria)}</span>` : ""}${t.strategy ? `<br><span class="note">How we support it: ${esc(t.strategy)}</span>` : ""}</div>
+      <button class="pg ${t.progress || "n"}" data-prog="${esc(t.id)}" title="${isMgr ? "Click to change" : ""}">${PROG[t.progress || "n"]}</button></div>`).join("") : '<p class="note" style="margin:6px 0 0">No targets yet.</p>'}
+    ${p.strategies ? `<p style="margin:10px 0 0"><b>Strategies for all teachers:</b> ${esc(p.strategies)}</p>` : ""}
+    ${p.review_notes ? `<p class="note" style="margin:8px 0 0"><b>Last review:</b> ${esc(p.review_notes)}</p>` : ""}</div>`;
+}
+
+/* ---------- A support plan ---------- */
+function openPlan(sid, pid){
+  const p = pid ? plans.find(x => String(x.id) === String(pid)) : null, r = regOf(sid) || {};
+  const kind0 = p ? p.kind : (r.categories || []).includes("sod") ? "iep" : (r.categories || []).includes("gt") ? "alp" : (r.categories || []).includes("eal") ? "lsp" : "other";
+  const ts = p ? targets.filter(t => String(t.plan_id) === String(p.id)) : [];
+  const start0 = p ? p.start_date : today(), rev0 = p ? p.review_date : new Date(Date.now() + 42 * 864e5).toISOString().slice(0, 10);
+  const trow = (t = {}) => `<div class="box trow" data-tid="${esc(t.id || "")}"><div class="two"><label class="f">Target <input type="text" name="t" value="${esc(t.target || "")}" placeholder="Specific and measurable, for example: reads 20 high-frequency words"></label>
+      <label class="f">Success looks like <input type="text" name="sc" value="${esc(t.success_criteria || "")}" placeholder="How we’ll know it’s achieved"></label></div>
+    <div class="two" style="margin-top:8px"><label class="f">How we support it <input type="text" name="st" value="${esc(t.strategy || "")}" placeholder="For example: daily 10-minute word games with the LSA"></label>
+      <label class="f">Progress <select name="pg">${Object.entries(PROG).map(([k, v]) => `<option value="${k}" ${(t.progress || "n") === k ? "selected" : ""}>${v}</option>`).join("")}</select></label></div>
+    <button type="button" class="btn ghost small" data-deltarget style="margin-top:8px">Remove this target</button></div>`;
+  dlg.innerHTML = `<form class="dlg" id="pf"><h2>${p ? "Edit plan" : "New support plan"} · ${esc(stud(sid).full_name)}</h2>
+    <div class="two"><label class="f">Type of plan <select name="kind">${Object.entries(PLAN_KINDS).map(([k, v]) => `<option value="${k}" ${kind0 === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+      <label class="f">Title (optional) <input type="text" name="title" value="${esc(p ? p.title || "" : "")}" placeholder="For example: Term 2 literacy IEP"></label></div>
+    <div class="two"><label class="f">Start date <input type="date" name="start" required value="${esc(start0)}"></label><label class="f">Review by <input type="date" name="rev" required value="${esc(rev0)}"></label></div>
+    <div><b>Targets</b> <span class="note">(usually 3 or 4)</span><div id="tl" style="display:grid;gap:10px;margin-top:8px">${(ts.length ? ts : [{}, {}, {}]).map(trow).join("")}</div>
+      <button type="button" class="btn ghost small" id="addt" style="margin-top:8px">+ Add a target</button></div>
+    <label class="f">Strategies for all the student’s teachers <textarea name="strat" rows="3" placeholder="For example: seat near the front; give instructions one at a time; check understanding privately">${esc(p ? p.strategies || "" : "")}</textarea></label>
+    ${p ? `<div class="box"><h3>Review</h3><label class="f">Review notes <textarea name="rnotes" rows="3" placeholder="What went well, what changes, and what parents said">${esc(p.review_notes || "")}</textarea></label>
+      <div class="checks" style="margin-top:8px"><label><input type="radio" name="after" value="keep" checked> Keep this plan going (set the next review date above)</label><label><input type="radio" name="after" value="close"> Close this plan</label></div></div>` : ""}
+    <div class="msg" id="perr" hidden></div>
+    <div class="row" style="justify-content:space-between"><div>${p ? '<button type="button" class="btn ghost small" id="delp">Delete plan</button>' : ""}</div>
+      <div class="row"><button type="button" class="btn ghost" data-back>Back</button><button class="btn">Save plan</button></div></div></form>`;
+  const f = dlg.querySelector("form"), tl = document.getElementById("tl");
+  document.getElementById("addt").onclick = () => tl.insertAdjacentHTML("beforeend", trow());
+  tl.onclick = e => { const d = e.target.closest("[data-deltarget]"); if (d) d.closest(".trow").remove(); };
+  dlg.querySelector("[data-back]").onclick = () => openStudent(sid);
+  const dp = document.getElementById("delp");
+  if (dp) dp.onclick = async () => { if (!confirm("Delete this plan and its targets? This can’t be undone. To keep a record, close it instead.")) return; const { error } = await sb.from("inclusion_plans").delete().eq("id", p.id); if (error) return toast(error.message); await load(); render(); openStudent(sid); toast("Plan deleted"); };
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const err = document.getElementById("perr"); err.hidden = true;
+    const close = p && (f.querySelector("input[name=after]:checked") || {}).value === "close";
+    if (f.rev.value < f.start.value) { err.textContent = "The review date must be after the start date."; err.hidden = false; return; }
+    const row = { school_id: school.id, student_id: sid, kind: f.kind.value, title: f.title.value.trim() || null, start_date: f.start.value, review_date: f.rev.value, strategies: f.strat.value.trim() || null, status: close ? "closed" : "active", updated_by: me.id, updated_at: new Date().toISOString() };
+    if (p) row.review_notes = f.rnotes.value.trim() || null;
+    let planId = p && p.id;
+    if (p) { const { error } = await sb.from("inclusion_plans").update(row).eq("id", p.id); if (error) { err.textContent = error.message; err.hidden = false; return; } }
+    else { row.created_by = me.id; const { data, error } = await sb.from("inclusion_plans").insert(row).select().single(); if (error) { err.textContent = error.message; err.hidden = false; return; } planId = data.id; }
+    const rows = [...tl.querySelectorAll(".trow")].map((b, i) => ({ id: b.dataset.tid || null, target: b.querySelector("[name=t]").value.trim(), success_criteria: b.querySelector("[name=sc]").value.trim() || null, strategy: b.querySelector("[name=st]").value.trim() || null, progress: b.querySelector("[name=pg]").value, position: i })).filter(x => x.target);
+    const keep = rows.filter(x => x.id).map(x => x.id);
+    const old = targets.filter(t => String(t.plan_id) === String(planId)).map(t => String(t.id)).filter(id => !keep.includes(id));
+    if (old.length) await sb.from("inclusion_targets").delete().in("id", old);
+    for (const t of rows) {
+      const data = { school_id: school.id, plan_id: planId, target: t.target, success_criteria: t.success_criteria, strategy: t.strategy, progress: t.progress, position: t.position, updated_at: new Date().toISOString() };
+      const { error } = t.id ? await sb.from("inclusion_targets").update(data).eq("id", t.id) : await sb.from("inclusion_targets").insert(data);
+      if (error) { err.textContent = error.message; err.hidden = false; return; }
+    }
+    await load(); render(); openStudent(sid); toast(close ? "Plan closed" : "Plan saved");
+  };
+  if (!dlg.open) dlg.showModal();
+}
+
+/* ---------- Teachers: their own students (fuller view comes in Part 2) ---------- */
+function teacherView(){
+  const mine = reg.filter(r => r.active !== false && stud(r.student_id));
+  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Inclusion</h1><p class="note">Students in your classes who need extra support or challenge, and how to help them.</p></div></div>
+    <div class="card">${mine.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Needs</th><th>What to know</th></tr>${mine.map(r => { const s = stud(r.student_id);
+      return `<tr><td><button class="nm" data-open="${esc(r.student_id)}">${esc(s.full_name)}</button><br><span class="note">${esc((cls(s.class_id) || {}).name || "")}</span></td><td>${(r.categories || []).map(k => `<span class="tag ${k}">${CAT_SHORT[k]}</span>`).join("")}</td><td>${esc(r.summary || "")}</td></tr>`; }).join("")}</table></div>`
+      : '<p class="note">None of your students are on the inclusion register.</p>'}</div>`;
+  app.querySelectorAll("[data-open]").forEach(b => b.onclick = () => openStudent(b.dataset.open));
+}
+
+/* ---------- Sample data for testing ---------- */
+async function addSamples(){
+  if (studs.length < 3) return toast("Add some test students in TwigNest first.");
+  if (!confirm("Add 6 sample students to the register, with sample plans? You can remove them later.")) return;
+  const pick = studs.slice().sort(() => Math.random() - .5).slice(0, 6);
+  const S = [
+    { categories: ["sod"], sod_needs: ["Specific learning difficulty (e.g. dyslexia)"], support_level: "targeted", summary: "Bright and creative. Reading and spelling take longer: give extra time, read questions aloud and allow coloured overlays.", plan: ["iep", "Literacy IEP", [["Reads 30 high-frequency words by sight", "Reads them in under a minute", "Daily word games with the LSA"], ["Spells 10 CVC words correctly", "8 of 10 in a weekly check", "Phonics group 3 times a week"]], "Give instructions one at a time; allow extra time; check understanding privately."] },
+    { categories: ["sod"], sod_needs: ["ADHD"], support_level: "targeted", summary: "Energetic and curious. Works best with movement breaks and short, clear tasks.", plan: ["iep", "Focus and organisation IEP", [["Stays on task for 10 minutes", "Teacher observation 4 of 5 lessons", "Visual timer and checklist"]], "Seat away from distractions; use a visual timetable; give a movement job."] },
+    { categories: ["gt"], gt_areas: ["Academic: Maths"], support_level: "universal", summary: "Very strong in Maths. Offer open challenges and reasoning problems, not more of the same.", plan: ["alp", "Maths ALP", [["Explains reasoning for multi-step problems", "Clear written explanations in 3 tasks", "Weekly challenge card"]], "Offer depth and challenge tasks; let them lead a group explanation."] },
+    { categories: ["eal"], eal_stage: "Early acquisition", support_level: "targeted", summary: "New to English this year, fluent in Arabic. Use visuals, key-word mats and talk partners.", plan: ["lsp", "English language support", [["Uses 50 classroom words in speech", "Uses them without prompts", "Key-word mat and pre-teaching vocabulary"]], "Pre-teach key words; pair with a supportive buddy; use pictures."] },
+    { categories: ["sod", "eal"], sod_needs: ["Speech and language"], eal_stage: "Developing competence", support_level: "specialist", summary: "Receives speech and language therapy. Give time to answer and model sentences.", plan: ["iep", "Speech and language IEP", [["Uses full sentences to answer questions", "In 3 of 5 lessons", "Sentence stems and modelling"]], "Wait time; sentence stems; repeat back correctly without correcting directly."] },
+    { categories: ["gt"], gt_areas: ["Creative and arts", "Leadership"], support_level: "universal", summary: "Talented artist and confident leader. Offer roles and creative extension work.", plan: null }
+  ];
+  for (let i = 0; i < pick.length; i++) {
+    const x = S[i], s = pick[i];
+    const { error } = await sb.from("inclusion_students").upsert({ school_id: school.id, student_id: s.id, categories: x.categories, sod_needs: x.sod_needs || [], gt_areas: x.gt_areas || [], eal_stage: x.eal_stage || null, support_level: x.support_level, key_staff: [me.id], summary: x.summary, parent_consent: true, added_on: today(), active: true, updated_by: me.id }, { onConflict: "student_id" });
+    if (error) return toast(error.message);
+    if (x.plan) {
+      const rev = new Date(Date.now() + (i * 9 - 5) * 864e5).toISOString().slice(0, 10);
+      const { data: pl, error: pe } = await sb.from("inclusion_plans").insert({ school_id: school.id, student_id: s.id, kind: x.plan[0], title: x.plan[1], start_date: new Date(Date.now() - 40 * 864e5).toISOString().slice(0, 10), review_date: rev, strategies: x.plan[3], status: "active", created_by: me.id, updated_by: me.id }).select().single();
+      if (pe) return toast(pe.message);
+      await sb.from("inclusion_targets").insert(x.plan[2].map((t, j) => ({ school_id: school.id, plan_id: pl.id, target: t[0], success_criteria: t[1], strategy: t[2], progress: ["w", "n", "a"][j % 3], position: j })));
+    }
+  }
+  await load(); render(); toast("Sample students added");
+}
+
+start();
+</script>
+</body>
+</html>
