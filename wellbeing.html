@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wellbeing · Nestopia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--plum:#462D5B;--plum-2:#6A4B85;--plum-soft:#EDE6F5;--sage:#5E8455;--sage-soft:#E6EFE2;--amber:#A86C12;--amber-soft:#FBF0DC;--red:#B4473A;--red-soft:#F8E4E1;--blue:#4E6FB8;--blue-soft:#E4EBF8;--bg:#F7F4FB;--card:#FFFFFF;--ink:#2E2140;--muted:#6F6680;--line:#E4DDEE;--empty:#ECE7F3;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--plum:#CDB9EA;--plum-2:#DCCCF2;--plum-soft:#352A45;--sage:#A7C59A;--sage-soft:#26331F;--amber:#E6B566;--amber-soft:#3A2E17;--red:#E8897C;--red-soft:#3D2220;--blue:#9DB4E8;--blue-soft:#1E2A40;--bg:#17131D;--card:#221C2B;--ink:#F1ECF7;--muted:#B2A8C2;--line:#382F45;--empty:#2C2536;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--plum-2);outline-offset:2px}
+h1,h2,h3,.btn,.brand{font-family:"Poppins","Nunito",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-weight:600;font-size:22px;color:var(--plum);text-decoration:none}
+header .who{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:14px;color:var(--muted);flex-wrap:wrap}
+main{max-width:1200px;margin:0 auto;padding:24px 20px 48px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px}
+.card h2{margin:0 0 8px;font-size:20px;color:var(--plum);font-weight:600}
+.btn{border:0;background:var(--plum);color:#fff;border-radius:999px;padding:10px 20px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--bg);color:var(--plum);border:1px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:13px}
+.note{color:var(--muted);font-size:14px}
+.msg{border-radius:12px;padding:10px 14px;margin-top:12px;font-weight:600;font-size:14px;background:var(--red-soft);color:var(--red)}
+.ptitle{margin:0 0 4px;font-weight:600;font-size:26px}
+.phead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.metric{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.metric span{display:block;font-size:13px;color:var(--muted);font-weight:700}
+.metric b{display:block;font-size:26px;color:var(--plum);font-family:Poppins,Nunito,sans-serif;font-weight:600;line-height:1.3}
+.tablewrap{overflow-x:auto}
+table.grid{border-collapse:separate;border-spacing:8px;min-width:100%}
+table.grid th{font-size:13px;color:var(--muted);text-align:left;font-weight:700;padding:4px}
+.cell{width:100%;min-width:150px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;cursor:pointer;display:block}
+.cell:hover{border-color:var(--plum-2)}
+.cell b{font-size:20px;font-family:Poppins,Nunito,sans-serif;font-weight:600;color:var(--plum)}
+.cell small{display:block;color:var(--muted);font-size:12.5px}
+.cell.none{cursor:default;color:var(--muted);background:var(--bg)}
+.cell.on{outline:3px solid var(--plum-2)}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--empty);margin:6px 0 4px}
+.bar i{display:block;height:100%}
+.bar .a{background:var(--sage)}.bar .t{background:var(--amber)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
+.obj{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.obj:last-child{border-bottom:0}
+.st{font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;justify-self:start}
+.st.n{background:var(--empty);color:var(--muted)}.st.p{background:var(--amber-soft);color:var(--amber)}.st.t{background:var(--blue-soft);color:var(--blue)}.st.a{background:var(--sage-soft);color:var(--sage)}
+.obj small{display:block;color:var(--muted);font-size:12.5px}
+.sec{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
+.sec b{display:block;font-size:16px;color:var(--ink)}
+@media (max-width:640px){.obj{grid-template-columns:1fr}.sec{text-align:left}}
+textarea,input{font:inherit;color:inherit}
+input[type=text],input[type=date],input[type=search],textarea{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;width:100%}
+label.f{display:grid;gap:4px;font-weight:700;font-size:14px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tab{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 16px;font-weight:700;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+table.reg{width:100%;border-collapse:collapse}
+table.reg th{font-size:13px;color:var(--muted);text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+table.reg td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14.5px}
+table.reg tr:hover td{background:var(--bg)}
+.nm{font-weight:800;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.nm:hover{color:var(--plum-2);text-decoration:underline}
+.tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;margin:2px 4px 2px 0}
+.tag.sod{background:var(--plum-soft);color:var(--plum)}.tag.gt{background:var(--amber-soft);color:var(--amber)}.tag.eal{background:var(--blue-soft);color:var(--blue)}.tag.other{background:var(--empty);color:var(--muted)}
+.lvl{font-size:12.5px;font-weight:800;border-radius:8px;padding:2px 8px}
+.lvl.u{background:var(--sage-soft);color:var(--sage)}.lvl.t{background:var(--amber-soft);color:var(--amber)}.lvl.s{background:var(--red-soft);color:var(--red)}
+.due{font-size:12.5px;font-weight:800}.due.late{color:var(--red)}.due.soon{color:var(--amber)}.due.ok{color:var(--muted)}
+dialog{border:0;border-radius:18px;padding:0;width:min(760px,96vw);max-height:92vh;background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(30,20,45,.45)}
+.dlg{padding:22px 24px;display:grid;gap:14px}
+.dlg h2{margin:0;color:var(--plum);font-size:21px}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px}
+.checks label{display:flex;gap:6px;align-items:center;font-weight:600;font-size:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.two{grid-template-columns:1fr}table.reg .hide-sm{display:none}}
+.box{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--bg)}
+.box h3{margin:0 0 6px;font-size:16px;color:var(--plum)}
+.target{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:8px 0;border-bottom:1px dashed var(--line)}
+.target:last-child{border-bottom:0}
+.pg{font-size:12.5px;font-weight:800;border-radius:999px;padding:2px 10px;border:1px solid var(--line);background:var(--card);cursor:pointer;white-space:nowrap}
+.pg.a{background:var(--sage-soft);color:var(--sage)}.pg.w{background:var(--amber-soft);color:var(--amber)}.pg.n{background:var(--empty);color:var(--muted)}
+.lock{font-size:12.5px;color:var(--red);font-weight:800}
+.empty{text-align:center;padding:30px 10px}
+.okmsg{border-radius:12px;padding:10px 14px;font-weight:600;font-size:14px;background:var(--sage-soft);color:var(--sage)}
+.calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:10px}
+.calhead{font-size:12px;font-weight:800;color:var(--muted);text-align:center;padding:4px}
+.calcell{min-height:86px;border:1px solid var(--line);border-radius:10px;padding:4px;background:var(--card);display:flex;flex-direction:column;gap:3px;overflow:hidden}
+.calcell.empty{background:transparent;border:0}.calcell.today{outline:2px solid var(--plum-2)}
+.calcell b{font-size:12px;color:var(--muted)}
+.calev{font:inherit;font-size:11.5px;font-weight:700;text-align:left;border:0;border-radius:6px;padding:2px 5px;cursor:pointer;background:var(--blue-soft);color:var(--blue);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.calev.parent_meeting{background:var(--plum-soft);color:var(--plum)}.calev.proposed,.calev.reschedule{background:var(--amber-soft);color:var(--amber)}.calev.done{opacity:.6}
+@media (max-width:640px){.calcell{min-height:60px}.calev{font-size:10px}}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:10px 18px;border-radius:999px;font-weight:700;opacity:0;transition:.2s;pointer-events:none;z-index:50}
+.toast.on{opacity:1}
+
+
+.faces{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.face{border:3px solid transparent;border-radius:22px;background:var(--card);font-size:clamp(40px,8vw,84px);padding:14px 4px;cursor:pointer;display:grid;gap:6px;justify-items:center}
+.face span{font-size:clamp(13px,1.8vw,18px);font-weight:800;color:var(--ink)}
+.face:focus-visible,.face:hover{border-color:var(--plum)}
+#kiosk{position:fixed;inset:0;background:var(--bg);z-index:60;overflow:auto;padding:22px clamp(14px,4vw,48px) 40px}
+#kiosk h1{font-size:clamp(26px,4vw,44px);color:var(--plum);text-align:center;margin:8px 0 22px}
+.names{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.nb{border:2px solid var(--line);background:var(--card);border-radius:16px;padding:16px 10px;font:inherit;font-size:18px;font-weight:800;color:var(--ink);cursor:pointer}
+.nb.done{opacity:.35;cursor:default}
+.yn{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.yn button{font:inherit;font-size:clamp(20px,3vw,30px);font-weight:800;border:0;border-radius:20px;padding:22px 40px;cursor:pointer}
+.mood{font-size:22px}
+.mbar{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--empty);min-width:120px}
+.mbar i{display:block;height:100%}
+
+</style>
+</head>
+<body>
+<header><a class="brand" href="./" id="brand">Nestopia</a><div class="who" id="who"></div></header>
+<main id="app"><p class="note">Loading…</p></main>
+<div id="kiosk" hidden></div>
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+/* Keep this the same as in index.html */
+const PLATFORM = "Nestopia";
+const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const app = document.getElementById("app"), who = document.getElementById("who"), dlg = document.getElementById("dlg"), kiosk = document.getElementById("kiosk");
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2600); };
+const FACES = [[1, "😢", "Very sad", "#B4473A"], [2, "🙁", "Sad", "#D9822B"], [3, "😐", "OK", "#C9A227"], [4, "🙂", "Good", "#7BAE6F"], [5, "😄", "Great", "#3F8A4B"]];
+const face = n => FACES.find(f => f[0] === n) || [0, "–", "", "#ccc"];
+const dayStr = d => { const x = d || new Date(); return x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0") + "-" + String(x.getDate()).padStart(2, "0"); };
+const today = () => dayStr();
+const fmt = d => d ? new Date(d + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }) : "";
+let me, school, isTeam = false, isLead = false, staff = [], classes = [], studs = [], myClassIds = [], checks = [], reg = [];
+let ui = { tab: "today", days: 7 };
+
+function fail(t){ app.innerHTML = `<div class="card"><div class="msg">${esc(t)}</div><p style="margin-top:14px"><a class="btn ghost" href="./">← Back to ${esc(PLATFORM)}</a></p></div>`; }
+async function fetchAll(q){ const out = []; for (let f = 0; ; f += 1000) { const { data, error } = await q().range(f, f + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; } return out; }
+const stud = id => studs.find(s => String(s.id) === String(id));
+const cls = id => classes.find(c => String(c.id) === String(id));
+const gradeName = g => { const G = window.SETUP && (window.SETUP.grades || []).find(x => x.id === g); return G ? G.name : g; };
+
+async function start(){
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { location.href = "./"; return; }
+  const { data: p } = await sb.from("profiles").select("*").eq("id", session.user.id).single();
+  if (!p) return fail("We couldn’t load your account. Please go back and sign in again.");
+  me = p; who.innerHTML = `<span>${esc(p.full_name || p.email)}</span><a class="btn ghost small" href="./">← ${esc(PLATFORM)}</a>`;
+  if (!p.school_id) return fail("Your account isn’t linked to a school yet.");
+  const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single(); school = s;
+  if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
+  if (!(school.modules || []).includes("wellbeing")) return fail("Wellbeing isn’t switched on for your school yet.");
+  isLead = ["school_lead", "admin"].includes(p.role);
+  isTeam = isLead || p.role === "coordinator" || !!p.wellbeing_team;
+  try { await load(); } catch (e) { return fail(/wellbeing_/.test(e.message || "") ? "Wellbeing needs its database step first. Please run the Wellbeing update in Supabase." : "Wellbeing couldn’t load: " + (e.message || e)); }
+  render();
+}
+async function load(){
+  const sid = school.id;
+  const set = await sb.from("school_setups").select("year,config").eq("school_id", sid).order("updated_at", { ascending: false }).limit(1);
+  const year = set.data && set.data[0] ? set.data[0].year : null; window.SETUP = set.data && set.data[0] ? set.data[0].config : null;
+  let cq = sb.from("classes").select("*").eq("school_id", sid); if (year) cq = cq.eq("year", year);
+  classes = (await cq).data || [];
+  let st = await sb.from("profiles").select("id,full_name,email,role,active,wellbeing_team").eq("school_id", sid);
+  if (st.error) st = await sb.from("profiles").select("id,full_name,email,role,active").eq("school_id", sid);
+  staff = (st.data || []).filter(x => x.active);
+  const { data: ct } = await sb.from("class_teachers").select("class_id").eq("teacher_id", me.id);
+  myClassIds = [...new Set((ct || []).map(x => String(x.class_id)))];
+  if (isTeam) studs = await fetchAll(() => sb.from("students").select("id,full_name,class_id,archived").eq("school_id", sid).eq("archived", false).order("full_name"));
+  else studs = myClassIds.length ? await fetchAll(() => sb.from("students").select("id,full_name,class_id,archived").in("class_id", myClassIds).eq("archived", false).order("full_name")) : [];
+  const since = dayStr(new Date(Date.now() - 60 * 864e5));
+  checks = await fetchAll(() => sb.from("wellbeing_checkins").select("*").eq("school_id", sid).gte("day", since));
+  try { reg = await fetchAll(() => sb.from("inclusion_students").select("student_id,categories,active").eq("school_id", sid)); } catch (_) { reg = []; }
+}
+
+/* ---------- Page ---------- */
+function render(){
+  const myClasses = classes.filter(c => myClassIds.includes(String(c.id)));
+  const tabs = [["today", "Today"], ...(isTeam ? [["overview", "Overview"]] : []), ...(isLead ? [["team", "Wellbeing team"]] : [])];
+  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Wellbeing</h1><p class="note">${esc(school.name)} · Short daily check-ins, so the right adult hears when a student needs to talk.</p></div>
+    ${myClasses.length ? `<div class="row"><select id="kc" aria-label="Class">${myClasses.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("")}</select><button class="btn" id="startK">▶ Start the class check-in</button></div>` : ""}</div>
+    ${tabs.length > 1 ? `<div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}</button>`).join("")}</div>` : ""}
+    <div id="pane"></div>`;
+  const sk = document.getElementById("startK"); if (sk) sk.onclick = () => startKiosk(document.getElementById("kc").value);
+  app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; render(); });
+  ({ today: todayPane, overview: overviewPane, team: teamPane })[ui.tab]();
+}
+
+function todayPane(){
+  const pane = document.getElementById("pane"), t = today();
+  const mine = isTeam ? studs : studs.filter(s => myClassIds.includes(String(s.class_id)));
+  const todays = checks.filter(c => c.day === t && mine.some(s => String(s.id) === String(c.student_id)));
+  const talk = todays.filter(c => c.talk && !c.followed_up_at), low = todays.filter(c => c.mood <= 2);
+  const repeat = repeatedLow();
+  const row = c => { const s = stud(c.student_id) || { full_name: "Student" }, f = face(c.mood);
+    return `<tr><td><b>${esc(s.full_name)}</b><br><span class="note">${esc((cls(s.class_id) || {}).name || "")}</span></td><td class="mood">${f[1]} <span class="note">${f[2]}</span></td><td>${c.talk ? "🙋 Wants to talk" : ""}${c.followed_up_at ? `<br><span class="note">✅ Followed up${c.follow_note ? ": " + esc(c.follow_note) : ""}</span>` : ""}</td>
+      <td>${c.talk && !c.followed_up_at ? `<button class="btn small" data-fu="${esc(c.id)}">Mark as followed up</button>` : ""}</td></tr>`; };
+  // class summary for each of my classes
+  const myClasses = classes.filter(c => myClassIds.includes(String(c.id)));
+  const classCard = c => { const kids = studs.filter(s => String(s.class_id) === String(c.id)), done = todays.filter(x => kids.some(k => String(k.id) === String(x.student_id)));
+    return `<div class="card"><div class="row" style="justify-content:space-between"><h2>${esc(c.name)} · today</h2><span class="note">${done.length} of ${kids.length} checked in</span></div>
+      ${moodBar(done)}<div class="row" style="margin-top:10px;flex-wrap:wrap">${kids.map(k => { const x = done.find(d => String(d.student_id) === String(k.id)); return `<span class="tag ${x ? (x.mood <= 2 ? "sod" : "eal") : "other"}" title="${x ? face(x.mood)[2] : "Not checked in"}">${x ? face(x.mood)[1] : "·"} ${esc(k.full_name.split(" ")[0])}${x && x.talk ? " 🙋" : ""}</span>`; }).join("")}</div></div>`; };
+  pane.innerHTML = `${talk.length ? `<div class="card" style="border-left:5px solid var(--red)"><h2>🙋 Asked to talk to someone today <span class="note">(${talk.length})</span></h2><p class="note">Please make time for these students today, or ask the wellbeing team to.</p><div class="tablewrap"><table class="reg">${talk.map(row).join("")}</table></div></div>` : ""}
+    ${myClasses.map(classCard).join("")}
+    ${isTeam ? `<div class="card"><h2>Feeling low today <span class="note">(${low.length})</span></h2>${low.length ? `<div class="tablewrap"><table class="reg">${low.map(row).join("")}</table></div>` : '<p class="note" style="margin:0">No student chose sad or very sad today.</p>'}</div>
+      <div class="card"><h2>Low on 2 or more days this week <span class="note">(${repeat.length})</span></h2>${repeat.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Low days (last 7 days)</th><th>Latest</th></tr>${repeat.map(([s, n, last]) => `<tr><td><b>${esc(s.full_name)}</b><br><span class="note">${esc((cls(s.class_id) || {}).name || "")}</span></td><td>${n}</td><td>${face(last.mood)[1]} ${fmt(last.day)}</td></tr>`).join("")}</table></div>` : '<p class="note" style="margin:0">Nobody has been low on more than one day this week.</p>'}</div>` : ""}
+    ${!myClasses.length && !isTeam ? '<div class="card"><p class="note" style="margin:0">You don’t have a class linked in TwigNest yet, so there’s no class check-in to start.</p></div>' : ""}`;
+  pane.querySelectorAll("[data-fu]").forEach(b => b.onclick = async () => {
+    const n = prompt("What happened? (optional, for example: “Talked at break, worried about a friendship; told parents”)", ""); if (n === null) return;
+    const { error } = await sb.from("wellbeing_checkins").update({ followed_up_at: new Date().toISOString(), followed_up_by: me.id, follow_note: n.trim() || null }).eq("id", b.dataset.fu);
+    if (error) return toast(error.message); await load(); render(); toast("Marked as followed up");
+  });
+}
+function repeatedLow(){
+  const since = dayStr(new Date(Date.now() - 6 * 864e5)), by = {};
+  checks.filter(c => c.day >= since && c.mood <= 2).forEach(c => (by[c.student_id] = by[c.student_id] || []).push(c));
+  return Object.entries(by).filter(([, l]) => l.length >= 2).map(([id, l]) => [stud(id), l.length, l.sort((a, b) => b.day.localeCompare(a.day))[0]]).filter(x => x[0]);
+}
+function moodBar(list){ const n = list.length; if (!n) return '<div class="mbar"></div>'; return `<div class="mbar">${FACES.map(f => { const k = list.filter(c => c.mood === f[0]).length; return k ? `<i title="${f[2]}: ${k}" style="width:${k / n * 100}%;background:${f[3]}"></i>` : ""; }).join("")}</div>`; }
+
+function overviewPane(){
+  const pane = document.getElementById("pane"), since = dayStr(new Date(Date.now() - (ui.days - 1) * 864e5));
+  const C = checks.filter(c => c.day >= since);
+  const grades = (window.SETUP && window.SETUP.grades || []).filter(g => classes.some(c => c.grade_id === g.id));
+  const statOf = (list, pool) => { const n = list.length, kids = new Set(list.map(c => String(c.student_id))).size; return { n, avg: n ? (list.reduce((a, c) => a + c.mood, 0) / n).toFixed(1) : "–", low: n ? Math.round(list.filter(c => c.mood <= 2).length / n * 100) : null, talk: list.filter(c => c.talk).length, part: pool ? Math.round(kids / pool * 100) : null }; };
+  const inGroup = (c, cat) => reg.some(r => String(r.student_id) === String(c.student_id) && r.active !== false && (r.categories || []).includes(cat));
+  const rows = [["Whole school", C, studs.length], ...grades.map(g => { const ids = new Set(studs.filter(s => (cls(s.class_id) || {}).grade_id === g.id).map(s => String(s.id))); return [g.name, C.filter(c => ids.has(String(c.student_id))), ids.size]; }),
+    ...(reg.length ? [["Students of determination", C.filter(c => inGroup(c, "sod")), null], ["Gifted and talented", C.filter(c => inGroup(c, "gt")), null], ["EAL", C.filter(c => inGroup(c, "eal")), null]] : [])];
+  // day-by-day average for the whole school
+  const days = []; for (let k = ui.days - 1; k >= 0; k--) days.push(dayStr(new Date(Date.now() - k * 864e5)));
+  const daily = days.map(d => { const l = C.filter(c => c.day === d); return [d, l.length ? l.reduce((a, c) => a + c.mood, 0) / l.length : null]; }).filter(x => x[1] !== null);
+  pane.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between"><h2>How students are feeling</h2><select id="ovd" aria-label="Period">${[[7, "Last 7 days"], [30, "Last 30 days"], [60, "Last 60 days"]].map(([v, l]) => `<option value="${v}" ${ui.days === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>
+    <div class="tablewrap"><table class="reg"><tr><th>Group</th><th>Check-ins</th><th>Average mood (1 to 5)</th><th>Sad or very sad</th><th>Asked to talk</th><th>Mood mix</th></tr>
+    ${rows.map(([name, list, pool], i) => { const s = statOf(list, pool); return `<tr${i === 0 ? ' style="font-weight:800"' : ""}><td>${esc(name)}</td><td>${s.n}${s.part != null ? `<br><span class="note">${s.part}% of students</span>` : ""}</td><td>${s.avg}</td><td style="color:${s.low != null && s.low >= 20 ? "var(--red)" : "inherit"}">${s.low == null ? "–" : s.low + "%"}</td><td>${s.talk}</td><td>${moodBar(list)}</td></tr>`; }).join("")}</table></div>
+    <div class="legend">${FACES.map(f => `<span><i style="background:${f[3]}"></i>${f[1]} ${f[2]}</span>`).join("")}</div></div>
+    <div class="card"><h2>Day by day (whole school)</h2>${daily.length ? `<div style="display:flex;align-items:flex-end;gap:4px;height:140px;padding-top:10px">${daily.map(([d, v]) => `<div title="${fmt(d)}: ${v.toFixed(1)}" style="flex:1;min-width:6px;height:${(v / 5) * 100}%;background:${face(Math.round(v))[3]};border-radius:6px 6px 0 0"></div>`).join("")}</div><p class="note">Each bar is one school day: taller means happier. Hover to see the date and average.</p>` : '<p class="note">No check-ins in this period yet.</p>'}</div>`;
+  document.getElementById("ovd").onchange = e => { ui.days = +e.target.value; overviewPane(); };
+}
+
+function teamPane(){
+  const pane = document.getElementById("pane");
+  pane.innerHTML = `<div class="card"><h2>Wellbeing team</h2><p class="note">School leaders and coordinators always see every student’s check-ins. Tick anyone else who should, such as your counsellor or wellbeing lead. Class teachers see only their own classes.</p>
+    <div class="tablewrap"><table class="reg"><tr><th>Name</th><th>Role</th><th>Wellbeing team</th></tr>${staff.slice().sort((a, b) => (a.full_name || "").localeCompare(b.full_name || "")).map(p => { const always = ["school_lead", "coordinator", "admin"].includes(p.role);
+      return `<tr><td>${esc(p.full_name || p.email)}</td><td>${esc({ school_lead: "School leader", coordinator: "Coordinator", teacher: "Teacher", checker: "Buddy checker", admin: "Admin" }[p.role] || p.role)}</td><td>${always ? '<span class="note">Always</span>' : `<label style="display:flex;gap:6px;align-items:center;font-weight:600"><input type="checkbox" data-wt="${p.id}" ${p.wellbeing_team ? "checked" : ""}> Team</label>`}</td></tr>`; }).join("")}</table></div></div>`;
+  pane.querySelectorAll("[data-wt]").forEach(cb => cb.onchange = async () => {
+    const { error } = await sb.rpc("set_wellbeing_team", { pid: cb.dataset.wt, on: cb.checked });
+    if (error) { cb.checked = !cb.checked; return toast(error.message); }
+    (staff.find(p => p.id === cb.dataset.wt) || {}).wellbeing_team = cb.checked; toast("Saved");
+  });
+}
+
+/* ---------- Class check-in on the teacher's screen ---------- */
+function startKiosk(classId){
+  const c = cls(classId), kids = studs.filter(s => String(s.class_id) === String(classId));
+  if (!kids.length) return toast("This class has no students yet.");
+  const done = new Set(checks.filter(x => x.day === today()).map(x => String(x.student_id)));
+  const fs = document.documentElement.requestFullscreen; try { fs && document.documentElement.requestFullscreen(); } catch (_) {}
+  kiosk.hidden = false;
+  const names = () => {
+    kiosk.innerHTML = `<div class="row" style="justify-content:space-between"><b class="note">${esc(c.name)} · ${new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</b><button class="btn ghost small" id="kEnd">Finish (teacher)</button></div>
+      <h1>Good morning! Tap your name 👋</h1><div class="names">${kids.map(k => `<button class="nb ${done.has(String(k.id)) ? "done" : ""}" data-k="${esc(k.id)}" ${done.has(String(k.id)) ? "disabled" : ""}>${esc(k.full_name.split(" ")[0])}<br><span class="note" style="font-size:13px">${esc(k.full_name.split(" ").slice(1).join(" "))}</span></button>`).join("")}</div>
+      <p class="note" style="text-align:center;margin-top:18px">${done.size} of ${kids.length} have checked in.</p>`;
+    kiosk.querySelector("#kEnd").onclick = () => { if (!confirm("Finish the check-in? (Teacher only)")) return; kiosk.hidden = true; try { document.fullscreenElement && document.exitFullscreen(); } catch (_) {} load().then(render); };
+    kiosk.querySelectorAll("[data-k]").forEach(b => b.onclick = () => moodStep(kids.find(k => String(k.id) === b.dataset.k)));
+  };
+  const moodStep = k => {
+    kiosk.innerHTML = `<h1>Hi ${esc(k.full_name.split(" ")[0])}! How are you feeling today?</h1><div class="faces">${FACES.map(f => `<button class="face" data-m="${f[0]}" aria-label="${f[2]}">${f[1]}<span>${f[2]}</span></button>`).join("")}</div>
+      <p style="text-align:center;margin-top:22px"><button class="btn ghost" id="kBack">← Not me</button></p>`;
+    kiosk.querySelector("#kBack").onclick = names;
+    kiosk.querySelectorAll("[data-m]").forEach(b => b.onclick = () => talkStep(k, +b.dataset.m));
+  };
+  const talkStep = (k, m) => {
+    kiosk.innerHTML = `<h1>Would you like to talk to a grown-up today?</h1><p style="text-align:center;font-size:clamp(18px,2.4vw,24px);margin:-8px 0 24px">It’s always OK to ask. 💛</p>
+      <div class="yn"><button style="background:var(--plum);color:#fff" data-t="1">🙋 Yes, please</button><button style="background:var(--card);border:2px solid var(--line);color:var(--ink)" data-t="0">👍 No, thank you</button></div>`;
+    kiosk.querySelectorAll("[data-t]").forEach(b => b.onclick = async () => {
+      const { error } = await sb.from("wellbeing_checkins").upsert({ school_id: school.id, student_id: k.id, class_id: k.class_id, day: today(), mood: m, talk: b.dataset.t === "1", recorded_by: me.id, created_at: new Date().toISOString() }, { onConflict: "student_id,day" });
+      if (error) { toast(/wellbeing_/.test(error.message) ? "Please run the Wellbeing database step first." : error.message); return names(); }
+      done.add(String(k.id));
+      kiosk.innerHTML = `<h1 style="margin-top:12vh">Thank you, ${esc(k.full_name.split(" ")[0])}! ${b.dataset.t === "1" ? "A grown-up will come and talk with you soon. 💛" : "Have a lovely day! 🌟"}</h1>`;
+      setTimeout(names, 1800);
+    });
+  };
+  names();
+}
+start();
+</script>
+</body>
+</html>
