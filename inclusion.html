@@ -89,7 +89,7 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 .box h3{margin:0 0 6px;font-size:16px;color:var(--plum)}
 .target{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:8px 0;border-bottom:1px dashed var(--line)}
 .target:last-child{border-bottom:0}
-.pg{font-size:12.5px;font-weight:800;border-radius:999px;padding:2px 10px;border:1px solid var(--line);background:var(--card);cursor:pointer}
+.pg{font-size:12.5px;font-weight:800;border-radius:999px;padding:2px 10px;border:1px solid var(--line);background:var(--card);cursor:pointer;white-space:nowrap}
 .pg.a{background:var(--sage-soft);color:var(--sage)}.pg.w{background:var(--amber-soft);color:var(--amber)}.pg.n{background:var(--empty);color:var(--muted)}
 .lock{font-size:12.5px;color:var(--red);font-weight:800}
 .empty{text-align:center;padding:30px 10px}
@@ -126,9 +126,11 @@ const EAL_STAGES = ["New to English", "Early acquisition", "Developing competenc
 const LEVELS = { universal: ["u", "Universal (in class)"], targeted: ["t", "Targeted (small group)"], specialist: ["s", "Specialist (individual)"] };
 const PLAN_KINDS = { iep: "IEP (individual education plan)", alp: "ALP (advanced learning plan)", lsp: "Language support plan (EAL)", bsp: "Behaviour support plan", health: "Health care plan", other: "Other plan" };
 const PROG = { n: "Not started", w: "Working towards", a: "Achieved" };
+const IEP_AREAS = ["Literacy", "Numeracy", "Communication and language", "Social and emotional", "Behaviour for learning", "Independence and organisation", "Physical and sensory", "English language (EAL)", "Challenge and extension", "Other"];
 
-let me, school, isMgr = false, isLead = false, staff = [], classes = [], studs = [], reg = [], plans = [], targets = [], conf = {};
-let ui = { tab: "register", cat: "all", grade: "all", q: "" };
+let me, school, isMgr = false, isLead = false, staff = [], classes = [], studs = [], reg = [], plans = [], targets = [], conf = {}, meetings = [], notes = [], versions = [], acks = [], feedback = [], cteach = [];
+const MEET_KINDS = { review: "Plan review meeting", update: "Progress update", concern: "A concern raised", start: "New plan agreed", other: "Other" };
+let ui = { tab: location.hash === "#reviews" ? "reviews" : "register", cat: "all", grade: "all", q: "" };
 
 function fail(text){ app.innerHTML = `<div class="card"><div class="msg">${esc(text)}</div><p style="margin-top:14px"><a class="btn ghost" href="./">← Back to ${esc(PLATFORM)}</a></p></div>`; }
 async function fetchAll(q){ const out = []; for (let f = 0; ; f += 1000) { const { data, error } = await q().range(f, f + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; } return out; }
@@ -182,6 +184,12 @@ async function load(){
   targets = plans.length ? await fetchAll(() => sb.from("inclusion_targets").select("*").eq("school_id", sid).order("position")) : [];
   conf = {};
   if (isMgr) (await fetchAll(() => sb.from("inclusion_confidential").select("*").eq("school_id", sid))).forEach(x => conf[x.student_id] = x);
+  meetings = isMgr ? await fetchAll(() => sb.from("inclusion_meetings").select("*").eq("school_id", sid).order("meeting_date", { ascending: false })).catch(() => []) : [];
+  notes = await fetchAll(() => sb.from("inclusion_notes").select("*").eq("school_id", sid).order("created_at", { ascending: false })).catch(() => []);
+  versions = await fetchAll(() => sb.from("inclusion_plan_versions").select("id,plan_id,version,created_at,created_by,snapshot").eq("school_id", sid).order("version", { ascending: false })).catch(() => []);
+  acks = await fetchAll(() => sb.from("inclusion_acks").select("*").eq("school_id", sid)).catch(() => []);
+  feedback = await fetchAll(() => sb.from("inclusion_target_feedback").select("*").eq("school_id", sid).order("created_at", { ascending: false })).catch(() => []);
+  cteach = isMgr ? await fetchAll(() => sb.from("class_teachers").select("class_id,teacher_id").in("class_id", classes.map(c => c.id))).catch(() => []) : [];
 }
 
 /* ---------- Page ---------- */
@@ -324,11 +332,26 @@ function openStudent(sid){
       ${isMgr && c.notes ? `<p style="margin:10px 0 0"><span class="lock">🔒 Confidential:</span> ${esc(c.notes)}</p>` : ""}
       <p class="note" style="margin:8px 0 0">${r.parent_consent ? "✅ Parents know and agree" : "⚠️ Parents’ agreement not recorded yet"} · On the register since ${fmt(r.added_on)}</p></div>
     <div class="row" style="justify-content:space-between"><h3 style="margin:0;color:var(--plum)">Support plans</h3>${isMgr ? '<button class="btn small" id="newplan">+ New plan</button>' : ""}</div>
-    ${ps.length ? ps.map(planHtml).join("") : '<p class="note">No plans yet.</p>'}</div>`;
+    ${ps.length ? ps.map(planHtml).join("") : '<p class="note">No plans yet.</p>'}
+    ${isMgr ? `<div class="row" style="justify-content:space-between"><h3 style="margin:0;color:var(--plum)">Parent meetings</h3><button class="btn small" id="newmeet">+ Log a meeting</button></div>
+      ${meetingsOf(sid).length ? meetingsOf(sid).map(meetHtml).join("") : '<p class="note">No parent meetings logged yet.</p>'}` : ""}
+    <div class="row" style="justify-content:space-between"><h3 style="margin:0;color:var(--plum)">Notes from teachers</h3></div>
+    <form class="box" id="nf" style="display:grid;gap:8px"><label class="f">${isMgr ? "Add a note" : "How is it going? Add a quick note for the inclusion team"} <textarea name="n" rows="2" maxlength="1500" placeholder="For example: the visual timer is working well in Maths; still finds group work hard"></textarea></label><div><button class="btn small">Add note</button></div></form>
+    ${notesOf(sid).length ? notesOf(sid).map(n => `<div class="box"><p style="margin:0">${esc(n.body)}</p><p class="note" style="margin:6px 0 0">${esc(staffName(n.author_id) || "A teacher")} · ${new Date(n.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p></div>`).join("") : '<p class="note">No notes yet.</p>'}</div>`;
   dlg.querySelector("[data-x]").onclick = () => dlg.close();
   const ed = document.getElementById("edit"); if (ed) ed.onclick = () => openEntry(sid);
   const np = document.getElementById("newplan"); if (np) np.onclick = () => openPlan(sid, null);
+  const nm = document.getElementById("newmeet"); if (nm) nm.onclick = () => openMeeting(sid, null);
+  dlg.querySelectorAll("[data-meet]").forEach(b => b.onclick = () => openMeeting(sid, b.dataset.meet));
+  const nf = document.getElementById("nf");
+  nf.onsubmit = async e => {
+    e.preventDefault(); const body = nf.n.value.trim(); if (!body) return;
+    const { error } = await sb.from("inclusion_notes").insert({ school_id: school.id, student_id: sid, author_id: me.id, body });
+    if (error) return toast(/inclusion_notes/.test(error.message) ? "Please run the Inclusion Part 2 database step first." : error.message);
+    await load(); openStudent(sid); toast("Note added");
+  };
   dlg.querySelectorAll("[data-plan]").forEach(b => b.onclick = () => openPlan(sid, b.dataset.plan));
+  dlg.querySelectorAll("[data-iep]").forEach(b => b.onclick = () => { dlg.close(); openIEP(b.dataset.iep); });
   dlg.querySelectorAll("[data-prog]").forEach(b => b.onclick = async () => {
     if (!isMgr) return;
     const t = targets.find(x => String(x.id) === b.dataset.prog), order = ["n", "w", "a"], nx = order[(order.indexOf(t.progress || "n") + 1) % 3];
@@ -342,11 +365,49 @@ function planHtml(p){
   const ts = targets.filter(t => String(t.plan_id) === String(p.id)), done = ts.filter(t => t.progress === "a").length;
   return `<div class="box"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h3>${esc(p.title || PLAN_KINDS[p.kind])}</h3>
       <p class="note" style="margin:0">${esc(PLAN_KINDS[p.kind])} · ${p.status === "active" ? "Active" : "Closed"} · from ${fmt(p.start_date)} · ${p.status === "active" ? dueTag(p.review_date) : "reviewed " + fmt(p.review_date)}${ts.length ? ` · ${done} of ${ts.length} targets achieved` : ""}</p></div>
-      ${isMgr ? `<button class="btn ghost small" data-plan="${esc(p.id)}">Edit</button>` : ""}</div>
+      <div class="row"><button class="btn small" data-iep="${esc(p.id)}">📄 Open ${p.kind === "iep" ? "IEP" : "plan"}</button>${isMgr ? `<button class="btn ghost small" data-plan="${esc(p.id)}">Edit</button>` : ""}</div></div>
     ${ts.length ? ts.map(t => `<div class="target"><div><b>${esc(t.target)}</b>${t.success_criteria ? `<br><span class="note">Success looks like: ${esc(t.success_criteria)}</span>` : ""}${t.strategy ? `<br><span class="note">How we support it: ${esc(t.strategy)}</span>` : ""}</div>
       <button class="pg ${t.progress || "n"}" data-prog="${esc(t.id)}" title="${isMgr ? "Click to change" : ""}">${PROG[t.progress || "n"]}</button></div>`).join("") : '<p class="note" style="margin:6px 0 0">No targets yet.</p>'}
     ${p.strategies ? `<p style="margin:10px 0 0"><b>Strategies for all teachers:</b> ${esc(p.strategies)}</p>` : ""}
     ${p.review_notes ? `<p class="note" style="margin:8px 0 0"><b>Last review:</b> ${esc(p.review_notes)}</p>` : ""}</div>`;
+}
+
+const meetingsOf = sid => meetings.filter(m => String(m.student_id) === String(sid));
+const notesOf = sid => notes.filter(n => String(n.student_id) === String(sid));
+function meetHtml(m){
+  const p = plans.find(x => String(x.id) === String(m.plan_id));
+  return `<div class="box"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h3>${esc(MEET_KINDS[m.kind] || "Meeting")} · ${fmt(m.meeting_date)}</h3>
+      <p class="note" style="margin:0">${esc([m.attendees, p ? "About: " + (p.title || PLAN_KINDS[p.kind]) : ""].filter(Boolean).join(" · "))}</p></div><button class="btn ghost small" data-meet="${esc(m.id)}">Edit</button></div>
+    ${m.discussed ? `<p style="margin:8px 0 0"><b>Discussed:</b> ${esc(m.discussed)}</p>` : ""}
+    ${m.agreed ? `<p style="margin:6px 0 0"><b>Agreed actions:</b> ${esc(m.agreed)}</p>` : ""}
+    <p class="note" style="margin:6px 0 0">${m.parent_agreed ? "✅ Parents agreed" : "⚠️ Parents haven’t agreed yet"}${m.next_date ? " · Next meeting " + fmt(m.next_date) : ""}</p></div>`;
+}
+function openMeeting(sid, mid){
+  const m = mid ? meetings.find(x => String(x.id) === String(mid)) : null, ps = plansOf(sid);
+  dlg.innerHTML = `<form class="dlg"><h2>${m ? "Edit meeting" : "Log a parent meeting"} · ${esc(stud(sid).full_name)}</h2>
+    <div class="two"><label class="f">Date <input type="date" name="d" required value="${esc(m ? m.meeting_date : today())}"></label>
+      <label class="f">Type <select name="k">${Object.entries(MEET_KINDS).map(([k, v]) => `<option value="${k}" ${(m ? m.kind : "review") === k ? "selected" : ""}>${v}</option>`).join("")}</select></label></div>
+    <div class="two"><label class="f">Who attended <input type="text" name="a" value="${esc(m ? m.attendees || "" : "")}" placeholder="For example: mother, class teacher, SENCO"></label>
+      <label class="f">About which plan <select name="p"><option value="">General</option>${ps.map(p => `<option value="${esc(p.id)}" ${m && String(m.plan_id) === String(p.id) ? "selected" : ""}>${esc(p.title || PLAN_KINDS[p.kind])}</option>`).join("")}</select></label></div>
+    <label class="f">What was discussed <textarea name="w" rows="3">${esc(m ? m.discussed || "" : "")}</textarea></label>
+    <label class="f">Agreed actions (school and home) <textarea name="g" rows="3" placeholder="For example: school: daily check-in with the LSA; home: 10 minutes of reading each evening">${esc(m ? m.agreed || "" : "")}</textarea></label>
+    <div class="two"><label class="f">Next meeting (optional) <input type="date" name="n" value="${esc(m ? m.next_date || "" : "")}"></label>
+      <div class="checks" style="align-self:end"><label><input type="checkbox" name="ok" ${m && m.parent_agreed ? "checked" : ""}> Parents agreed to the actions</label></div></div>
+    <div class="msg" id="merr" hidden></div>
+    <div class="row" style="justify-content:space-between"><div>${m ? '<button type="button" class="btn ghost small" id="delm">Delete</button>' : ""}</div><div class="row"><button type="button" class="btn ghost" data-back>Back</button><button class="btn">Save</button></div></div></form>`;
+  const f = dlg.querySelector("form");
+  dlg.querySelector("[data-back]").onclick = () => openStudent(sid);
+  const dm = document.getElementById("delm");
+  if (dm) dm.onclick = async () => { if (!confirm("Delete this meeting record?")) return; await sb.from("inclusion_meetings").delete().eq("id", m.id); await load(); render(); openStudent(sid); };
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const row = { school_id: school.id, student_id: sid, plan_id: f.p.value || null, meeting_date: f.d.value, kind: f.k.value, attendees: f.a.value.trim() || null, discussed: f.w.value.trim() || null, agreed: f.g.value.trim() || null, next_date: f.n.value || null, parent_agreed: f.ok.checked, updated_by: me.id };
+    const { error } = m ? await sb.from("inclusion_meetings").update(row).eq("id", m.id) : await sb.from("inclusion_meetings").insert(Object.assign(row, { created_by: me.id }));
+    if (error) { const er = document.getElementById("merr"); er.textContent = /inclusion_meetings/.test(error.message) ? "Please run the Inclusion Part 2 database step first." : error.message; er.hidden = false; return; }
+    if (row.parent_agreed && !(regOf(sid) || {}).parent_consent && regOf(sid)) await sb.from("inclusion_students").update({ parent_consent: true }).eq("student_id", sid);
+    await load(); render(); openStudent(sid); toast("Meeting saved");
+  };
+  if (!dlg.open) dlg.showModal();
 }
 
 /* ---------- A support plan ---------- */
@@ -355,7 +416,8 @@ function openPlan(sid, pid){
   const kind0 = p ? p.kind : (r.categories || []).includes("sod") ? "iep" : (r.categories || []).includes("gt") ? "alp" : (r.categories || []).includes("eal") ? "lsp" : "other";
   const ts = p ? targets.filter(t => String(t.plan_id) === String(p.id)) : [];
   const start0 = p ? p.start_date : today(), rev0 = p ? p.review_date : new Date(Date.now() + 42 * 864e5).toISOString().slice(0, 10);
-  const trow = (t = {}) => `<div class="box trow" data-tid="${esc(t.id || "")}"><div class="two"><label class="f">Target <input type="text" name="t" value="${esc(t.target || "")}" placeholder="Specific and measurable, for example: reads 20 high-frequency words"></label>
+  const trow = (t = {}) => `<div class="box trow" data-tid="${esc(t.id || "")}"><div class="two" style="margin-bottom:8px"><label class="f">Area <select name="ar">${["", ...IEP_AREAS].map(a => `<option ${t.area === a ? "selected" : ""} value="${esc(a)}">${a || "Choose…"}</option>`).join("")}</select></label>
+      <label class="f">Who and how often <input type="text" name="wh" value="${esc(t.who || "")}" placeholder="For example: LSA, 3 × 20 minutes a week"></label></div><div class="two"><label class="f">Target <input type="text" name="t" value="${esc(t.target || "")}" placeholder="Specific and measurable, for example: reads 20 high-frequency words"></label>
       <label class="f">Success looks like <input type="text" name="sc" value="${esc(t.success_criteria || "")}" placeholder="How we’ll know it’s achieved"></label></div>
     <div class="two" style="margin-top:8px"><label class="f">How we support it <input type="text" name="st" value="${esc(t.strategy || "")}" placeholder="For example: daily 10-minute word games with the LSA"></label>
       <label class="f">Progress <select name="pg">${Object.entries(PROG).map(([k, v]) => `<option value="${k}" ${(t.progress || "n") === k ? "selected" : ""}>${v}</option>`).join("")}</select></label></div>
@@ -388,28 +450,189 @@ function openPlan(sid, pid){
     let planId = p && p.id;
     if (p) { const { error } = await sb.from("inclusion_plans").update(row).eq("id", p.id); if (error) { err.textContent = error.message; err.hidden = false; return; } }
     else { row.created_by = me.id; const { data, error } = await sb.from("inclusion_plans").insert(row).select().single(); if (error) { err.textContent = error.message; err.hidden = false; return; } planId = data.id; }
-    const rows = [...tl.querySelectorAll(".trow")].map((b, i) => ({ id: b.dataset.tid || null, target: b.querySelector("[name=t]").value.trim(), success_criteria: b.querySelector("[name=sc]").value.trim() || null, strategy: b.querySelector("[name=st]").value.trim() || null, progress: b.querySelector("[name=pg]").value, position: i })).filter(x => x.target);
+    const rows = [...tl.querySelectorAll(".trow")].map((b, i) => ({ id: b.dataset.tid || null, area: b.querySelector("[name=ar]").value || null, who: b.querySelector("[name=wh]").value.trim() || null, target: b.querySelector("[name=t]").value.trim(), success_criteria: b.querySelector("[name=sc]").value.trim() || null, strategy: b.querySelector("[name=st]").value.trim() || null, progress: b.querySelector("[name=pg]").value, position: i })).filter(x => x.target);
     const keep = rows.filter(x => x.id).map(x => x.id);
     const old = targets.filter(t => String(t.plan_id) === String(planId)).map(t => String(t.id)).filter(id => !keep.includes(id));
     if (old.length) await sb.from("inclusion_targets").delete().in("id", old);
     for (const t of rows) {
-      const data = { school_id: school.id, plan_id: planId, target: t.target, success_criteria: t.success_criteria, strategy: t.strategy, progress: t.progress, position: t.position, updated_at: new Date().toISOString() };
+      const data = { school_id: school.id, plan_id: planId, area: t.area, who: t.who, target: t.target, success_criteria: t.success_criteria, strategy: t.strategy, progress: t.progress, position: t.position, updated_at: new Date().toISOString() };
       const { error } = t.id ? await sb.from("inclusion_targets").update(data).eq("id", t.id) : await sb.from("inclusion_targets").insert(data);
       if (error) { err.textContent = error.message; err.hidden = false; return; }
     }
-    await load(); render(); openStudent(sid); toast(close ? "Plan closed" : "Plan saved");
+    await load(); if (iepBack) { const b = iepBack; iepBack = null; dlg.close(); openIEP(b); } else { render(); openStudent(sid); } toast(close ? "Plan closed" : "Plan saved");
   };
   if (!dlg.open) dlg.showModal();
 }
 
-/* ---------- Teachers: their own students (fuller view comes in Part 2) ---------- */
+
+/* ---------- Online IEP: written by the inclusion team, read and used by class teachers ---------- */
+const EXAM_ARR = ["Extra time (25%)", "Reader", "Scribe", "Separate quiet room", "Rest breaks", "Enlarged or coloured paper", "Use of a laptop", "Prompter", "Questions read in Arabic", "Calculator"];
+const FB = { good: ["🟢", "Going well"], some: ["🟡", "Some progress"], not: ["🔴", "Not yet"] };
+const teachersOf = sid => { const s = stud(sid); return [...new Set(cteach.filter(c => String(c.class_id) === String(s.class_id)).map(c => c.teacher_id))]; };
+const docOf = p => p.doc || {};
+let iepBack = null;
+
+function openIEP(pid){
+  const p = plans.find(x => String(x.id) === String(pid)); if (!p) return;
+  const s = stud(p.student_id), r = regOf(p.student_id) || {}, d = docOf(p), v = p.version || 1, cl = cls(s.class_id) || {};
+  const ts = targets.filter(t => String(t.plan_id) === String(p.id));
+  const myRead = acks.some(a => String(a.plan_id) === String(p.id) && a.teacher_id === me.id && a.version === v);
+  const tlist = teachersOf(p.student_id), readers = acks.filter(a => String(a.plan_id) === String(p.id) && a.version === v);
+  const vers = versions.filter(x => String(x.plan_id) === String(p.id));
+  const list = arr => (arr || []).filter(Boolean).length ? `<ul style="margin:6px 0 0;padding-left:20px">${arr.filter(Boolean).map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : '<p class="note" style="margin:6px 0 0">Not added yet.</p>';
+  const fbFor = t => feedback.filter(f => String(f.target_id) === String(t.id));
+  const section = (title, inner, key) => `<div class="card"><div class="row" style="justify-content:space-between"><h2>${title}</h2>${isMgr && key ? `<button class="btn ghost small" data-edit="${key}">Edit</button>` : ""}</div>${inner}</div>`;
+  app.innerHTML = `<div class="phead"><div><button class="btn ghost small" id="iback">← Back</button>
+      <h1 class="ptitle" style="margin-top:10px">${esc(p.title || PLAN_KINDS[p.kind])}</h1>
+      <p class="note">${esc(s.full_name)} · ${esc(cl.name || "")} · ${esc(PLAN_KINDS[p.kind])} · ${p.status === "active" ? "Active" : "Closed"} · ${fmt(p.start_date)} to review ${fmt(p.review_date)} · Version ${v}${p.published_at ? " shared " + new Date(p.published_at).toLocaleDateString("en-GB") : ""}</p></div>
+      <div class="row">${isMgr ? '<button class="btn" id="ishare">📣 Share this version with teachers</button>' : ""}<button class="btn ghost" id="iword">⬇ Word</button><button class="btn ghost" id="iwordar">⬇ Word (Arabic headings)</button><button class="btn ghost" id="iprint">🖨 Print or PDF</button></div></div>
+    ${!isMgr ? `<div class="card" style="border-left:5px solid ${myRead ? "var(--sage)" : "var(--amber)"}">${myRead ? `<p style="margin:0;font-weight:700;color:var(--sage)">✅ You’ve read version ${v} of this ${p.kind === "iep" ? "IEP" : "plan"}.</p>` : `<p style="margin:0 0 10px;font-weight:700">Please read this ${p.kind === "iep" ? "IEP" : "plan"}, then confirm. The inclusion team can see who has read the latest version.</p><button class="btn" id="iack">✅ I’ve read this ${p.kind === "iep" ? "IEP" : "plan"}</button>`}</div>`
+      : `<div class="card"><h2>Teachers who have read version ${v}</h2>${tlist.length ? `<div class="row">${tlist.map(t => `<span class="tag ${readers.some(a => a.teacher_id === t) ? "eal" : "other"}">${readers.some(a => a.teacher_id === t) ? "✅" : "⏳"} ${esc(staffName(t) || "Teacher")}</span>`).join("")}</div><p class="note" style="margin:8px 0 0">${readers.length} of ${tlist.length} have confirmed.</p>` : '<p class="note" style="margin:0">No class teachers are linked to this student’s class in TwigNest yet.</p>'}</div>`}
+    ${section("In class: how to help", `${p.strategies ? `<p style="margin:0">${esc(p.strategies)}</p>` : ""}${list(d.adjustments)}`, "adjust")}
+    ${section("All about me", `<div class="two"><div><b>My strengths</b>${list(d.strengths)}</div><div><b>What I enjoy</b>${list(d.interests)}</div><div><b>What helps me learn</b>${list(d.helps)}</div><div><b>What I find hard</b>${list(d.hard)}</div></div>
+      ${d.student_voice ? `<p style="margin:12px 0 0"><b>In my words:</b> “${esc(d.student_voice)}”</p>` : ""}${d.parent_views ? `<p style="margin:8px 0 0"><b>My parents say:</b> ${esc(d.parent_views)}</p>` : ""}`, "about")}
+    ${section("Barriers to learning", `${(r.sod_needs || []).length ? `<p class="note" style="margin:0 0 6px"><b>Areas of need:</b> ${esc(r.sod_needs.join(", "))}</p>` : ""}${d.barriers ? `<p style="margin:0">${esc(d.barriers)}</p>` : '<p class="note" style="margin:0">Not added yet.</p>'}`, "barriers")}
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>Targets</h2>${isMgr ? `<button class="btn ghost small" data-targets>Edit targets</button>` : ""}</div>
+      ${ts.length ? `<div class="tablewrap"><table class="reg"><tr><th>Area</th><th>Target</th><th>Success looks like</th><th>How we support it</th><th>Who and how often</th><th>Progress</th><th>${isMgr ? "Teachers say" : "How is it going in your lessons?"}</th></tr>
+        ${ts.map(t => { const fs = fbFor(t), mine = fs.find(f => f.teacher_id === me.id);
+          return `<tr><td>${esc(t.area || "")}</td><td><b>${esc(t.target)}</b></td><td>${esc(t.success_criteria || "")}</td><td>${esc(t.strategy || "")}</td><td>${esc(t.who || "")}</td><td><span class="pg ${t.progress || "n"}">${PROG[t.progress || "n"]}</span></td>
+          <td>${isMgr ? (fs.length ? fs.slice(0, 4).map(f => `<div class="note">${FB[f.rating][0]} ${esc(staffName(f.teacher_id) || "Teacher")}${f.comment ? ": " + esc(f.comment) : ""}</div>`).join("") : '<span class="note">No feedback yet</span>')
+            : `<div class="row">${Object.entries(FB).map(([k, [ic, l]]) => `<button class="pg ${mine && mine.rating === k ? "a" : "n"}" data-fb="${esc(t.id)}" data-r="${k}" title="${l}">${ic} ${l}</button>`).join("")}</div>`}</td></tr>`; }).join("")}</table></div>` : '<p class="note" style="margin:0">No targets yet.</p>'}</div>
+    ${section("Provision", (d.provision || []).length ? `<div class="tablewrap"><table class="reg"><tr><th>Support or intervention</th><th>How often</th><th>Who</th><th>From</th></tr>${d.provision.map(x => `<tr><td>${esc(x.what)}</td><td>${esc(x.often || "")}</td><td>${esc(x.who || "")}</td><td>${esc(x.from ? fmt(x.from) : "")}</td></tr>`).join("")}</table></div>` : '<p class="note" style="margin:0">Not added yet.</p>', "provision")}
+    ${section("Exam and assessment arrangements", list([...(d.exam || []), d.exam_other]), "exam")}
+    ${section("Review", `${p.review_notes ? `<p style="margin:0"><b>Review notes:</b> ${esc(p.review_notes)}</p>` : '<p class="note" style="margin:0">The review notes appear here after the review.</p>'}${d.review_student ? `<p style="margin:8px 0 0"><b>The student says:</b> ${esc(d.review_student)}</p>` : ""}${d.review_parent ? `<p style="margin:8px 0 0"><b>Parents say:</b> ${esc(d.review_parent)}</p>` : ""}`, "review")}
+    ${isMgr && vers.length ? `<div class="card"><h2>Earlier versions</h2>${vers.map(x => `<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:6px 0"><span>Version ${x.version} · shared ${new Date(x.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}${x.created_by ? " by " + esc(staffName(x.created_by)) : ""}</span><button class="btn ghost small" data-oldword="${esc(x.id)}">⬇ Word</button></div>`).join("")}</div>` : ""}`;
+  window.scrollTo(0, 0);
+  document.getElementById("iback").onclick = () => { render(); if (isMgr) openStudent(p.student_id); };
+  document.getElementById("iword").onclick = () => downloadIEP(p, null, "en");
+  document.getElementById("iwordar").onclick = () => downloadIEP(p, null, "ar");
+  document.getElementById("iprint").onclick = () => { const w = window.open("", "_blank"); if (!w) return; w.document.write(iepDocHtml(p, null, "en") + '<script>setTimeout(function(){window.print()},300)<\/script>'); w.document.close(); };
+  app.querySelectorAll("[data-oldword]").forEach(b => b.onclick = () => { const x = versions.find(y => String(y.id) === b.dataset.oldword); downloadIEP(p, x, "en"); });
+  app.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => editIEP(p, b.dataset.edit));
+  const et = app.querySelector("[data-targets]"); if (et) et.onclick = () => { openPlan(p.student_id, p.id); iepBack = p.id; };
+  const ack = document.getElementById("iack");
+  if (ack) ack.onclick = async () => {
+    const { error } = await sb.from("inclusion_acks").insert({ school_id: school.id, plan_id: p.id, teacher_id: me.id, version: v });
+    if (error && !/duplicate/.test(error.message)) return toast(/inclusion_acks/.test(error.message) ? "Please run the online IEP database step first." : error.message);
+    await load(); openIEP(p.id); toast("Thank you. Marked as read.");
+  };
+  app.querySelectorAll("[data-fb]").forEach(b => b.onclick = async () => {
+    const c = prompt("Optional: a short comment for the inclusion team (for example: “Uses the word mat without reminders now”).", "");
+    if (c === null) return;
+    const { error } = await sb.from("inclusion_target_feedback").insert({ school_id: school.id, plan_id: p.id, target_id: b.dataset.fb, teacher_id: me.id, rating: b.dataset.r, comment: c.trim() || null });
+    if (error) return toast(error.message);
+    await load(); openIEP(p.id); toast("Thanks, your feedback was sent.");
+  });
+  const sh = document.getElementById("ishare");
+  if (sh) sh.onclick = async () => {
+    if (!confirm("Share this as version " + (v + (p.published_at ? 1 : 0)) + "? Teachers will be asked to read and confirm it, and a copy of this version is kept.")) return;
+    const nv = p.published_at ? v + 1 : v;
+    const snap = { plan: Object.assign({}, p, { version: nv }), targets: ts, register: r, student: { full_name: s.full_name, class: cl.name || "" } };
+    const { error: ve } = await sb.from("inclusion_plan_versions").insert({ school_id: school.id, plan_id: p.id, version: nv, snapshot: snap, created_by: me.id });
+    if (ve) return toast(/inclusion_plan_versions/.test(ve.message) ? "Please run the online IEP database step first." : ve.message);
+    const { error } = await sb.from("inclusion_plans").update({ version: nv, published_at: new Date().toISOString() }).eq("id", p.id);
+    if (error) return toast(error.message);
+    await load(); openIEP(p.id); toast("Shared. Teachers will see “Please read”.");
+  };
+}
+
+function editIEP(p, key){
+  const d = Object.assign({}, docOf(p)), lines = a => (a || []).join("\n");
+  const F = {
+    about: `<div class="two"><label class="f">My strengths <span class="note">(one per line)</span><textarea name="strengths" rows="4">${esc(lines(d.strengths))}</textarea></label><label class="f">What I enjoy<textarea name="interests" rows="4">${esc(lines(d.interests))}</textarea></label>
+      <label class="f">What helps me learn<textarea name="helps" rows="4">${esc(lines(d.helps))}</textarea></label><label class="f">What I find hard<textarea name="hard" rows="4">${esc(lines(d.hard))}</textarea></label></div>
+      <label class="f">In my words (the student’s own voice) <textarea name="student_voice" rows="2">${esc(d.student_voice || "")}</textarea></label><label class="f">My parents say <textarea name="parent_views" rows="2">${esc(d.parent_views || "")}</textarea></label>`,
+    barriers: `<label class="f">Barriers to learning, in plain language <textarea name="barriers" rows="5" placeholder="For example: finds it hard to hold several instructions in mind; reading is slow, so written questions take much longer">${esc(d.barriers || "")}</textarea></label>`,
+    adjust: `<label class="f">In-class adjustments <span class="note">(one per line; teachers see these first)</span><textarea name="adjustments" rows="6" placeholder="Sit near the front, away from the door&#10;Give instructions one step at a time&#10;Check understanding privately">${esc(lines(d.adjustments))}</textarea></label>`,
+    provision: `<div id="prov" style="display:grid;gap:8px">${(d.provision && d.provision.length ? d.provision : [{}]).map(x => provRow(x)).join("")}</div><button type="button" class="btn ghost small" id="addprov">+ Add support</button>`,
+    exam: `<div class="checks">${EXAM_ARR.map(x => `<label><input type="checkbox" name="exam" value="${esc(x)}" ${(d.exam || []).includes(x) ? "checked" : ""}> ${esc(x)}</label>`).join("")}</div><label class="f">Other arrangement <input type="text" name="exam_other" value="${esc(d.exam_other || "")}"></label>`,
+    review: `<label class="f">The student says <textarea name="review_student" rows="2">${esc(d.review_student || "")}</textarea></label><label class="f">Parents say <textarea name="review_parent" rows="2">${esc(d.review_parent || "")}</textarea></label><p class="note">Review notes and closing the plan are in “Edit targets”.</p>`
+  };
+  const T = { about: "All about me", barriers: "Barriers to learning", adjust: "In class: how to help", provision: "Provision", exam: "Exam and assessment arrangements", review: "Review comments" };
+  dlg.innerHTML = `<form class="dlg"><h2>${T[key]}</h2>${F[key]}<div class="row" style="justify-content:flex-end"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn">Save</button></div></form>`;
+  const f = dlg.querySelector("form");
+  dlg.querySelector("[data-x]").onclick = () => dlg.close();
+  const ap = document.getElementById("addprov"); if (ap) ap.onclick = () => document.getElementById("prov").insertAdjacentHTML("beforeend", provRow({}));
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const L = n => f[n] ? f[n].value.split("\n").map(x => x.trim()).filter(Boolean) : undefined, T2 = n => f[n] ? f[n].value.trim() || null : undefined;
+    if (key === "about") Object.assign(d, { strengths: L("strengths"), interests: L("interests"), helps: L("helps"), hard: L("hard"), student_voice: T2("student_voice"), parent_views: T2("parent_views") });
+    if (key === "barriers") d.barriers = T2("barriers");
+    if (key === "adjust") d.adjustments = L("adjustments");
+    if (key === "provision") d.provision = [...f.querySelectorAll(".prow")].map(b => ({ what: b.querySelector("[name=pw]").value.trim(), often: b.querySelector("[name=po]").value.trim(), who: b.querySelector("[name=py]").value.trim(), from: b.querySelector("[name=pf]").value })).filter(x => x.what);
+    if (key === "exam") { d.exam = [...f.querySelectorAll("input[name=exam]:checked")].map(x => x.value); d.exam_other = T2("exam_other"); }
+    if (key === "review") Object.assign(d, { review_student: T2("review_student"), review_parent: T2("review_parent") });
+    const { error } = await sb.from("inclusion_plans").update({ doc: d, updated_by: me.id, updated_at: new Date().toISOString() }).eq("id", p.id);
+    if (error) return toast(/doc/.test(error.message) ? "Please run the online IEP database step first." : error.message);
+    dlg.close(); await load(); openIEP(p.id); toast("Saved. Press “Share this version” when teachers should read it.");
+  };
+  dlg.showModal();
+}
+const provRow = x => `<div class="box prow"><div class="two"><label class="f">Support or intervention <input type="text" name="pw" value="${esc(x.what || "")}" placeholder="For example: phonics catch-up group"></label><label class="f">How often <input type="text" name="po" value="${esc(x.often || "")}" placeholder="3 × 20 minutes a week"></label></div>
+  <div class="two" style="margin-top:8px"><label class="f">Who <input type="text" name="py" value="${esc(x.who || "")}" placeholder="LSA, SENCO, speech therapist"></label><label class="f">From <input type="date" name="pf" value="${esc(x.from || "")}"></label></div></div>`;
+
+// Word document (opens in Word; parents' copy), in the school's name, English or Arabic headings
+function iepDocHtml(p, ver, lang){
+  const P = ver ? ver.snapshot.plan : p, R = ver ? ver.snapshot.register || {} : regOf(p.student_id) || {}, d = P.doc || {};
+  const S = ver ? ver.snapshot.student : { full_name: stud(p.student_id).full_name, class: (cls(stud(p.student_id).class_id) || {}).name || "" };
+  const TS = ver ? ver.snapshot.targets || [] : targets.filter(t => String(t.plan_id) === String(p.id));
+  const A = lang === "ar";
+  const L = A ? { title: "الخطة التربوية الفردية", student: "الطالب", cls: "الصف", start: "تاريخ البدء", review: "تاريخ المراجعة", version: "الإصدار", about: "كل شيء عني", str: "نقاط قوتي", enj: "ما أستمتع به", help: "ما يساعدني على التعلّم", hard: "ما أجده صعبًا", voice: "بكلماتي", parents: "رأي أولياء الأمور", barriers: "عوائق التعلّم", inclass: "في الصف: كيف نساعد", targets: "الأهداف", area: "المجال", target: "الهدف", sc: "معيار النجاح", how: "كيف ندعمه", who: "من وكم مرة", prog: "التقدّم", prov: "الدعم والتدخلات", often: "كم مرة", whoP: "من", exam: "ترتيبات الاختبارات والتقييم", rev: "المراجعة", sign: "التوقيعات", sig: ["وليّ الأمر", "المعلّم", "منسّق الدمج"], conf: "سرّي" }
+    : { title: P.kind === "iep" ? "Individual Education Plan" : (PLAN_KINDS[P.kind] || "Support plan"), student: "Student", cls: "Class", start: "Start", review: "Review by", version: "Version", about: "All about me", str: "My strengths", enj: "What I enjoy", help: "What helps me learn", hard: "What I find hard", voice: "In my words", parents: "My parents say", barriers: "Barriers to learning", inclass: "In class: how to help", targets: "Targets", area: "Area", target: "Target", sc: "Success looks like", how: "How we support it", who: "Who and how often", prog: "Progress", prov: "Provision", often: "How often", whoP: "Who", exam: "Exam and assessment arrangements", rev: "Review", sign: "Signatures", sig: ["Parent", "Class teacher", "Inclusion lead"], conf: "Confidential" };
+  const ul = a => (a || []).filter(Boolean).length ? "<ul>" + a.filter(Boolean).map(x => `<li>${esc(x)}</li>`).join("") + "</ul>" : "<p>—</p>";
+  const PG = A ? { n: "لم يبدأ", w: "قيد العمل", a: "تحقّق" } : PROG;
+  return `<!doctype html><html lang="${A ? "ar" : "en"}" dir="${A ? "rtl" : "ltr"}"><head><meta charset="utf-8"><title>${esc(L.title)}: ${esc(S.full_name)}</title>
+  <style>body{font-family:Arial,Helvetica,sans-serif;color:#222;font-size:11pt;margin:24px}h1{color:#462D5B;font-size:20pt;margin:0}h2{color:#462D5B;font-size:13pt;border-bottom:2px solid #462D5B;padding-bottom:3px;margin:18px 0 6px}
+  table{border-collapse:collapse;width:100%;table-layout:fixed}td,th{border:1px solid #bbb;padding:5px;vertical-align:top;font-size:10pt;text-align:${A ? "right" : "left"}}th{background:#EDE6F5}.meta td{border:0;padding:2px 6px}.c{color:#B4473A;font-size:9pt}</style></head><body>
+  <p class="c">${esc(L.conf)} · ${esc(school.name)}</p><h1>${esc(L.title)}</h1>
+  <table class="meta" width="100%" cellpadding="3"><tr><td><b>${L.student}:</b> ${esc(S.full_name)}</td><td><b>${L.cls}:</b> ${esc(S.class)}</td></tr><tr><td><b>${L.start}:</b> ${esc(fmt(P.start_date))}</td><td><b>${L.review}:</b> ${esc(fmt(P.review_date))}</td></tr><tr><td><b>${L.version}:</b> ${P.version || 1}</td><td></td></tr></table>
+  <h2>${L.about}</h2><table width="100%" border="1" cellspacing="0" cellpadding="6"><col width="50%"><col width="50%"><tr><th>${L.str}</th><th>${L.enj}</th></tr><tr><td>${ul(d.strengths)}</td><td>${ul(d.interests)}</td></tr><tr><th>${L.help}</th><th>${L.hard}</th></tr><tr><td>${ul(d.helps)}</td><td>${ul(d.hard)}</td></tr></table>
+  ${d.student_voice ? `<p><b>${L.voice}:</b> “${esc(d.student_voice)}”</p>` : ""}${d.parent_views ? `<p><b>${L.parents}:</b> ${esc(d.parent_views)}</p>` : ""}
+  <h2>${L.barriers}</h2>${(R.sod_needs || []).length ? `<p>${esc(R.sod_needs.join(", "))}</p>` : ""}<p>${esc(d.barriers || "—")}</p>
+  <h2>${L.inclass}</h2>${P.strategies ? `<p>${esc(P.strategies)}</p>` : ""}${ul(d.adjustments)}
+  <h2>${L.targets}</h2><table width="100%" border="1" cellspacing="0" cellpadding="5"><col width="13%"><col width="22%"><col width="18%"><col width="19%"><col width="16%"><col width="12%"><tr><th>${L.area}</th><th>${L.target}</th><th>${L.sc}</th><th>${L.how}</th><th>${L.who}</th><th>${L.prog}</th></tr>${TS.map(t => `<tr><td>${esc(t.area || "")}</td><td>${esc(t.target)}</td><td>${esc(t.success_criteria || "")}</td><td>${esc(t.strategy || "")}</td><td>${esc(t.who || "")}</td><td>${PG[t.progress || "n"]}</td></tr>`).join("")}</table>
+  ${(d.provision || []).length ? `<h2>${L.prov}</h2><table width="100%" border="1" cellspacing="0" cellpadding="5"><col width="50%"><col width="25%"><col width="25%"><tr><th>${L.prov}</th><th>${L.often}</th><th>${L.whoP}</th></tr>${d.provision.map(x => `<tr><td>${esc(x.what)}</td><td>${esc(x.often || "")}</td><td>${esc(x.who || "")}</td></tr>`).join("")}</table>` : ""}
+  ${(d.exam || []).length || d.exam_other ? `<h2>${L.exam}</h2>${ul([...(d.exam || []), d.exam_other])}` : ""}
+  ${P.review_notes || d.review_student || d.review_parent ? `<h2>${L.rev}</h2>${P.review_notes ? `<p>${esc(P.review_notes)}</p>` : ""}${d.review_student ? `<p><b>${L.voice}:</b> ${esc(d.review_student)}</p>` : ""}${d.review_parent ? `<p><b>${L.parents}:</b> ${esc(d.review_parent)}</p>` : ""}` : ""}
+  <h2>${L.sign}</h2><table width="100%" border="1" cellspacing="0" cellpadding="6">${L.sig.map(x => `<tr><td style="width:30%"><b>${x}</b></td><td style="height:34px"></td></tr>`).join("")}</table></body></html>`;
+}
+function downloadIEP(p, ver, lang){
+  const html = iepDocHtml(p, ver, lang), name = (stud(p.student_id).full_name || "student").replace(/[^\w\- ]+/g, "") + " IEP" + (ver ? " v" + ver.version : "") + (lang === "ar" ? " (AR)" : "") + ".doc";
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + html], { type: "application/msword" })); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  toast("Downloaded. It opens in Word, where you can edit or save it as PDF.");
+}
+
+/* ---------- Teachers: their own students, by class, with strategies (and a printable class summary) ---------- */
 function teacherView(){
   const mine = reg.filter(r => r.active !== false && stud(r.student_id));
-  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Inclusion</h1><p class="note">Students in your classes who need extra support or challenge, and how to help them.</p></div></div>
-    <div class="card">${mine.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Needs</th><th>What to know</th></tr>${mine.map(r => { const s = stud(r.student_id);
-      return `<tr><td><button class="nm" data-open="${esc(r.student_id)}">${esc(s.full_name)}</button><br><span class="note">${esc((cls(s.class_id) || {}).name || "")}</span></td><td>${(r.categories || []).map(k => `<span class="tag ${k}">${CAT_SHORT[k]}</span>`).join("")}</td><td>${esc(r.summary || "")}</td></tr>`; }).join("")}</table></div>`
-      : '<p class="note">None of your students are on the inclusion register.</p>'}</div>`;
+  const byClass = {}; mine.forEach(r => { const c = stud(r.student_id).class_id; (byClass[c] = byClass[c] || []).push(r); });
+  const card = r => { const s = stud(r.student_id), ap = plansOf(r.student_id).filter(p => p.status === "active");
+    const strat = ap.map(p => p.strategies).filter(Boolean);
+    return `<div class="box" style="margin-bottom:10px"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><button class="nm" data-open="${esc(r.student_id)}" style="font-size:16px">${esc(s.full_name)}</button>
+        <div>${(r.categories || []).map(k => `<span class="tag ${k}">${CATS[k]}</span>`).join("")}${LEVELS[r.support_level] ? ` <span class="lvl ${LEVELS[r.support_level][0]}">${LEVELS[r.support_level][1].split(" (")[0]}</span>` : ""}</div></div>
+        ${(r.key_staff || []).length ? `<span class="note">Key staff: ${esc(r.key_staff.map(staffName).filter(Boolean).join(", "))}</span>` : ""}</div>
+      ${r.summary ? `<p style="margin:8px 0 0"><b>What to know:</b> ${esc(r.summary)}</p>` : ""}
+      ${strat.length ? `<p style="margin:6px 0 0"><b>How to help in class:</b> ${esc(strat.join(" "))}</p>` : ""}
+      ${ap.length ? `<div class="row" style="margin-top:8px">${ap.map(p => { const read = acks.some(a => String(a.plan_id) === String(p.id) && a.teacher_id === me.id && a.version === (p.version || 1));
+        return `<button class="btn small ${read ? "ghost" : ""}" data-iep="${esc(p.id)}">📄 ${esc(p.title || PLAN_KINDS[p.kind].split(" (")[0])} ${read ? "· ✅ Read" : "· Please read"}</button>`; }).join("")}</div>` : ""}
+      ${ap.length ? `<p class="note" style="margin:6px 0 0"><b>Current targets:</b> ${esc(ap.flatMap(p => targets.filter(t => String(t.plan_id) === String(p.id) && t.progress !== "a").map(t => t.target)).join("; ") || "all achieved")}</p>` : ""}</div>`; };
+  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Inclusion</h1><p class="note">Students in your classes who need extra support or challenge, and how to help them in class. Please keep this information private.</p></div>
+      ${mine.length ? '<button class="btn ghost" id="print">🖨 Print a class summary</button>' : ""}</div>
+    ${mine.length ? Object.entries(byClass).map(([cid, rs]) => `<div class="card"><h2>${esc((cls(cid) || {}).name || "My students")} <span class="note">(${rs.length})</span></h2>${rs.sort((a, b) => stud(a.student_id).full_name.localeCompare(stud(b.student_id).full_name)).map(card).join("")}</div>`).join("")
+      : '<div class="card"><p class="note" style="margin:0">None of your students are on the inclusion register.</p></div>'}`;
   app.querySelectorAll("[data-open]").forEach(b => b.onclick = () => openStudent(b.dataset.open));
+  app.querySelectorAll("[data-iep]").forEach(b => b.onclick = () => openIEP(b.dataset.iep));
+  const pr = document.getElementById("print");
+  if (pr) pr.onclick = () => {
+    const w = window.open("", "_blank"); if (!w) return window.print();
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Class inclusion summary</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#222}h1{font-size:20px;margin:0 0 4px}h2{font-size:16px;margin:18px 0 6px;border-bottom:2px solid #462D5B}
+      table{width:100%;border-collapse:collapse;font-size:12.5px}th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}th{background:#EDE6F5}.p{color:#B4473A;font-size:12px}</style></head><body>
+      <h1>Class inclusion summary</h1><p class="p">Confidential: for staff working with these students only. ${esc(school.name)} · printed ${new Date().toLocaleDateString("en-GB")}</p>
+      ${Object.entries(byClass).map(([cid, rs]) => `<h2>${esc((cls(cid) || {}).name || "")}</h2><table><tr><th>Student</th><th>Needs</th><th>What to know</th><th>How to help in class</th></tr>${rs.map(r => { const s = stud(r.student_id), ap = plansOf(r.student_id).filter(p => p.status === "active");
+        return `<tr><td>${esc(s.full_name)}</td><td>${esc((r.categories || []).map(k => CATS[k]).join(", "))}</td><td>${esc(r.summary || "")}</td><td>${esc(ap.map(p => p.strategies).filter(Boolean).join(" "))}</td></tr>`; }).join("")}</table>`).join("")}
+      <script>setTimeout(function(){window.print()},300)<\/script></body></html>`);
+    w.document.close();
+  };
 }
 
 /* ---------- Sample data for testing ---------- */
