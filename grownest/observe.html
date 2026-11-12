@@ -85,6 +85,7 @@ textarea.f{font:inherit;padding:10px 12px;border:1px solid var(--line);border-ra
  <span>Overall</span><span id="ovChip" class="lchip">Not judged</span>
  <select id="ovSel" aria-label="Overall judgement"></select>
  <span class="status" id="saveSt" style="flex:1"></span>
+ <button class="btn ghost small" id="spBtn" title="Open a teacher support plan from this observation">🤝 Support plan</button>
  <button class="btn ghost small" id="wordBtn">Word form</button>
  <button class="btn primary small" id="sendBtn">Send to teacher</button>
  <a class="btn ghost small" href="observations.html">Done</a>
@@ -170,6 +171,10 @@ function suggested(){const v=Object.values(judg);return v.length?Math.round(v.re
 function renderOverall(){const chosen=+$("ovSel").value||0,n=chosen||suggested(),L=lvl(n);const c=$("ovChip");
  c.textContent=L?`${n} · ${L.name}`:"Not judged";c.style.background=L?L.bg:"";c.style.color=L?L.fg:"";
  $("ovSel").options[0].textContent=suggested()?"Use suggested ("+lvl(suggested()).name+")":"Use suggested";}
+// ---- teacher support plan (suggested when the overall judgement is Acceptable or below) ----
+$("spBtn").onclick=async()=>{if(!obs)return;await chain;location.href="support-plan.html?obs="+obs.id;};
+function spHint(){const b=$("spBtn");if(!b)return;const n=+$("ovSel").value||suggested();const low=n&&n<=3;b.classList.toggle("primary",!!low);b.classList.toggle("ghost",!low);b.textContent=low?"🤝 Support plan (suggested)":"🤝 Support plan";}
+const _ro=renderOverall;renderOverall=function(){_ro();spHint();};
 $("ovSel").onchange=()=>{renderOverall();save(()=>sb.from("observations").update({overall_level:+$("ovSel").value||null}).eq("id",obs.id));};
 
 // ---- photos ----

@@ -28,6 +28,7 @@ main.tr{padding:24px 20px 60px}
   <section class="card"><h2>Recurring strengths</h2><ol class="pat" id="patS"></ol></section>
   <section class="card"><h2>Recurring next steps</h2><ol class="pat" id="patD"></ol></section>
  </div>
+ <section class="card sec" id="spSec"><h2>Support plans</h2><div id="spList"><p class="muted">Loading…</p></div></section>
  <section class="card sec"><h2>Timeline</h2><div class="tl" id="tl"></div></section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261108s"></script>
@@ -36,6 +37,9 @@ let ctx=null,T=null,obsAll=[],inds=[],judg={},sts=[];
 const tid=new URLSearchParams(location.search).get("id");
 const WS={seen:"Seen",partly_seen:"Partly seen",not_seen:"Not yet seen"};
 async function init(){ctx=await requireStaff();if(!ctx)return;headerButtons([["app.html","Dashboard"],["teachers.html","Teachers"]]);
+ (async()=>{const {data,error}=await sb.from("gn_support_plans").select("id,status,created_at,end_date,data").eq("teacher_id",tid).order("created_at",{ascending:false});const el=$("spList");if(!el)return;
+  if(error){$("spSec").remove();return;}
+  el.innerHTML=(data||[]).length?(data.map(p=>`<p style="margin:6px 0"><a href="support-plan.html?id=${p.id}"><b>${{draft:"Draft",active:"Active",completed:"Completed"}[p.status]||p.status}</b> · started ${fmtDate((p.data&&p.data.issued)||p.created_at.slice(0,10))}${p.end_date?" · ends "+fmtDate(p.end_date):""} · ${((p.data&&p.data.targets)||[]).length} target${((p.data&&p.data.targets)||[]).length===1?"":"s"}</a></p>`).join("")):'<p class="muted">No support plans. You can start one from the end of a formal observation (🤝 Support plan).</p>';})();
  if(!tid)return location.href="teachers.html";
  const [t,o,i]=await Promise.all([sb.from("teachers").select("*").eq("id",tid).maybeSingle(),
   sb.from("observations").select("id,type,observed_on,academic_year,period_label,subject,grade_class,overall_level,status,teacher_response,meeting_done,walk_group,lesson_stage,duration_minutes,staff(full_name)").eq("teacher_id",tid).order("observed_on",{ascending:true}),

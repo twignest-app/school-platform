@@ -1,0 +1,202 @@
+<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#4A2C5E"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="GrowNest"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=20261108s"><title>Teacher support plan · GrowNest</title><style>
+main.sp{padding:22px 20px 120px}
+.sp .card{margin-bottom:16px}
+.det{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.sugg{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;background:#fff}
+.sugg h3{margin:0 0 4px;font-size:1rem}
+.chiprow{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.pick{display:flex;gap:8px;align-items:flex-start;padding:6px 8px;border-radius:10px;cursor:pointer;font-size:.92rem}
+.pick:hover{background:var(--mist)}
+.pick input{margin-top:3px}
+.tg{border:2px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:14px;background:#fff}
+.tg h3{margin:0;font-size:1.05rem}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.cols2{grid-template-columns:1fr}}
+.opts{border:1px solid var(--line);border-radius:12px;padding:8px;max-height:230px;overflow:auto;background:var(--mist)}
+.opts b{display:block;font-size:.8rem;color:var(--muted);margin:4px 8px}
+textarea{width:100%;font:inherit;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.flag{font-size:.75rem;font-weight:700;background:#F8E4E1;color:#B4473A;border-radius:99px;padding:2px 8px;margin-left:6px}
+.rev{border-left:4px solid var(--plum);padding:8px 12px;margin:8px 0;background:var(--mist);border-radius:0 10px 10px 0}
+.bar2{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));z-index:10}
+.bar2 .in{max-width:1100px;margin:0 auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+</style></head><body>
+<header class="top"><div class="wrap"><a href="index.html"><img src="logo-header.png" alt="GrowNest"></a><a class="btn ghost small" href="app.html">Dashboard</a></div></header>
+<main class="wrap sp">
+ <h1>Teacher support plan</h1>
+ <div id="msg" class="msg hide" role="status"></div>
+ <div id="body"><p class="muted">Loading…</p></div>
+</main>
+<div class="bar2 hide" id="bar"><div class="in">
+ <span class="lchip" id="stChip">Draft</span><span class="status" id="saveSt" style="flex:1"></span>
+ <button class="btn ghost small" id="wordBtn">⬇ Word</button>
+ <button class="btn ghost small" id="saveBtn">Save draft</button>
+ <button class="btn primary small" id="actBtn">Start the plan</button>
+</div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261108s"></script>
+<script>
+let ctx = null, plan = null, obs = null, teacher = null, inds = [], stmts = [], judg = {}, ticked = new Set(), past = [];
+const qs = new URLSearchParams(location.search);
+const today = () => new Date().toISOString().slice(0, 10);
+const addDays = (d, n) => { const x = new Date((d || today()) + "T00:00:00"); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
+const TIMES = ["2 weeks", "4 weeks", "6 weeks", "By half term", "By the end of term"];
+const SUPPORT = ["Co-planning sessions with the subject leader or a strong colleague", "Watch a model lesson by a Very good or Outstanding teacher, focused on this area", "Weekly coaching conversation with the line manager", "Peer observation with a buddy teacher, then a short reflection", "Targeted CPD session or course on this area", "Shared resources and lesson exemplars for this area", "Joint scrutiny of students’ work to agree next steps"];
+const MONITOR = ["Short drop-in visits every 2 weeks, with brief feedback", "A learning walk focused on this area", "Review of lesson plans before teaching, every week", "Scrutiny of students’ work every 2 weeks", "Student voice conversations", "A follow-up formal observation at the end of the plan"];
+const PROGRESS = { on: "On track", some: "Some progress", not: "Not yet" };
+const OUTCOME = { met: "Targets met: plan closed", extend: "Partly met: plan extended", escalate: "Not met: next stage of support" };
+let chain = Promise.resolve(), dirty = false;
+
+async function init(){
+  ctx = await requireStaff(); if (!ctx) return;
+  headerButtons([["app.html", "Dashboard"], ["observations.html", "Observations"]]);
+  const pid = qs.get("id"), oid = qs.get("obs");
+  const [i, s] = await Promise.all([sb.from("indicators").select("*").contains("used_in", ["formal_observation"]).order("sort"), sb.from("statements").select("*").order("sort")]);
+  inds = i.data || []; stmts = s.data || [];
+  if (pid) { const { data, error } = await sb.from("gn_support_plans").select("*").eq("id", pid).maybeSingle(); if (error || !data) return fail(error ? friendly(error) : "This support plan could not be found."); plan = data; }
+  else if (oid) { const { data } = await sb.from("gn_support_plans").select("*").eq("observation_id", oid).maybeSingle(); if (data) plan = data; }
+  const obsId = plan ? plan.observation_id : oid;
+  if (obsId) {
+    const { data, error } = await sb.from("observations").select("*, teachers(*)").eq("id", obsId).maybeSingle();
+    if (error || !data) return fail(error ? friendly(error) : "The observation could not be found."); obs = data; teacher = obs.teachers;
+    const [j, st] = await Promise.all([sb.from("observation_judgements").select("*").eq("observation_id", obs.id), sb.from("observation_statements").select("statement_id").eq("observation_id", obs.id)]);
+    (j.data || []).forEach(x => judg[x.indicator_code] = x.level); (st.data || []).forEach(x => ticked.add(x.statement_id));
+    // earlier formal observations of this teacher, to spot areas that keep coming up
+    const { data: prev } = await sb.from("observations").select("id,observed_on").eq("teacher_id", obs.teacher_id).eq("type", "formal_observation").neq("id", obs.id).order("observed_on", { ascending: false }).limit(3);
+    if ((prev || []).length) { const { data: pj } = await sb.from("observation_judgements").select("*").in("observation_id", prev.map(p => p.id)); past = pj || []; }
+  } else if (plan) { const { data } = await sb.from("teachers").select("*").eq("id", plan.teacher_id).maybeSingle(); teacher = data; }
+  if (!plan) plan = newPlan();
+  render();
+}
+function fail(t){ $("body").innerHTML = ""; showMsg($("msg"), t, "err"); }
+function newPlan(){
+  const d = obs ? obs.observed_on : today();
+  return { id: null, status: "draft", data: { reviewer: ctx.staff.full_name || "", reviewer_role: ctx.staff.job_title || "", grade: obs ? obs.grade_class || "" : "", subject: obs ? obs.subject || "" : "", obs_date: d, meeting_date: "", issued: today(), end_date: addDays(today(), 42),
+    purpose: "This plan identifies areas requiring improvement, the support to be provided and the evidence needed to show sustained progress. Existing professional responsibilities remain in place throughout the plan.", reflection: "", strengths: strengthsFromObs(), targets: [], reviews: [], outcome: "", outcome_note: "" } };
+}
+const lvlName = n => (lvl(n) || {}).name || "";
+function strengthsFromObs(){ return inds.filter(i => judg[i.code]).flatMap(i => stmts.filter(s => s.indicator_code === i.code && s.level === judg[i.code] && s.kind === "strength" && ticked.has(s.id)).map(s => s.text)).slice(0, 6); }
+function weakAreas(){ return inds.filter(i => judg[i.code] && judg[i.code] <= 3).sort((a, b) => judg[a.code] - judg[b.code] || (a.sort || 0) - (b.sort || 0)); }
+function recurring(code){ return past.filter(p => p.indicator_code === code && p.level <= 3).length; }
+function nextSteps(code){ const n = judg[code]; return stmts.filter(s => s.indicator_code === code && s.kind !== "strength" && (ticked.has(s.id) || s.level === n)).sort((a, b) => ticked.has(b.id) - ticked.has(a.id)).map(s => [s.text, ticked.has(s.id)]); }
+function lookFors(ind){ return String(ind.look_fors || "").split(/\n|;|•/).map(x => x.trim()).filter(x => x.length > 6).slice(0, 6); }
+
+function render(){
+  const D = plan.data, t = teacher || {};
+  const used = new Set(D.targets.map(x => x.code));
+  const W = weakAreas();
+  $("body").innerHTML = `
+  <section class="card"><h2>Plan details</h2><div class="det">
+    <label class="f">Teacher<input value="${esc(t.full_name || "")}" disabled></label>
+    <label class="f">Grade / subject<input id="f_grade" value="${esc([D.grade, D.subject].filter(Boolean).join(" · "))}"></label>
+    <label class="f">Line manager / reviewer<input id="f_reviewer" value="${esc(D.reviewer)}"></label>
+    <label class="f">Observation date<input type="date" id="f_obs_date" value="${esc(D.obs_date || "")}"></label>
+    <label class="f">Feedback meeting<input type="date" id="f_meeting_date" value="${esc(D.meeting_date || "")}"></label>
+    <label class="f">Plan issued<input type="date" id="f_issued" value="${esc(D.issued || "")}"></label>
+    <label class="f">Plan end date<input type="date" id="f_end_date" value="${esc(D.end_date || "")}"></label>
+  </div>${obs ? `<p class="muted" style="margin:10px 0 0">From the formal observation on ${esc(fmtDate(obs.observed_on))}: overall ${levelChip(obs.overall_level)}</p>` : ""}</section>
+
+  <section class="card"><h2>Purpose and initial reflection</h2>
+    <label class="f">Purpose<textarea id="f_purpose" rows="3">${esc(D.purpose)}</textarea></label>
+    <label class="f" style="margin-top:10px">The teacher’s reflection (at the feedback meeting)<textarea id="f_reflection" rows="3" placeholder="What the teacher feels is going well, what they find difficult, and what support they’d like">${esc(D.reflection)}</textarea></label>
+    <label class="f" style="margin-top:10px">Strengths to build on <span class="muted">(one per line)</span><textarea id="f_strengths" rows="3">${esc((D.strengths || []).join("\n"))}</textarea></label></section>
+
+  ${obs ? `<section class="card"><h2>Suggested from the observation</h2>
+    <p class="muted" style="margin-top:0">Areas judged Acceptable or below, weakest first. Add the ones to focus on: GrowNest fills in the baseline and suggests success criteria, support and monitoring for you to choose from. Most plans have 2 or 3 targets.</p>
+    ${W.length ? W.map(i => `<div class="sugg"><h3>${esc(i.title)} <span class="moe">MOE ${esc(i.moe_ref || "")}</span> ${levelChip(judg[i.code])}${recurring(i.code) ? `<span class="flag">Also ${recurring(i.code) === 1 ? "in an earlier observation" : "in " + recurring(i.code) + " earlier observations"}</span>` : ""}</h3>
+      ${nextSteps(i.code).filter(x => x[1]).length ? `<p class="muted" style="margin:4px 0 0"><b>Next steps from the observation:</b> ${esc(nextSteps(i.code).filter(x => x[1]).map(x => x[0]).join(" · "))}</p>` : ""}
+      <p style="margin:8px 0 0">${used.has(i.code) ? '<span class="muted">✅ Added as a target</span>' : `<button class="btn primary small" data-add="${esc(i.code)}">+ Add as a target</button>`}</p></div>`).join("")
+      : '<p class="muted">No area was judged Acceptable or below in this observation. You can still add a target yourself.</p>'}</section>` : ""}
+
+  <section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">Agreed improvement targets</h2><button class="btn ghost small" id="addOwn">+ Add my own target</button></div>
+    <div id="targets" style="margin-top:12px">${D.targets.length ? D.targets.map(targetHtml).join("") : '<p class="muted">No targets yet.</p>'}</div></section>
+
+  <section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">Review meetings</h2><button class="btn ghost small" id="addRev">+ Add a review</button></div>
+    ${(D.reviews || []).length ? D.reviews.map((r, k) => `<div class="rev"><b>${esc(fmtDate(r.date))}</b>${(r.progress || []).map((p, j) => D.targets[j] ? `<div class="muted">Target ${j + 1}: ${esc(PROGRESS[p] || "–")}</div>` : "").join("")}${r.notes ? `<p style="margin:6px 0 0">${esc(r.notes)}</p>` : ""}<button class="btn ghost small" data-delrev="${k}" style="margin-top:6px">Remove</button></div>`).join("") : '<p class="muted">Add a short review every 2 weeks or so, and at the end of the plan.</p>'}</section>
+
+  <section class="card"><h2>Outcome at the end of the plan</h2><div class="chiprow">${Object.entries(OUTCOME).map(([k, v]) => `<label class="pick"><input type="radio" name="oc" value="${k}" ${D.outcome === k ? "checked" : ""}> ${v}</label>`).join("")}</div>
+    <label class="f" style="margin-top:8px">Notes<textarea id="f_outcome_note" rows="2">${esc(D.outcome_note || "")}</textarea></label></section>`;
+  $("bar").classList.remove("hide");
+  $("stChip").textContent = { draft: "Draft", active: "Active", completed: "Completed" }[plan.status];
+  $("actBtn").textContent = plan.status === "draft" ? "Start the plan" : plan.status === "active" ? "Complete the plan" : "Reopen";
+  bind();
+}
+function targetHtml(x, k){
+  const ind = inds.find(i => i.code === x.code);
+  const ns = x.code ? nextSteps(x.code) : [];
+  const crit = [...new Set([...(x.code ? [`Judged at least Good for ${ind ? ind.title : "this area"} in the follow-up observation`] : []), "Consistent evidence of this in drop-in visits (at least 3 out of 4)", ...ns.map(n => "Seen consistently in lessons: " + n[0].replace(/\.$/, "").replace(/^./, c => c.toLowerCase())), ...(ind ? lookFors(ind).map(l => "Seen in lessons: " + l.replace(/\.$/, "").replace(/^./, c => c.toLowerCase())) : [])])];
+  const box = (name, opts, chosen) => `<div class="opts">${opts.map(o => `<label class="pick"><input type="checkbox" data-t="${k}" data-list="${name}" value="${esc(o)}" ${(chosen || []).includes(o) ? "checked" : ""}> <span>${esc(o)}</span></label>`).join("")}</div>`;
+  return `<div class="tg"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><h3>Target ${k + 1}${ind ? `: ${esc(ind.title)} <span class="moe">MOE ${esc(ind.moe_ref || "")}</span>` : ""}</h3><button class="btn ghost small" data-del="${k}">Remove</button></div>
+    <div class="cols2" style="margin-top:10px">
+      <label class="f">Area for improvement and baseline evidence<textarea data-t="${k}" data-f="area" rows="4">${esc(x.area || "")}</textarea></label>
+      <label class="f">Time by which improvement should be shown<select data-t="${k}" data-f="time">${TIMES.map(o => `<option ${x.time === o ? "selected" : ""}>${o}</option>`).join("")}</select>
+        <span class="muted" style="margin-top:8px;display:block">Your own words, if needed:</span><input data-t="${k}" data-f="time_note" value="${esc(x.time_note || "")}" placeholder="For example: by 15 December"></label>
+    </div>
+    <div class="cols2" style="margin-top:12px">
+      <div><b>Success criteria</b> <span class="muted">(how will we know?)</span>${box("crit", crit, x.crit)}<label class="f" style="margin-top:6px">More success criteria<textarea data-t="${k}" data-f="crit_own" rows="2">${esc(x.crit_own || "")}</textarea></label></div>
+      <div><b>Support provided</b>${box("support", SUPPORT, x.support)}<b style="display:block;margin-top:10px">Monitoring and evaluation</b>${box("monitor", MONITOR, x.monitor)}
+        <label class="f" style="margin-top:6px">Responsible person, and anything else<textarea data-t="${k}" data-f="support_own" rows="2" placeholder="For example: Ms Sara (Maths lead) leads co-planning">${esc(x.support_own || "")}</textarea></label></div>
+    </div></div>`;
+}
+function collect(){
+  const D = plan.data, v = id => ($(id) || {}).value;
+  const g = v("f_grade") || ""; D.grade = g.split(" · ")[0] || ""; D.subject = g.split(" · ")[1] || "";
+  ["reviewer", "obs_date", "meeting_date", "issued", "end_date", "purpose", "reflection", "outcome_note"].forEach(k => { if ($("f_" + k)) D[k] = $("f_" + k).value; });
+  if ($("f_strengths")) D.strengths = $("f_strengths").value.split("\n").map(x => x.trim()).filter(Boolean);
+  D.outcome = (document.querySelector("input[name=oc]:checked") || {}).value || "";
+  document.querySelectorAll("[data-f]").forEach(el => { const t = D.targets[+el.dataset.t]; if (t) t[el.dataset.f] = el.value; });
+  D.targets.forEach((t, k) => ["crit", "support", "monitor"].forEach(L => t[L] = [...document.querySelectorAll(`input[data-t="${k}"][data-list="${L}"]:checked`)].map(x => x.value)));
+}
+function bind(){
+  document.querySelectorAll("[data-add]").forEach(b => b.onclick = () => { collect(); const ind = inds.find(i => i.code === b.dataset.add), ns = nextSteps(ind.code).filter(x => x[1]).map(x => x[0].replace(/\.$/, ""));
+    plan.data.targets.push({ code: ind.code, area: `${ind.title} (MOE ${ind.moe_ref || ""}). Judged ${lvlName(judg[ind.code])} in the formal observation on ${fmtDate(obs.observed_on)}.${ns.length ? " Next steps identified: " + ns.join("; ") + "." : ""}`, time: "6 weeks", crit: [`Judged at least Good for ${ind.title} in the follow-up observation`], support: [SUPPORT[0], SUPPORT[2]], monitor: [MONITOR[0], MONITOR[5]] });
+    dirty = true; render(); });
+  $("addOwn").onclick = () => { collect(); plan.data.targets.push({ code: null, area: "", time: "6 weeks", crit: [], support: [], monitor: [] }); dirty = true; render(); };
+  document.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { if (!confirm("Remove this target?")) return; collect(); plan.data.targets.splice(+b.dataset.del, 1); dirty = true; render(); });
+  $("addRev").onclick = () => { collect(); const n = plan.data.targets.length;
+    const note = prompt("Review notes: what progress has been made, and what happens next?", ""); if (note === null) return;
+    const progress = []; for (let k = 0; k < n; k++) { const a = prompt(`Target ${k + 1}: type 1 for On track, 2 for Some progress, 3 for Not yet`, "1"); progress.push({ 1: "on", 2: "some", 3: "not" }[String(a).trim()] || "some"); }
+    plan.data.reviews = (plan.data.reviews || []).concat([{ date: today(), notes: note.trim(), progress }]); dirty = true; render(); };
+  document.querySelectorAll("[data-delrev]").forEach(b => b.onclick = () => { collect(); plan.data.reviews.splice(+b.dataset.delrev, 1); dirty = true; render(); });
+  document.querySelectorAll("#body input, #body textarea, #body select").forEach(el => el.addEventListener("change", () => { dirty = true; $("saveSt").textContent = "Not saved yet"; }));
+}
+async function save(status){
+  collect();
+  const row = { school_id: ctx.school.id, teacher_id: teacher ? teacher.id : plan.teacher_id, observation_id: obs ? obs.id : plan.observation_id || null, status: status || plan.status, data: plan.data, end_date: plan.data.end_date || null, updated_at: new Date().toISOString() };
+  $("saveSt").textContent = "Saving…";
+  const res = plan.id ? await sb.from("gn_support_plans").update(row).eq("id", plan.id).select().single() : await sb.from("gn_support_plans").insert(Object.assign(row, { created_by: ctx.user.id })).select().single();
+  if (res.error) { $("saveSt").textContent = ""; return showMsg($("msg"), /gn_support_plans/.test(res.error.message) ? "Please run the support plan database step in Supabase first." : friendly(res.error), "err"); }
+  plan = res.data; dirty = false; if (!qs.get("id")) history.replaceState(null, "", "support-plan.html?id=" + plan.id);
+  $("saveSt").textContent = "All changes saved"; render();
+}
+$("saveBtn").onclick = () => save();
+$("actBtn").onclick = () => { const nx = { draft: "active", active: "completed", completed: "active" }[plan.status];
+  if (nx === "active" && !plan.data.targets.length) return showMsg($("msg"), "Add at least one target before starting the plan.", "err");
+  if (nx === "completed") { collect(); if (!plan.data.outcome) return showMsg($("msg"), "Choose the outcome at the end of the plan first.", "err"); }
+  save(nx); };
+window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+// Word copy (opens in Word; edit or save as PDF)
+$("wordBtn").onclick = () => {
+  collect(); const D = plan.data, t = teacher || {}, e = esc;
+  const th = "background:#4A2C5E;color:#fff;font-weight:bold;padding:6px;border:1px solid #999;text-align:left;vertical-align:top";
+  const td = "padding:6px;border:1px solid #999;vertical-align:top";
+  const list = a => (a || []).filter(Boolean).map(x => "• " + e(x)).join("<br>");
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Teacher support plan</title><style>body{font-family:Arial,sans-serif;font-size:10.5pt;color:#222}h2{color:#4A2C5E;font-size:13pt;margin:14px 0 6px}</style></head><body>
+    <p style="font-size:9pt;color:#555">${e(ctx.school.name)} · Performance management · Confidential</p>
+    <table width="100%" cellspacing="0" cellpadding="0"><tr><td style="background:#4A2C5E;color:#fff;font-size:18pt;font-weight:bold;padding:8px 10px">Teacher Support Plan</td></tr></table>
+    <table width="100%" cellspacing="0" style="border-collapse:collapse"><tr><td style="${td}" width="50%"><b>Name of teacher:</b> ${e(t.full_name || "")}</td><td style="${td}"><b>Grade / subject:</b> ${e([D.grade, D.subject].filter(Boolean).join(" · "))}</td></tr>
+    <tr><td style="${td}"><b>Line manager / reviewer:</b> ${e(D.reviewer)}</td><td style="${td}"><b>Feedback meeting:</b> ${e(D.meeting_date ? fmtDate(D.meeting_date) : "")}</td></tr>
+    <tr><td style="${td}"><b>Observation date:</b> ${e(D.obs_date ? fmtDate(D.obs_date) : "")}</td><td style="${td}"><b>Plan issued:</b> ${e(D.issued ? fmtDate(D.issued) : "")}</td></tr>
+    <tr><td style="${td}"><b>Plan end date:</b> ${e(D.end_date ? fmtDate(D.end_date) : "")}</td><td style="${td}"><b>Status:</b> ${e({ draft: "Draft", active: "Active", completed: "Completed" }[plan.status])}</td></tr></table>
+    <h2>Purpose and initial reflection</h2><p>${e(D.purpose)}</p>${D.reflection ? `<p><b>Teacher’s reflection:</b> ${e(D.reflection)}</p>` : ""}${(D.strengths || []).length ? `<p><b>Strengths to build on:</b><br>${list(D.strengths)}</p>` : ""}
+    <h2>Agreed improvement targets</h2>
+    <table width="100%" cellspacing="0" style="border-collapse:collapse"><col width="26%"><col width="14%"><col width="28%"><col width="32%"><tr><th style="${th}">Area for improvement</th><th style="${th}">Time by which improvement should be shown</th><th style="${th}">Success criteria (how will we know?)</th><th style="${th}">Support provided / monitoring and evaluation</th></tr>
+    ${D.targets.map((x, k) => `<tr><td style="${td}"><b>Target ${k + 1}</b><br>${e(x.area)}</td><td style="${td}">${e(x.time_note || x.time || "")}</td><td style="${td}">${list([...(x.crit || []), ...String(x.crit_own || "").split("\n")])}</td><td style="${td}">${list(x.support)}${(x.monitor || []).length ? "<br><b>Monitoring:</b><br>" + list(x.monitor) : ""}${x.support_own ? "<br>" + e(x.support_own) : ""}</td></tr>`).join("")}</table>
+    ${(D.reviews || []).length ? `<h2>Reviews</h2><table width="100%" cellspacing="0" style="border-collapse:collapse"><tr><th style="${th}">Date</th><th style="${th}">Progress</th><th style="${th}">Notes</th></tr>${D.reviews.map(r => `<tr><td style="${td}">${e(fmtDate(r.date))}</td><td style="${td}">${(r.progress || []).map((p, j) => "Target " + (j + 1) + ": " + e(PROGRESS[p] || "")).join("<br>")}</td><td style="${td}">${e(r.notes || "")}</td></tr>`).join("")}</table>` : ""}
+    ${D.outcome ? `<h2>Outcome</h2><p><b>${e(OUTCOME[D.outcome])}</b>${D.outcome_note ? "<br>" + e(D.outcome_note) : ""}</p>` : ""}
+    <h2>Signatures</h2><table width="100%" cellspacing="0" style="border-collapse:collapse"><tr><td style="${td}" width="30%"><b>Teacher</b></td><td style="${td};height:34px"></td><td style="${td}" width="15%">Date</td></tr><tr><td style="${td}"><b>Line manager</b></td><td style="${td};height:34px"></td><td style="${td}">Date</td></tr></table>
+    <p style="font-size:8.5pt;color:#555;margin-top:16px">${e(ctx.school.name)} · Confidential staff document</p></body></html>`;
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + html], { type: "application/msword" }));
+  a.download = ("Teacher support plan - " + (t.full_name || "") + ".doc").replace(/[\\/:*?"<>|]/g, ""); document.body.appendChild(a); a.click(); a.remove();
+};
+init();
+</script></body></html>
