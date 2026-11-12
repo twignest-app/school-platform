@@ -33,7 +33,7 @@
     ["inclusion", "Inclusion", "inclusion.html", "inclusion"],
     ["wellbeing", "Wellbeing", "wellbeing.html", "wellbeing"],
     ["evidence", "Evidence packs", "evidence.html", "evidence"],
-    ["conferences", "Parent conferences", "conferences.html", null, true],
+    ["conferences", "Parent conferences", "conferences.html", null],
     ["label", ""],
     ["settings", "Settings", "settings.html", null]
   ];

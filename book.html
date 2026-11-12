@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Book a parent–teacher conference · Nestopia</title>
+<meta name="robots" content="noindex">
+<style>
+:root{--ink:#2A2233;--muted:#6B6475;--line:#E6E0EE;--bg:#F7F4FA;--card:#fff;--plum:#462D5B;--plum-soft:#EDE6F5;--sage:#3F8A4B;--sage-soft:#E4F1E6;--red:#B4473A}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+main{max-width:760px;margin:0 auto;padding:22px 16px 60px}
+h1{color:var(--plum);font-size:clamp(24px,5vw,32px);margin:6px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 20px;margin-bottom:14px}
+.ar{display:block;color:var(--muted);font-size:.95em}
+.btn{font:inherit;font-weight:800;border:0;border-radius:12px;padding:11px 18px;background:var(--plum);color:#fff;cursor:pointer}
+.btn.ghost{background:var(--card);color:var(--plum);border:2px solid var(--line)}
+input,select{font:inherit;border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;background:#fff}
+label{display:grid;gap:4px;font-weight:700;margin-bottom:10px}
+.slots{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.slot{font:inherit;font-weight:700;border:2px solid var(--line);border-radius:10px;padding:7px 10px;background:#fff;cursor:pointer}
+.slot[disabled]{opacity:.3;cursor:default;text-decoration:line-through}
+.slot.near{border-color:var(--plum)}
+.ok{background:var(--sage-soft);color:var(--sage);border-radius:12px;padding:10px 14px;font-weight:700}
+.err{background:#F8E1DE;color:var(--red);border-radius:12px;padding:10px 14px;font-weight:700}
+.muted{color:var(--muted)}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.day{font-weight:800;margin:12px 0 0}
+</style>
+</head>
+<body>
+<main id="app"><p class="muted">Loading…</p></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const app = document.getElementById("app");
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const tm = d => new Date(d).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+const dayName = d => new Date(d + "T00:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+let kids = [], parent = { name: "", contact: "" };   // several children = several codes
+
+function slotsFor(c){ const out = []; (c.days || []).forEach(d => { let t = new Date(d.date + "T" + d.start), end = new Date(d.date + "T" + d.end);
+  while (t.getTime() + c.slot * 60e3 <= end.getTime()) { out.push(new Date(t)); t = new Date(t.getTime() + (c.slot + (c.gap || 0)) * 60e3); } }); return out; }
+
+function askCode(msg){
+  app.innerHTML = `<h1>Book a parent–teacher conference<span class="ar" dir="rtl" lang="ar">احجز موعد لقاء أولياء الأمور والمعلمين</span></h1>
+    <div class="card"><p style="margin-top:0">Type the booking code your child’s school sent you.<span class="ar" dir="rtl" lang="ar">اكتب رمز الحجز الذي أرسلته المدرسة.</span></p>
+      ${msg ? `<p class="err">${esc(msg)}</p>` : ""}
+      <form id="f" class="row"><input id="code" autocomplete="off" placeholder="For example: 7KQ2FA" style="max-width:220px;text-transform:uppercase;letter-spacing:.15em;font-weight:800" maxlength="6" required><button class="btn">Continue · متابعة</button></form></div>`;
+  document.getElementById("f").onsubmit = e => { e.preventDefault(); addCode(document.getElementById("code").value); };
+}
+async function addCode(code){
+  const { data, error } = await sb.rpc("pc_lookup", { p_code: code });
+  if (error || !data) return kids.length ? render("That code wasn’t found. Please check it and try again.") : askCode("That code wasn’t found. Please check it and try again. · لم يتم العثور على الرمز.");
+  if (kids.some(k => k.code === data.code)) return render();
+  kids.push(data); history.replaceState(null, "", "?c=" + kids.map(k => k.code).join(",")); render();
+}
+async function refresh(){ for (let i = 0; i < kids.length; i++) { const { data } = await sb.rpc("pc_lookup", { p_code: kids[i].code }); if (data) kids[i] = data; } }
+
+function render(msg){
+  const c0 = kids[0];
+  const mine = kids.flatMap(k => (k.mine || []).map(b => Object.assign({ kid: k }, b))).sort((a, b) => a.at.localeCompare(b.at));
+  const busyAt = new Set(mine.map(b => new Date(b.at).getTime()));
+  const near = t => mine.some(b => Math.abs(new Date(b.at).getTime() - t) <= (c0.slot + (c0.gap || 0)) * 60e3 * 1.01);
+  app.innerHTML = `<p class="muted" style="margin:0">${esc(c0.school)}</p><h1>${esc(c0.title)}</h1>
+    ${c0.message ? `<div class="card">${esc(c0.message)}</div>` : ""}
+    ${msg ? `<p class="${/booked|cancel/i.test(msg) && !/sorry|already|closed/i.test(msg) ? "ok" : "err"}">${esc(msg)}</p>` : ""}
+    ${!c0.open ? '<p class="err">Booking isn’t open yet, or has closed. · الحجز غير متاح حاليًا.</p>' : ""}
+    <div class="card"><h2 style="margin-top:0">Your details · بياناتك</h2>
+      <label>Your name · الاسم <input id="pn" value="${esc(parent.name)}" required></label>
+      <label>Phone or email (for the school to contact you) · رقم الهاتف أو البريد <input id="pc" value="${esc(parent.contact)}"></label>
+      ${c0.mode === "choice" ? `<label>How would you like to meet? · طريقة اللقاء <select id="md"><option value="in_person">In person · حضوريًا</option><option value="online">Online · عن بُعد</option></select></label>` : `<p class="muted" style="margin:0">${c0.mode === "online" ? "Meetings are online. · اللقاءات عن بُعد." : "Meetings are at school, in person. · اللقاءات حضورية في المدرسة."}</p>`}</div>
+    ${mine.length ? `<div class="card"><h2 style="margin-top:0">Your bookings · حجوزاتك</h2>${mine.map(b => `<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:8px 0"><span><b>${dayName(b.at.slice(0, 10))}, ${tm(b.at)}</b> · ${esc((b.kid.teachers.find(t => t.id === b.t) || {}).name || "Teacher")} · ${esc(b.kid.student)}</span><button class="btn ghost" data-cancel="${esc(b.id)}" data-code="${esc(b.kid.code)}">Cancel · إلغاء</button></div>`).join("")}
+      <p class="row" style="margin:10px 0 0"><button class="btn ghost" id="ics">📅 Add to my calendar · أضف إلى التقويم</button></p></div>` : ""}
+    ${kids.map(k => `<div class="card"><h2 style="margin-top:0">${esc(k.student)} · ${esc(k.class || "")}</h2>${k.teachers.length ? k.teachers.map(t => { const has = (k.mine || []).find(b => b.t === t.id);
+      return `<div style="border-top:1px solid var(--line);padding-top:10px;margin-top:10px"><b>${esc(t.name)}</b>${has ? ` <span class="ok" style="padding:3px 10px">✓ ${dayName(has.at.slice(0, 10))}, ${tm(has.at)}</span>` : k.open ? (() => { const byDay = {}; slotsFor(k).forEach(s => (byDay[s.toISOString().slice(0, 10)] = byDay[s.toISOString().slice(0, 10)] || []).push(s));
+        return Object.entries(byDay).map(([d, list]) => `<p class="day">${dayName(d)}</p><div class="slots">${list.map(s => { const taken = (k.taken || []).some(x => x.t === t.id && new Date(x.at).getTime() === s.getTime()) || busyAt.has(s.getTime()) || s < new Date();
+          return `<button class="slot ${!taken && near(s.getTime()) ? "near" : ""}" ${taken ? "disabled" : ""} data-book="${esc(t.id)}" data-at="${s.toISOString()}" data-code="${esc(k.code)}">${tm(s)}</button>`; }).join("")}</div>`).join(""); })() : ""}</div>`; }).join("") : '<p class="muted">No teachers are listed for this class yet.</p>'}</div>`).join("")}
+    ${mine.length > 1 || kids.length > 1 ? '<p class="muted">Times with a purple border are right next to your other bookings.</p>' : ""}
+    <div class="card"><b>Another child at this school? · طفل آخر في المدرسة؟</b><form id="f2" class="row" style="margin-top:8px"><input id="code2" placeholder="Their booking code" maxlength="6" style="max-width:200px;text-transform:uppercase;letter-spacing:.15em;font-weight:800"><button class="btn ghost">Add · إضافة</button></form></div>`;
+  const sv = () => { parent.name = document.getElementById("pn").value.trim(); parent.contact = document.getElementById("pc").value.trim(); };
+  document.getElementById("pn").oninput = sv; document.getElementById("pc").oninput = sv;
+  document.getElementById("f2").onsubmit = e => { e.preventDefault(); sv(); addCode(document.getElementById("code2").value); };
+  app.querySelectorAll("[data-book]").forEach(b => b.onclick = async () => {
+    sv(); if (!parent.name) { document.getElementById("pn").focus(); return alert("Please write your name first. · يُرجى كتابة اسمك أولًا."); }
+    const md = document.getElementById("md");
+    const { error } = await sb.rpc("pc_book", { p_code: b.dataset.code, p_teacher: b.dataset.book, p_at: b.dataset.at, p_name: parent.name, p_contact: parent.contact, p_mode: md ? md.value : kids[0].mode });
+    await refresh(); render(error ? error.message : "Booked! · تم الحجز");
+  });
+  app.querySelectorAll("[data-cancel]").forEach(b => b.onclick = async () => { if (!confirm("Cancel this booking? · إلغاء الحجز؟")) return; await sb.rpc("pc_cancel", { p_code: b.dataset.code, p_booking: b.dataset.cancel }); await refresh(); render("Booking cancelled. · تم الإلغاء"); });
+  const ic = document.getElementById("ics"); if (ic) ic.onclick = () => {
+    const f = d => new Date(d).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+    const L = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Nestopia//Conferences//EN"]; mine.forEach((b, i) => { const t = (b.kid.teachers.find(x => x.id === b.t) || {}).name || "Teacher";
+      L.push("BEGIN:VEVENT", "UID:pc-" + b.id + "@nestopia.school", "DTSTAMP:" + f(new Date()), "DTSTART:" + f(b.at), "DTEND:" + f(new Date(new Date(b.at).getTime() + c0.slot * 60e3)), "SUMMARY:Parent conference: " + t + " (" + b.kid.student + ")", "LOCATION:" + c0.school, "END:VEVENT"); });
+    L.push("END:VCALENDAR"); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([L.join("\r\n")], { type: "text/calendar" })); a.download = "parent-conferences.ics"; document.body.appendChild(a); a.click(); a.remove(); };
+}
+(async () => { const q = new URLSearchParams(location.search).get("c"); if (!q) return askCode(); for (const c of q.split(",").filter(Boolean)) await addCode(c); if (!kids.length) askCode("That code wasn’t found."); })();
+</script>
+</body>
+</html>

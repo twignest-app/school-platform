@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Parent conferences · Nestopia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--plum:#462D5B;--plum-2:#6A4B85;--plum-soft:#EDE6F5;--sage:#5E8455;--sage-soft:#E6EFE2;--amber:#A86C12;--amber-soft:#FBF0DC;--red:#B4473A;--red-soft:#F8E4E1;--blue:#4E6FB8;--blue-soft:#E4EBF8;--bg:#F7F4FB;--card:#FFFFFF;--ink:#2E2140;--muted:#6F6680;--line:#E4DDEE;--empty:#ECE7F3;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--plum:#CDB9EA;--plum-2:#DCCCF2;--plum-soft:#352A45;--sage:#A7C59A;--sage-soft:#26331F;--amber:#E6B566;--amber-soft:#3A2E17;--red:#E8897C;--red-soft:#3D2220;--blue:#9DB4E8;--blue-soft:#1E2A40;--bg:#17131D;--card:#221C2B;--ink:#F1ECF7;--muted:#B2A8C2;--line:#382F45;--empty:#2C2536;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--plum-2);outline-offset:2px}
+h1,h2,h3,.btn,.brand{font-family:"Poppins","Nunito",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-weight:600;font-size:22px;color:var(--plum);text-decoration:none}
+header .who{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:14px;color:var(--muted);flex-wrap:wrap}
+main{max-width:1200px;margin:0 auto;padding:24px 20px 48px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px}
+.card h2{margin:0 0 8px;font-size:20px;color:var(--plum);font-weight:600}
+.btn{border:0;background:var(--plum);color:#fff;border-radius:999px;padding:10px 20px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--bg);color:var(--plum);border:1px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:13px}
+.note{color:var(--muted);font-size:14px}
+.msg{border-radius:12px;padding:10px 14px;margin-top:12px;font-weight:600;font-size:14px;background:var(--red-soft);color:var(--red)}
+.ptitle{margin:0 0 4px;font-weight:600;font-size:26px}
+.phead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.metric{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.metric span{display:block;font-size:13px;color:var(--muted);font-weight:700}
+.metric b{display:block;font-size:26px;color:var(--plum);font-family:Poppins,Nunito,sans-serif;font-weight:600;line-height:1.3}
+.tablewrap{overflow-x:auto}
+table.grid{border-collapse:separate;border-spacing:8px;min-width:100%}
+table.grid th{font-size:13px;color:var(--muted);text-align:left;font-weight:700;padding:4px}
+.cell{width:100%;min-width:150px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;cursor:pointer;display:block}
+.cell:hover{border-color:var(--plum-2)}
+.cell b{font-size:20px;font-family:Poppins,Nunito,sans-serif;font-weight:600;color:var(--plum)}
+.cell small{display:block;color:var(--muted);font-size:12.5px}
+.cell.none{cursor:default;color:var(--muted);background:var(--bg)}
+.cell.on{outline:3px solid var(--plum-2)}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--empty);margin:6px 0 4px}
+.bar i{display:block;height:100%}
+.bar .a{background:var(--sage)}.bar .t{background:var(--amber)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
+.obj{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.obj:last-child{border-bottom:0}
+.st{font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;justify-self:start}
+.st.n{background:var(--empty);color:var(--muted)}.st.p{background:var(--amber-soft);color:var(--amber)}.st.t{background:var(--blue-soft);color:var(--blue)}.st.a{background:var(--sage-soft);color:var(--sage)}
+.obj small{display:block;color:var(--muted);font-size:12.5px}
+.sec{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
+.sec b{display:block;font-size:16px;color:var(--ink)}
+@media (max-width:640px){.obj{grid-template-columns:1fr}.sec{text-align:left}}
+textarea,input{font:inherit;color:inherit}
+input[type=text],input[type=date],input[type=search],textarea{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;width:100%}
+label.f{display:grid;gap:4px;font-weight:700;font-size:14px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tab{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 16px;font-weight:700;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+table.reg{width:100%;border-collapse:collapse}
+table.reg th{font-size:13px;color:var(--muted);text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+table.reg td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14.5px}
+table.reg tr:hover td{background:var(--bg)}
+.nm{font-weight:800;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.nm:hover{color:var(--plum-2);text-decoration:underline}
+.tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;margin:2px 4px 2px 0}
+.tag.sod{background:var(--plum-soft);color:var(--plum)}.tag.gt{background:var(--amber-soft);color:var(--amber)}.tag.eal{background:var(--blue-soft);color:var(--blue)}.tag.other{background:var(--empty);color:var(--muted)}
+.lvl{font-size:12.5px;font-weight:800;border-radius:8px;padding:2px 8px}
+.lvl.u{background:var(--sage-soft);color:var(--sage)}.lvl.t{background:var(--amber-soft);color:var(--amber)}.lvl.s{background:var(--red-soft);color:var(--red)}
+.due{font-size:12.5px;font-weight:800}.due.late{color:var(--red)}.due.soon{color:var(--amber)}.due.ok{color:var(--muted)}
+dialog{border:0;border-radius:18px;padding:0;width:min(760px,96vw);max-height:92vh;background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(30,20,45,.45)}
+.dlg{padding:22px 24px;display:grid;gap:14px}
+.dlg h2{margin:0;color:var(--plum);font-size:21px}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px}
+.checks label{display:flex;gap:6px;align-items:center;font-weight:600;font-size:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.two{grid-template-columns:1fr}table.reg .hide-sm{display:none}}
+.box{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--bg)}
+.box h3{margin:0 0 6px;font-size:16px;color:var(--plum)}
+.target{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:8px 0;border-bottom:1px dashed var(--line)}
+.target:last-child{border-bottom:0}
+.pg{font-size:12.5px;font-weight:800;border-radius:999px;padding:2px 10px;border:1px solid var(--line);background:var(--card);cursor:pointer;white-space:nowrap}
+.pg.a{background:var(--sage-soft);color:var(--sage)}.pg.w{background:var(--amber-soft);color:var(--amber)}.pg.n{background:var(--empty);color:var(--muted)}
+.lock{font-size:12.5px;color:var(--red);font-weight:800}
+.empty{text-align:center;padding:30px 10px}
+.okmsg{border-radius:12px;padding:10px 14px;font-weight:600;font-size:14px;background:var(--sage-soft);color:var(--sage)}
+
+input[type=time],input[type=number]{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;font:inherit}
+.dayrow{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px}
+.slotrow{display:grid;grid-template-columns:80px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.slotrow .t{font-weight:800;color:var(--plum)}
+.band{font-size:12px;font-weight:800;border-radius:8px;padding:2px 8px}.band.below{background:var(--red-soft);color:var(--red)}.band.inline{background:var(--sage-soft);color:var(--sage)}.band.above{background:var(--plum-soft);color:var(--plum)}
+
+</style>
+</head>
+<body>
+<header><a class="brand" href="./" id="brand">Nestopia</a><div class="who" id="who"></div></header>
+<main id="app"><p class="note">Loading…</p></main>
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="hub.js?v=6"></script>
+<script src="twcalc.js?v=3"></script>
+<script>
+/* Keep this the same as in index.html */
+const PLATFORM = "Nestopia";
+const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const app = document.getElementById("app"), who = document.getElementById("who"), dlg = document.getElementById("dlg");
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2800); };
+const tm = d => new Date(d).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+const dn = d => new Date(d + "T00:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+const MODES = { in_person: "In person", online: "Online", choice: "Parents choose" };
+const BOOK_URL = location.origin + location.pathname.replace(/[^/]*$/, "") + "book.html";
+let me, school, lead = false, classes = [], staffN = {}, confs = [], ui = { conf: null, tab: "schedule" };
+const cls = id => classes.find(c => String(c.id) === String(id)) || {};
+function fail(t){ app.innerHTML = `<div class="card"><div class="msg">${esc(t)}</div></div>`; }
+async function fetchAll(q){ const out = []; for (let f = 0; ; f += 1000) { const { data, error } = await q().range(f, f + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; } return out; }
+
+(async function start(){
+  const { data: { session } } = await sb.auth.getSession(); if (!session) { location.href = "./"; return; }
+  const { data: p } = await sb.from("profiles").select("*").eq("id", session.user.id).single();
+  if (!p || !p.school_id) return fail("Your account isn’t linked to a school yet.");
+  me = p; who.innerHTML = `<span>${esc(p.full_name || p.email)}</span><a class="btn ghost small" href="./">← ${esc(PLATFORM)}</a>`;
+  const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single(); school = s;
+  if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
+  lead = ["school_lead", "coordinator", "admin"].includes(p.role);
+  if (window.hubInit) hubInit("conferences");
+  const set = await sb.from("school_setups").select("year").eq("school_id", school.id).order("updated_at", { ascending: false }).limit(1);
+  const year = set.data && set.data[0] ? set.data[0].year : null;
+  let cq = sb.from("classes").select("*").eq("school_id", school.id); if (year) cq = cq.eq("year", year);
+  classes = ((await cq).data || []).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
+  const { data: st } = await sb.from("profiles").select("id,full_name").eq("school_id", school.id); (st || []).forEach(x => staffN[x.id] = x.full_name);
+  const r = await sb.from("pc_conferences").select("*").eq("school_id", school.id).order("created_at", { ascending: false });
+  if (r.error) return fail(/pc_/.test(r.error.message) ? "Parent conferences need their database step first. Please run the Parent conferences update in Supabase." : r.error.message);
+  confs = r.data || []; ui.conf = confs[0] ? confs[0].id : null;
+  draw();
+})();
+const conf = () => confs.find(c => c.id === ui.conf);
+
+async function draw(){
+  const c = conf();
+  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Parent conferences</h1><p class="note">${esc(school.name)} · Parents book a time with each teacher using a code. No account needed.</p></div>
+      <div class="row">${confs.length ? `<select id="cf" aria-label="Conference">${confs.map(x => `<option value="${x.id}" ${x.id === ui.conf ? "selected" : ""}>${esc(x.title)}</option>`).join("")}</select>` : ""}${lead ? '<button class="btn" id="newc">+ New conference</button>' : ""}</div></div>
+    ${!c ? `<div class="card empty"><p class="note">${lead ? "No conferences yet. Set one up: choose the days, times and classes." : "No conferences have been set up yet."}</p></div>` : `
+    <div class="card"><div class="row" style="justify-content:space-between"><div><h2 style="margin:0">${esc(c.title)}</h2><p class="note" style="margin:4px 0 0">${(c.days || []).map(d => esc(dn(d.date)) + " " + esc(d.start) + "–" + esc(d.end)).join(" · ")} · ${c.slot_minutes}-minute slots · ${MODES[c.mode]}</p></div>
+      <div class="row"><span class="tag ${c.open ? "eal" : "other"}">${c.open ? "Booking is open" : "Booking is closed"}</span>${lead ? `<button class="btn ghost small" id="tog">${c.open ? "Close booking" : "Open booking"}</button><button class="btn ghost small" id="edc">Edit</button>` : ""}</div></div></div>
+    <div class="tabs" role="tablist">${[["schedule", lead ? "Schedules" : "My schedule"], ...(lead ? [["booked", "Who has booked"], ["codes", "Booking codes"], ["after", "After the conference"]] : [])].map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}</button>`).join("")}</div><div id="pane"><p class="note">Loading…</p></div>`}`;
+  const cf = document.getElementById("cf"); if (cf) cf.onchange = e => { ui.conf = e.target.value; draw(); };
+  const nc = document.getElementById("newc"); if (nc) nc.onclick = () => editConf(null);
+  const ed = document.getElementById("edc"); if (ed) ed.onclick = () => editConf(c);
+  const tg = document.getElementById("tog"); if (tg) tg.onclick = async () => { const { error } = await sb.from("pc_conferences").update({ open: !c.open }).eq("id", c.id); if (error) return toast(error.message); c.open = !c.open; draw(); toast(c.open ? "Booking is open. Share the codes with parents." : "Booking is closed."); };
+  app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; draw(); });
+  if (c) ({ schedule: schedulePane, booked: bookedPane, codes: codesPane, after: afterPane })[ui.tab](c);
+}
+
+function editConf(c){
+  const days = c ? c.days : [{ date: new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10), start: "13:00", end: "17:00" }];
+  const dayRow = d => `<div class="dayrow"><label class="f">Date <input type="date" name="dd" value="${esc(d.date || "")}"></label><label class="f">From <input type="time" name="ds" value="${esc(d.start || "13:00")}"></label><label class="f">Until <input type="time" name="de" value="${esc(d.end || "17:00")}"></label><button type="button" class="btn ghost small" data-rm>Remove</button></div>`;
+  dlg.innerHTML = `<form class="dlg"><h2>${c ? "Edit conference" : "New parent conference"}</h2>
+    <label class="f">Name <input type="text" name="t" required value="${esc(c ? c.title : "")}" placeholder="For example: Term 1 parent–teacher conferences"></label>
+    <div><b>Days and times</b><div id="days" style="margin-top:6px">${days.map(dayRow).join("")}</div><button type="button" class="btn ghost small" id="addd">+ Add a day</button></div>
+    <div class="two"><label class="f">Slot length (minutes) <input type="number" name="sl" min="5" max="60" value="${c ? c.slot_minutes : 10}"></label><label class="f">Gap between slots (minutes) <input type="number" name="gp" min="0" max="30" value="${c ? c.gap_minutes : 0}"></label></div>
+    <label class="f">How parents meet <select name="md">${Object.entries(MODES).map(([k, v]) => `<option value="${k}" ${(c ? c.mode : "in_person") === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+    <div><b>Classes</b> <span class="note">(leave all unticked for every class)</span><div class="checks">${classes.map(x => `<label><input type="checkbox" name="cl" value="${esc(x.id)}" ${c && (c.class_ids || []).includes(String(x.id)) ? "checked" : ""}> ${esc(x.name)}</label>`).join("")}</div></div>
+    <label class="f">Message for parents (optional) <textarea name="msg" rows="2" placeholder="For example: Please arrive 5 minutes early. Meetings are in your child’s classroom.">${esc(c ? c.message || "" : "")}</textarea></label>
+    <p class="note" style="margin:0">Each teacher’s free times are made from these days and the slot length. Every class teacher of the chosen classes takes part (from TwigNest’s class teachers).</p>
+    <div class="row" style="justify-content:space-between"><div>${c ? '<button type="button" class="btn ghost small" id="delc">Delete</button>' : ""}</div><div class="row"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn">Save</button></div></div></form>`;
+  const f = dlg.querySelector("form"), box = document.getElementById("days");
+  dlg.querySelector("[data-x]").onclick = () => dlg.close();
+  document.getElementById("addd").onclick = () => box.insertAdjacentHTML("beforeend", dayRow({}));
+  box.onclick = e => { const b = e.target.closest("[data-rm]"); if (b && box.children.length > 1) b.closest(".dayrow").remove(); };
+  const dc = document.getElementById("delc"); if (dc) dc.onclick = async () => { if (!confirm("Delete this conference, its codes and all its bookings?")) return; await sb.from("pc_conferences").delete().eq("id", c.id); confs = confs.filter(x => x.id !== c.id); ui.conf = confs[0] ? confs[0].id : null; dlg.close(); draw(); };
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const ds = [...box.querySelectorAll(".dayrow")].map(r => ({ date: r.querySelector("[name=dd]").value, start: r.querySelector("[name=ds]").value, end: r.querySelector("[name=de]").value })).filter(d => d.date && d.start && d.end);
+    if (!ds.length) return toast("Add at least one day.");
+    if (ds.some(d => d.end <= d.start)) return toast("Each day must end after it starts.");
+    const row = { school_id: school.id, title: f.t.value.trim(), days: ds.sort((a, b) => a.date.localeCompare(b.date)), slot_minutes: +f.sl.value || 10, gap_minutes: +f.gp.value || 0, mode: f.md.value, class_ids: [...f.querySelectorAll("input[name=cl]:checked")].map(x => x.value), message: f.msg.value.trim() || null };
+    const res = c ? await sb.from("pc_conferences").update(row).eq("id", c.id).select().single() : await sb.from("pc_conferences").insert(Object.assign(row, { created_by: me.id })).select().single();
+    if (res.error) return toast(res.error.message);
+    if (c) Object.assign(c, res.data); else { confs.unshift(res.data); ui.conf = res.data.id; ui.tab = "codes"; }
+    dlg.close(); draw(); toast(c ? "Saved" : "Created. Next: make the booking codes.");
+  };
+  dlg.showModal();
+}
+const inConf = c => s => !(c.class_ids || []).length || (c.class_ids || []).includes(String(s.class_id));
+async function getBookings(c){ return (await sb.from("pc_bookings").select("*").eq("conference_id", c.id).eq("status", "booked").order("starts_at")).data || []; }
+async function getStudents(ids){ if (!ids.length) return []; const out = []; for (let k = 0; k < ids.length; k += 200) { const { data } = await sb.from("students").select("id,full_name,class_id").in("id", ids.slice(k, k + 200)); out.push(...(data || [])); } return out; }
+
+/* ---------- Schedules ---------- */
+async function schedulePane(c){
+  const pane = document.getElementById("pane"), bk = await getBookings(c);
+  const st = await getStudents([...new Set(bk.map(b => b.student_id))]), sName = id => (st.find(s => String(s.id) === String(id)) || {}).full_name || "Student";
+  const tIds = lead ? [...new Set(bk.map(b => b.teacher_id))] : [me.id];
+  ui.tch = ui.tch && tIds.includes(ui.tch) ? ui.tch : (tIds.includes(me.id) ? me.id : tIds[0]);
+  const mine = bk.filter(b => b.teacher_id === ui.tch), byDay = {};
+  mine.forEach(b => { const d = b.starts_at.slice(0, 10); (byDay[d] = byDay[d] || []).push(b); });
+  pane.innerHTML = `<div class="card">${lead ? `<div class="row" style="margin-bottom:10px"><select id="tch" aria-label="Teacher">${tIds.map(t => `<option value="${t}" ${t === ui.tch ? "selected" : ""}>${esc(staffN[t] || "Teacher")}</option>`).join("")}</select></div>` : ""}
+    ${mine.length ? Object.entries(byDay).map(([d, l]) => `<h3 style="margin:10px 0 4px;color:var(--plum)">${esc(dn(d))}</h3>${l.map(b => `<div class="slotrow"><span class="t">${tm(b.starts_at)}</span><div><b>${esc(sName(b.student_id))}</b> <span class="note">· ${esc(cls((st.find(s => String(s.id) === String(b.student_id)) || {}).class_id).name || "")}</span><br><span class="note">${esc(b.parent_name || "")}${b.parent_contact ? " · " + esc(b.parent_contact) : ""}${b.mode ? " · " + MODES[b.mode] : ""}</span>${b.attended != null ? `<br><span class="note">${b.attended ? "✅ Came" : "❌ Didn’t come"}</span>` : ""}</div>
+      <div class="row"><button class="btn small" data-prep="${b.id}">📋 Summary and notes</button></div></div>`).join("")}`).join("") : `<p class="note" style="margin:0">${lead ? "No bookings yet." : "No parents have booked with you yet."}</p>`}</div>`;
+  const tc = document.getElementById("tch"); if (tc) tc.onchange = e => { ui.tch = e.target.value; schedulePane(c); };
+  pane.querySelectorAll("[data-prep]").forEach(b => b.onclick = () => prep(c, bk.find(x => x.id === b.dataset.prep), sName));
+}
+async function prep(c, b, sName){
+  dlg.innerHTML = `<div class="dlg"><p class="note">Loading the summary…</p></div>`; dlg.showModal();
+  const sid = b.student_id, now = new Date(), y0 = (now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1) + "-08-01";
+  const safe = async (fn, d) => { try { return await fn(); } catch (_) { return d; } };
+  const [T, att, inc, wb] = await Promise.all([
+    safe(() => twigLoad(sb, school.id, [sid]), null),
+    safe(async () => (await sb.from("attendance_marks").select("status").eq("student_id", sid).gte("day", y0)).data || [], []),
+    safe(async () => (await sb.from("inclusion_students").select("categories,summary,active").eq("student_id", sid).maybeSingle()).data, null),
+    safe(async () => (await sb.from("wellbeing_checkins").select("mood").eq("student_id", sid).gte("day", new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10))).data || [], [])]);
+  let subj = "";
+  if (T && T.studs[0]) { const s = T.studs[0], terms = T.C.terms;
+    subj = T.C.subjects.map(sub => { for (let k = terms.length - 1; k >= 0; k--) { const band = T.avgBand(s, sub.strands, String(k)); if (band) return `<span class="band ${band}">${esc(sub.name)}: ${{ below: "Below", inline: "In line", above: "Above" }[band]}</span>`; } return ""; }).filter(Boolean).join(" "); }
+  const ap = att.length ? Math.round(att.filter(m => m.status === "present" || m.status === "late").length / att.length * 100) : null;
+  const mood = wb.length ? (wb.reduce((a, x) => a + x.mood, 0) / wb.length).toFixed(1) : null;
+  dlg.innerHTML = `<form class="dlg"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h2>${esc(sName(sid))}</h2><p class="note" style="margin:2px 0 0">${tm(b.starts_at)} · with ${esc(b.parent_name || "the parent")}${b.parent_contact ? " · " + esc(b.parent_contact) : ""}</p></div><button type="button" class="btn ghost small" data-x>Close</button></div>
+    <div class="box"><h3>Summary</h3><p style="margin:0">${subj || '<span class="note">No TwigNest results yet.</span>'}</p>
+      <p class="note" style="margin:8px 0 0">Attendance this year: <b>${ap == null ? "–" : ap + "%"}</b>${mood ? ` · Wellbeing (last 30 days): <b>${mood} of 5</b>` : ""}</p>
+      ${inc && inc.active !== false ? `<p class="note" style="margin:6px 0 0">Inclusion: ${esc((inc.categories || []).map(k => ({ sod: "Student of determination", gt: "Gifted and talented", eal: "EAL", other: "Other need" })[k] || k).join(", "))}${inc.summary ? " · " + esc(inc.summary) : ""}</p>` : ""}
+      <p style="margin:8px 0 0"><a href="students.html?id=${esc(sid)}" target="_blank" rel="noopener">Open the full student profile ↗</a></p></div>
+    <div class="two"><label class="f">Two strengths to share <textarea name="s" rows="3">${esc(b.strengths || "")}</textarea></label><label class="f">Two next steps <textarea name="n" rows="3">${esc(b.next_steps || "")}</textarea></label></div>
+    <label class="f">Notes from the meeting <textarea name="no" rows="3">${esc(b.notes || "")}</textarea></label>
+    <label class="f">Agreed actions (school and home) <textarea name="ac" rows="2">${esc(b.actions || "")}</textarea></label>
+    <div class="checks"><label><input type="radio" name="at" value="1" ${b.attended === true ? "checked" : ""}> ✅ The parent came</label><label><input type="radio" name="at" value="0" ${b.attended === false ? "checked" : ""}> ❌ Didn’t come</label></div>
+    <div class="row" style="justify-content:space-between"><button type="button" class="btn ghost small" id="fu">✉️ Follow-up message</button><button class="btn">Save</button></div></form>`;
+  const f = dlg.querySelector("form"); dlg.querySelector("[data-x]").onclick = () => dlg.close();
+  document.getElementById("fu").onclick = async () => { const first = sName(sid).split(" ")[0];
+    const txt = `Dear ${b.parent_name || "parent"},\n\nThank you for meeting with me about ${first}.\n\n${f.s.value.trim() ? "Strengths:\n" + f.s.value.trim() + "\n\n" : ""}${f.n.value.trim() ? "Next steps:\n" + f.n.value.trim() + "\n\n" : ""}${f.ac.value.trim() ? "What we agreed:\n" + f.ac.value.trim() + "\n\n" : ""}Kind regards,\n${me.full_name || ""}\n${school.name}`;
+    try { await navigator.clipboard.writeText(txt); toast("Message copied. Paste it into an email or WhatsApp."); } catch (_) { prompt("Copy this message:", txt); } };
+  f.onsubmit = async e => { e.preventDefault(); const at = (f.querySelector("input[name=at]:checked") || {}).value;
+    const { error } = await sb.from("pc_bookings").update({ strengths: f.s.value.trim() || null, next_steps: f.n.value.trim() || null, notes: f.no.value.trim() || null, actions: f.ac.value.trim() || null, attended: at == null ? null : at === "1", updated_at: new Date().toISOString() }).eq("id", b.id);
+    if (error) return toast(error.message); dlg.close(); toast("Saved"); schedulePane(c); };
+}
+
+/* ---------- Leaders: who has booked, codes, and after the conference ---------- */
+async function bookedPane(c){
+  const pane = document.getElementById("pane"), bk = await getBookings(c);
+  const all = (await fetchAll(() => sb.from("students").select("id,full_name,class_id").eq("school_id", school.id).eq("archived", false))).filter(inConf(c));
+  const codes = (await sb.from("pc_codes").select("student_id,code").eq("conference_id", c.id)).data || [];
+  const booked = new Set(bk.map(b => String(b.student_id)));
+  const rows = classes.filter(x => all.some(s => String(s.class_id) === String(x.id))).map(x => { const kids = all.filter(s => String(s.class_id) === String(x.id)), n = kids.filter(s => booked.has(String(s.id))).length; return [x, kids, n]; });
+  const not = all.filter(s => !booked.has(String(s.id))).sort((a, b) => String(cls(a.class_id).name).localeCompare(String(cls(b.class_id).name)) || a.full_name.localeCompare(b.full_name));
+  const tot = all.length ? Math.round(all.filter(s => booked.has(String(s.id))).length / all.length * 100) : 0;
+  pane.innerHTML = `<div class="metrics"><div class="metric"><span>Families booked</span><b>${tot}%</b></div><div class="metric"><span>Bookings</span><b>${bk.length}</b></div><div class="metric"><span>Not booked yet</span><b style="color:var(--amber)">${not.length}</b></div></div>
+    <div class="card"><h2>By class</h2><div class="tablewrap"><table class="reg"><tr><th>Class</th><th>Booked</th></tr>${rows.map(([x, kids, n]) => `<tr><td>${esc(x.name)}</td><td>${n} of ${kids.length} (${kids.length ? Math.round(n / kids.length * 100) : 0}%)</td></tr>`).join("")}</table></div></div>
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>Not booked yet <span class="note">(${not.length})</span></h2>${not.length ? '<button class="btn ghost small" id="cpy">📋 Copy reminder list</button>' : ""}</div>${not.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Class</th><th>Code</th></tr>${not.map(s => `<tr><td>${esc(s.full_name)}</td><td>${esc(cls(s.class_id).name || "")}</td><td><b>${esc((codes.find(x => String(x.student_id) === String(s.id)) || {}).code || "–")}</b></td></tr>`).join("")}</table></div>` : '<p class="note" style="margin:0">Every family has booked. 🎉</p>'}</div>`;
+  const cp = document.getElementById("cpy"); if (cp) cp.onclick = async () => { const t = not.map(s => `${s.full_name} (${cls(s.class_id).name || ""}): ${BOOK_URL}?c=${(codes.find(x => String(x.student_id) === String(s.id)) || {}).code || ""}`).join("\n"); try { await navigator.clipboard.writeText(t); toast("Copied: each student’s name with their booking link"); } catch (_) { prompt("Copy:", t); } };
+}
+async function codesPane(c){
+  const pane = document.getElementById("pane");
+  const codes = (await sb.from("pc_codes").select("student_id,code").eq("conference_id", c.id)).data || [];
+  const st = await getStudents(codes.map(x => x.student_id));
+  pane.innerHTML = `<div class="card"><h2>Booking codes</h2><p class="note">Each student gets a 6-letter code. Parents type it at <b>${esc(BOOK_URL)}</b>, or open their personal link, to book. Families with more than one child add each child’s code on the same page.</p>
+    <div class="row"><button class="btn" id="mk">${codes.length ? "Make codes for new students" : "Make the booking codes"}</button>${codes.length ? '<button class="btn ghost" id="slips">⬇ Word: printable slips</button><button class="btn ghost" id="csv">⬇ CSV: list with links</button>' : ""}</div>
+    <p class="note" style="margin:10px 0 0">${codes.length} code${codes.length === 1 ? "" : "s"} made.${c.open ? "" : " Remember to <b>Open booking</b> when you’re ready."}</p></div>`;
+  document.getElementById("mk").onclick = async () => { const { data, error } = await sb.rpc("pc_make_codes", { cid: c.id }); if (error) return toast(error.message); toast(data + " new code" + (data === 1 ? "" : "s") + " made"); codesPane(c); };
+  const row = x => { const s = st.find(y => String(y.id) === String(x.student_id)) || {}; return [s.full_name || "", cls(s.class_id).name || "", x.code, BOOK_URL + "?c=" + x.code]; };
+  const rows = codes.map(row).sort((a, b) => a[1].localeCompare(b[1], undefined, { numeric: true }) || a[0].localeCompare(b[0]));
+  const sl = document.getElementById("slips"); if (sl) sl.onclick = () => {
+    const html = `<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif}td{border:1px dashed #999;padding:12px;width:50%;vertical-align:top;font-size:10.5pt}</style></head><body><table width="100%" cellspacing="6">${rows.reduce((a, r, i) => a + (i % 2 ? "" : "<tr>") + `<td><b>${esc(school.name)}</b><br>${esc(c.title)}<br><br>For the parents of <b>${esc(r[0])}</b> (${esc(r[1])})<br>Book your times at: ${esc(BOOK_URL)}<br>Booking code: <b style="font-size:16pt;letter-spacing:3px">${esc(r[2])}</b><br><br><span dir="rtl" lang="ar">احجز موعدك باستخدام الرمز أعلاه.</span></td>` + (i % 2 ? "</tr>" : ""), "")}${rows.length % 2 ? "<td></td></tr>" : ""}</table></body></html>`;
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + html], { type: "application/msword" })); a.download = c.title + " - booking slips.doc"; document.body.appendChild(a); a.click(); a.remove(); };
+  const cv = document.getElementById("csv"); if (cv) cv.onclick = () => { const q = v => '"' + String(v).replace(/"/g, '""') + '"';
+    const t = "\ufeff" + [["Student", "Class", "Code", "Booking link"], ...rows].map(r => r.map(q).join(",")).join("\n");
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([t], { type: "text/csv" })); a.download = c.title + " - booking codes.csv"; document.body.appendChild(a); a.click(); a.remove(); };
+}
+async function afterPane(c){
+  const pane = document.getElementById("pane"), bk = (await getBookings(c)).filter(b => new Date(b.starts_at) < new Date());
+  const came = bk.filter(b => b.attended === true).length, no = bk.filter(b => b.attended === false).length, unk = bk.length - came - no;
+  const byT = {}; bk.forEach(b => { const a = byT[b.teacher_id] = byT[b.teacher_id] || { n: 0, came: 0, notes: 0 }; a.n++; if (b.attended) a.came++; if (b.notes || b.actions) a.notes++; });
+  pane.innerHTML = `<div class="metrics"><div class="metric"><span>Meetings so far</span><b>${bk.length}</b></div><div class="metric"><span>Parents came</span><b style="color:var(--sage)">${bk.length ? Math.round(came / bk.length * 100) + "%" : "–"}</b></div><div class="metric"><span>Didn’t come</span><b style="color:var(--red)">${no}</b></div><div class="metric"><span>Not recorded</span><b>${unk}</b></div></div>
+    <div class="card"><h2>By teacher</h2><div class="tablewrap"><table class="reg"><tr><th>Teacher</th><th>Meetings</th><th>Parents came</th><th>Notes written</th></tr>${Object.entries(byT).map(([t, a]) => `<tr><td>${esc(staffN[t] || "Teacher")}</td><td>${a.n}</td><td>${a.came}</td><td>${a.notes}</td></tr>`).join("") || '<tr><td colspan="4" class="note">No meetings yet.</td></tr>'}</table></div>
+    <p class="note" style="margin:10px 0 0">This is evidence for parent partnerships (inspection framework 6.3). You can add it to an Evidence pack.</p></div>`;
+}
+</script>
+</body>
+</html>
