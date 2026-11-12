@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calendar · Nestopia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--plum:#462D5B;--plum-2:#6A4B85;--plum-soft:#EDE6F5;--sage:#5E8455;--sage-soft:#E6EFE2;--amber:#A86C12;--amber-soft:#FBF0DC;--red:#B4473A;--red-soft:#F8E4E1;--blue:#4E6FB8;--blue-soft:#E4EBF8;--bg:#F7F4FB;--card:#FFFFFF;--ink:#2E2140;--muted:#6F6680;--line:#E4DDEE;--empty:#ECE7F3;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--plum:#CDB9EA;--plum-2:#DCCCF2;--plum-soft:#352A45;--sage:#A7C59A;--sage-soft:#26331F;--amber:#E6B566;--amber-soft:#3A2E17;--red:#E8897C;--red-soft:#3D2220;--blue:#9DB4E8;--blue-soft:#1E2A40;--bg:#17131D;--card:#221C2B;--ink:#F1ECF7;--muted:#B2A8C2;--line:#382F45;--empty:#2C2536;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--plum-2);outline-offset:2px}
+h1,h2,h3,.btn,.brand{font-family:"Poppins","Nunito",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-weight:600;font-size:22px;color:var(--plum);text-decoration:none}
+header .who{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:14px;color:var(--muted);flex-wrap:wrap}
+main{max-width:1200px;margin:0 auto;padding:24px 20px 48px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px}
+.card h2{margin:0 0 8px;font-size:20px;color:var(--plum);font-weight:600}
+.btn{border:0;background:var(--plum);color:#fff;border-radius:999px;padding:10px 20px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--bg);color:var(--plum);border:1px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:13px}
+.note{color:var(--muted);font-size:14px}
+.msg{border-radius:12px;padding:10px 14px;margin-top:12px;font-weight:600;font-size:14px;background:var(--red-soft);color:var(--red)}
+.ptitle{margin:0 0 4px;font-weight:600;font-size:26px}
+.phead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.metric{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.metric span{display:block;font-size:13px;color:var(--muted);font-weight:700}
+.metric b{display:block;font-size:26px;color:var(--plum);font-family:Poppins,Nunito,sans-serif;font-weight:600;line-height:1.3}
+.tablewrap{overflow-x:auto}
+table.grid{border-collapse:separate;border-spacing:8px;min-width:100%}
+table.grid th{font-size:13px;color:var(--muted);text-align:left;font-weight:700;padding:4px}
+.cell{width:100%;min-width:150px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;cursor:pointer;display:block}
+.cell:hover{border-color:var(--plum-2)}
+.cell b{font-size:20px;font-family:Poppins,Nunito,sans-serif;font-weight:600;color:var(--plum)}
+.cell small{display:block;color:var(--muted);font-size:12.5px}
+.cell.none{cursor:default;color:var(--muted);background:var(--bg)}
+.cell.on{outline:3px solid var(--plum-2)}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--empty);margin:6px 0 4px}
+.bar i{display:block;height:100%}
+.bar .a{background:var(--sage)}.bar .t{background:var(--amber)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
+.obj{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.obj:last-child{border-bottom:0}
+.st{font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;justify-self:start}
+.st.n{background:var(--empty);color:var(--muted)}.st.p{background:var(--amber-soft);color:var(--amber)}.st.t{background:var(--blue-soft);color:var(--blue)}.st.a{background:var(--sage-soft);color:var(--sage)}
+.obj small{display:block;color:var(--muted);font-size:12.5px}
+.sec{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
+.sec b{display:block;font-size:16px;color:var(--ink)}
+@media (max-width:640px){.obj{grid-template-columns:1fr}.sec{text-align:left}}
+textarea,input{font:inherit;color:inherit}
+input[type=text],input[type=date],input[type=search],textarea{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;width:100%}
+label.f{display:grid;gap:4px;font-weight:700;font-size:14px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tab{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 16px;font-weight:700;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+table.reg{width:100%;border-collapse:collapse}
+table.reg th{font-size:13px;color:var(--muted);text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+table.reg td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14.5px}
+table.reg tr:hover td{background:var(--bg)}
+.nm{font-weight:800;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.nm:hover{color:var(--plum-2);text-decoration:underline}
+.tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;margin:2px 4px 2px 0}
+.tag.sod{background:var(--plum-soft);color:var(--plum)}.tag.gt{background:var(--amber-soft);color:var(--amber)}.tag.eal{background:var(--blue-soft);color:var(--blue)}.tag.other{background:var(--empty);color:var(--muted)}
+.lvl{font-size:12.5px;font-weight:800;border-radius:8px;padding:2px 8px}
+.lvl.u{background:var(--sage-soft);color:var(--sage)}.lvl.t{background:var(--amber-soft);color:var(--amber)}.lvl.s{background:var(--red-soft);color:var(--red)}
+.due{font-size:12.5px;font-weight:800}.due.late{color:var(--red)}.due.soon{color:var(--amber)}.due.ok{color:var(--muted)}
+dialog{border:0;border-radius:18px;padding:0;width:min(760px,96vw);max-height:92vh;background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(30,20,45,.45)}
+.dlg{padding:22px 24px;display:grid;gap:14px}
+.dlg h2{margin:0;color:var(--plum);font-size:21px}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px}
+.checks label{display:flex;gap:6px;align-items:center;font-weight:600;font-size:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.two{grid-template-columns:1fr}table.reg .hide-sm{display:none}}
+.box{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--bg)}
+.box h3{margin:0 0 6px;font-size:16px;color:var(--plum)}
+.target{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:8px 0;border-bottom:1px dashed var(--line)}
+.target:last-child{border-bottom:0}
+.pg{font-size:12.5px;font-weight:800;border-radius:999px;padding:2px 10px;border:1px solid var(--line);background:var(--card);cursor:pointer;white-space:nowrap}
+.pg.a{background:var(--sage-soft);color:var(--sage)}.pg.w{background:var(--amber-soft);color:var(--amber)}.pg.n{background:var(--empty);color:var(--muted)}
+.lock{font-size:12.5px;color:var(--red);font-weight:800}
+.empty{text-align:center;padding:30px 10px}
+.okmsg{border-radius:12px;padding:10px 14px;font-weight:600;font-size:14px;background:var(--sage-soft);color:var(--sage)}
+.calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:10px}
+.calhead{font-size:12px;font-weight:800;color:var(--muted);text-align:center;padding:4px}
+.calcell{min-height:86px;border:1px solid var(--line);border-radius:10px;padding:4px;background:var(--card);display:flex;flex-direction:column;gap:3px;overflow:hidden}
+.calcell.empty{background:transparent;border:0}.calcell.today{outline:2px solid var(--plum-2)}
+.calcell b{font-size:12px;color:var(--muted)}
+.calev{font:inherit;font-size:11.5px;font-weight:700;text-align:left;border:0;border-radius:6px;padding:2px 5px;cursor:pointer;background:var(--blue-soft);color:var(--blue);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.calev.parent_meeting{background:var(--plum-soft);color:var(--plum)}.calev.proposed,.calev.reschedule{background:var(--amber-soft);color:var(--amber)}.calev.done{opacity:.6}
+
+.calev{display:block;width:100%}
+.calev.holiday{background:#E4F1E6;color:#3F7A4B}.calev.assessment{background:#FBEBD5;color:#9A6512}.calev.event{background:var(--blue-soft);color:var(--blue)}.calev.parents{background:#FDE7EC;color:#A53C5B}.calev.meeting{background:var(--plum-soft);color:var(--plum)}.calev.trip{background:#E2F2F4;color:#2D7480}
+.calev.inclusion{background:#EFE7F7;color:#6B4791}.calev.grownest{background:#E8F3E3;color:#4E7A35}
+.fl{display:flex;flex-wrap:wrap;gap:6px}
+.fl label{display:flex;gap:5px;align-items:center;font-size:13.5px;font-weight:700;border:1px solid var(--line);border-radius:99px;padding:4px 10px;background:var(--card);cursor:pointer}
+.up{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
+.up:last-child{border-bottom:0}
+.dd{display:grid;justify-items:center;min-width:46px;font-size:12px;color:var(--muted);text-transform:uppercase}.dd b{font-size:20px;color:var(--ink)}
+.calwrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px}
+@media(max-width:1000px){.calwrap{grid-template-columns:1fr}}
+@media (max-width:640px){.calcell{min-height:56px}.calev{font-size:10px}}
+
+</style>
+</head>
+<body>
+<header><a class="brand" href="./" id="brand">Nestopia</a><div class="who" id="who"></div></header>
+<main id="app"><p class="note">Loading…</p></main>
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="hub.js?v=3"></script>
+<script>
+/* Keep this the same as in index.html */
+const PLATFORM = "Nestopia";
+const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const app = document.getElementById("app"), who = document.getElementById("who"), dlg = document.getElementById("dlg");
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2600); };
+const CATS = { event: "📌 School event", holiday: "🌴 Holiday", assessment: "📝 Assessment", parents: "👪 Parents", meeting: "👥 Staff meeting", trip: "🚌 Trip", inclusion: "💜 Inclusion", grownest: "🌱 GrowNest" };
+const ymd = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+let me, school, lead = false, grades = [], evs = [], month = new Date(), show = new Set(Object.keys(CATS));
+function fail(t){ app.innerHTML = `<div class="card"><div class="msg">${esc(t)}</div></div>`; }
+const safe = async (fn, d) => { try { return await fn(); } catch (_) { return d; } };
+
+(async function start(){
+  const { data: { session } } = await sb.auth.getSession(); if (!session) { location.href = "./"; return; }
+  const { data: p } = await sb.from("profiles").select("*").eq("id", session.user.id).single();
+  if (!p || !p.school_id) return fail("Your account isn’t linked to a school yet.");
+  me = p; who.innerHTML = `<span>${esc(p.full_name || p.email)}</span><a class="btn ghost small" href="./">← ${esc(PLATFORM)}</a>`;
+  const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single(); school = s;
+  if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
+  lead = ["school_lead", "coordinator", "admin"].includes(p.role);
+  const set = await sb.from("school_setups").select("config").eq("school_id", school.id).order("updated_at", { ascending: false }).limit(1);
+  grades = (set.data && set.data[0] && set.data[0].config && set.data[0].config.grades) || [];
+  if (window.hubInit) hubInit("calendar");
+  await load(); draw();
+})();
+
+async function load(){
+  evs = [];
+  const from = new Date(month.getFullYear(), month.getMonth() - 1, 1), to = new Date(month.getFullYear(), month.getMonth() + 3, 0);
+  // school events
+  const se = await sb.from("school_events").select("*").eq("school_id", school.id).lte("start_date", ymd(to)).gte("end_date", ymd(from));
+  if (se.error && /school_events/.test(se.error.message)) { window.NEEDS_SQL = true; } else (se.data || []).forEach(e => evs.push({ id: e.id, own: e, cat: e.category, title: e.title, start: e.start_date, end: e.end_date || e.start_date, time: e.start_time, note: e.details, grades: e.grades || [] }));
+  const mods = school.modules || [];
+  // inclusion observations and parent meetings (each person sees their own; the inclusion team sees all), and plan reviews
+  if (mods.includes("inclusion")) {
+    const ie = await safe(() => sb.from("inclusion_events").select("kind,starts_at,status,location").eq("school_id", school.id).gte("starts_at", from.toISOString()).lte("starts_at", to.toISOString()).neq("status", "cancelled"), {});
+    (ie.data || []).forEach(e => evs.push({ cat: "inclusion", title: (e.kind === "parent_meeting" ? "Parent meeting" : "Inclusion observation") + (e.status === "proposed" || e.status === "reschedule" ? " (to confirm)" : ""), start: e.starts_at.slice(0, 10), end: e.starts_at.slice(0, 10), time: new Date(e.starts_at).toTimeString().slice(0, 5), note: e.location, link: "inclusion.html" }));
+    const pr = await safe(() => sb.from("inclusion_plans").select("review_date,title,kind").eq("school_id", school.id).eq("status", "active").gte("review_date", ymd(from)).lte("review_date", ymd(to)), {});
+    (pr.data || []).forEach(x => evs.push({ cat: "inclusion", title: "Support plan review", start: x.review_date, end: x.review_date, link: "inclusion.html#reviews" }));
+  }
+  // GrowNest (leaders): observations and teacher support plans ending
+  if (mods.includes("grownest") && lead) {
+    const ob = await safe(() => sb.from("observations").select("observed_on,type").gte("observed_on", ymd(from)).lte("observed_on", ymd(to)), {});
+    const byDay = {}; (ob.data || []).forEach(o => { byDay[o.observed_on] = (byDay[o.observed_on] || 0) + 1; });
+    Object.entries(byDay).forEach(([d, n]) => evs.push({ cat: "grownest", title: n + " observation" + (n === 1 ? "" : "s"), start: d, end: d, link: "grownest/observations.html" }));
+    const sp = await safe(() => sb.from("gn_support_plans").select("end_date,status").eq("status", "active").gte("end_date", ymd(from)).lte("end_date", ymd(to)), {});
+    (sp.data || []).forEach(x => evs.push({ cat: "grownest", title: "Teacher support plan ends", start: x.end_date, end: x.end_date, link: "grownest/app.html" }));
+  }
+}
+const onDay = d => evs.filter(e => show.has(e.cat) && e.start <= d && e.end >= d).sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+
+function draw(){
+  const y = month.getFullYear(), m = month.getMonth(), first = new Date(y, m, 1), days = new Date(y, m + 1, 0).getDate(), pad = (first.getDay() + 6) % 7, today = ymd(new Date());
+  let cells = ""; for (let i = 0; i < pad; i++) cells += '<div class="calcell empty"></div>';
+  for (let d = 1; d <= days; d++) { const k = ymd(new Date(y, m, d)), list = onDay(k);
+    cells += `<div class="calcell ${k === today ? "today" : ""}"><b>${d}</b>${list.slice(0, 4).map((e, i) => `<button class="calev ${e.cat}" data-k="${k}" data-i="${i}" title="${esc(e.title)}">${e.time ? esc(e.time) + " " : ""}${esc(e.title)}</button>`).join("")}${list.length > 4 ? `<button class="calev" data-k="${k}" data-i="more">+${list.length - 4} more</button>` : ""}</div>`; }
+  const up = evs.filter(e => show.has(e.cat) && e.end >= today).sort((a, b) => a.start.localeCompare(b.start) || (a.time || "").localeCompare(b.time || "")).slice(0, 12);
+  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Calendar</h1><p class="note">${esc(school.name)} · School events, inclusion meetings and reviews${lead ? ", and GrowNest observations" : ""}, in one place.</p></div>
+      <div class="row">${lead ? '<button class="btn" id="add">+ Add an event</button>' : ""}<button class="btn ghost" id="ics">📅 Add to my calendar</button></div></div>
+    ${window.NEEDS_SQL ? '<div class="msg">School events need the Calendar database step. Please run the Calendar update in Supabase.</div>' : ""}
+    <div class="card" style="padding:12px 16px"><div class="fl">${Object.entries(CATS).filter(([k]) => k !== "grownest" || lead).map(([k, v]) => `<label><input type="checkbox" data-cat="${k}" ${show.has(k) ? "checked" : ""}> ${v}</label>`).join("")}</div></div>
+    <div class="calwrap"><section class="card"><div class="row" style="justify-content:space-between"><h2>${first.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}</h2><div class="row"><button class="btn ghost small" id="prev" aria-label="Previous month">‹</button><button class="btn ghost small" id="today">Today</button><button class="btn ghost small" id="next" aria-label="Next month">›</button></div></div>
+      <div class="calgrid">${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(x => `<div class="calhead">${x}</div>`).join("")}${cells}</div></section>
+      <section class="card"><h2>Coming up</h2>${up.length ? up.map(e => `<div class="up"><span class="dd"><b>${new Date(e.start + "T00:00:00").getDate()}</b>${new Date(e.start + "T00:00:00").toLocaleDateString("en-GB", { month: "short" })}</span><div><b>${esc(e.title)}</b><br><span class="note">${esc(CATS[e.cat] || "")}${e.time ? " · " + esc(e.time) : ""}${e.end !== e.start ? " · until " + new Date(e.end + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : ""}${e.grades && e.grades.length ? " · " + esc(e.grades.map(g => (grades.find(x => x.id === g) || { name: g }).name).join(", ")) : ""}</span></div></div>`).join("") : '<p class="note" style="margin:0">Nothing coming up.</p>'}</section></div>`;
+  const go = async n => { month = new Date(y, m + n, 1); await load(); draw(); };
+  document.getElementById("prev").onclick = () => go(-1); document.getElementById("next").onclick = () => go(1);
+  document.getElementById("today").onclick = async () => { month = new Date(); await load(); draw(); };
+  const ad = document.getElementById("add"); if (ad) ad.onclick = () => editEvent(null, today);
+  document.getElementById("ics").onclick = downloadIcs;
+  app.querySelectorAll("[data-cat]").forEach(cb => cb.onchange = () => { cb.checked ? show.add(cb.dataset.cat) : show.delete(cb.dataset.cat); draw(); });
+  app.querySelectorAll(".calev[data-k]").forEach(b => b.onclick = () => openDay(b.dataset.k));
+}
+function openDay(k){
+  const list = onDay(k);
+  dlg.innerHTML = `<div class="dlg"><div class="row" style="justify-content:space-between"><h2>${new Date(k + "T00:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</h2><button class="btn ghost small" data-x>Close</button></div>
+    ${list.map((e, i) => `<div class="box"><b>${esc(e.title)}</b><p class="note" style="margin:4px 0 0">${esc(CATS[e.cat] || "")}${e.time ? " · " + esc(e.time) : ""}${e.end !== e.start ? " · " + new Date(e.start + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + " to " + new Date(e.end + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : ""}</p>${e.note ? `<p style="margin:6px 0 0">${esc(e.note)}</p>` : ""}
+      <div class="row" style="margin-top:8px">${e.link ? `<a class="btn ghost small" href="${e.link}">Open</a>` : ""}${e.own && lead ? `<button class="btn ghost small" data-ed="${i}">Edit</button>` : ""}</div></div>`).join("") || '<p class="note">Nothing on this day.</p>'}
+    ${lead ? `<button class="btn" id="addHere">+ Add an event on this day</button>` : ""}</div>`;
+  dlg.querySelector("[data-x]").onclick = () => dlg.close();
+  dlg.querySelectorAll("[data-ed]").forEach(b => b.onclick = () => editEvent(list[+b.dataset.ed].own, k));
+  const ah = document.getElementById("addHere"); if (ah) ah.onclick = () => editEvent(null, k);
+  dlg.open || dlg.showModal();
+}
+function editEvent(e, day){
+  dlg.innerHTML = `<form class="dlg"><h2>${e ? "Edit event" : "Add an event"}</h2>
+    <label class="f">Title <input type="text" name="t" required value="${esc(e ? e.title : "")}" placeholder="For example: End of term assessments, National Day holiday, Grade 5 trip"></label>
+    <div class="two"><label class="f">Type <select name="c">${Object.entries(CATS).filter(([k]) => !["inclusion", "grownest"].includes(k)).map(([k, v]) => `<option value="${k}" ${(e ? e.category : "event") === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+      <label class="f">Time (optional) <input type="time" name="tm" value="${esc(e ? e.start_time || "" : "")}"></label></div>
+    <div class="two"><label class="f">From <input type="date" name="s" required value="${esc(e ? e.start_date : day)}"></label><label class="f">To <input type="date" name="e" value="${esc(e ? e.end_date || "" : "")}"></label></div>
+    ${grades.length ? `<div><b>For</b> <span class="note">(leave all unticked for the whole school)</span><div class="checks">${grades.map(g => `<label><input type="checkbox" name="g" value="${esc(g.id)}" ${e && (e.grades || []).includes(g.id) ? "checked" : ""}> ${esc(g.name)}</label>`).join("")}</div></div>` : ""}
+    <label class="f">Details (optional) <textarea name="d" rows="3">${esc(e ? e.details || "" : "")}</textarea></label>
+    <div class="row" style="justify-content:space-between"><div>${e ? '<button type="button" class="btn ghost small" id="del">Delete</button>' : ""}</div><div class="row"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn">Save</button></div></div></form>`;
+  const f = dlg.querySelector("form"); dlg.querySelector("[data-x]").onclick = () => dlg.close();
+  const dl = document.getElementById("del"); if (dl) dl.onclick = async () => { if (!confirm("Delete this event?")) return; await sb.from("school_events").delete().eq("id", e.id); dlg.close(); await load(); draw(); };
+  f.onsubmit = async ev => {
+    ev.preventDefault(); if (f.e.value && f.e.value < f.s.value) return toast("The end date must be after the start date.");
+    const row = { school_id: school.id, title: f.t.value.trim(), category: f.c.value, start_date: f.s.value, end_date: f.e.value || f.s.value, start_time: f.tm.value || null, grades: [...f.querySelectorAll("input[name=g]:checked")].map(x => x.value), details: f.d.value.trim() || null, updated_at: new Date().toISOString() };
+    const { error } = e ? await sb.from("school_events").update(row).eq("id", e.id) : await sb.from("school_events").insert(Object.assign(row, { created_by: me.id }));
+    if (error) return toast(/school_events/.test(error.message) ? "Please run the Calendar database step first." : error.message);
+    dlg.close(); month = new Date(f.s.value + "T00:00:00"); await load(); draw(); toast("Saved");
+  };
+  dlg.open || dlg.showModal();
+}
+function downloadIcs(){
+  const list = evs.filter(e => show.has(e.cat) && e.end >= ymd(new Date())); if (!list.length) return toast("Nothing coming up to add.");
+  const d8 = s => s.replace(/-/g, ""), nextDay = s => { const x = new Date(s + "T00:00:00"); x.setDate(x.getDate() + 1); return ymd(x).replace(/-/g, ""); };
+  const clean = t => String(t || "").replace(/[\\;,]/g, " ").replace(/\n/g, " ");
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Nestopia//School calendar//EN"];
+  list.forEach((e, i) => { lines.push("BEGIN:VEVENT", "UID:nest-" + i + "-" + d8(e.start) + "@nestopia.school", "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""));
+    if (e.time) { const st = d8(e.start) + "T" + e.time.replace(":", "") + "00"; lines.push("DTSTART:" + st, "DURATION:PT1H"); } else lines.push("DTSTART;VALUE=DATE:" + d8(e.start), "DTEND;VALUE=DATE:" + nextDay(e.end));
+    lines.push("SUMMARY:" + clean(e.title), "DESCRIPTION:" + clean((CATS[e.cat] || "") + (e.note ? " · " + e.note : "")), "END:VEVENT"); });
+  lines.push("END:VCALENDAR");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([lines.join("\r\n")], { type: "text/calendar" })); a.download = "school-calendar.ics"; document.body.appendChild(a); a.click(); a.remove();
+  toast("Downloaded. Open the file to add these dates to your calendar.");
+}
+</script>
+</body>
+</html>

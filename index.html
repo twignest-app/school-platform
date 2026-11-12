@@ -705,7 +705,7 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
 </template>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=2"></script>
+<script src="hub.js?v=3"></script>
 <script src="twcalc.js?v=2"></script>
 <script>
 document.documentElement.classList.add("js");
@@ -916,11 +916,12 @@ async function overviewData(p, school, lead){
     const [ev, pl] = await Promise.all([
       sb.from("inclusion_events").select("kind,starts_at,status").eq("school_id", school.id).gte("starts_at", t).lte("starts_at", soon).neq("status", "cancelled").order("starts_at").limit(5),
       lead ? sb.from("inclusion_plans").select("review_date").eq("school_id", school.id).eq("status", "active").gte("review_date", t.slice(0, 10)).lte("review_date", soon.slice(0, 10)).order("review_date").limit(5) : Promise.resolve({ data: [] })]);
-    const rows = [...(ev.data || []).map(e => [e.starts_at, (e.kind === "parent_meeting" ? "Parent meeting" : "Inclusion observation") + (e.status === "proposed" ? " (to confirm)" : ""), "inclusion.html"]),
+    const se = await sb.from("school_events").select("title,start_date,start_time,category").eq("school_id", school.id).gte("end_date", t.slice(0, 10)).lte("start_date", soon.slice(0, 10)).order("start_date").limit(6);
+    const rows = [...(se.data || []).map(e => [e.start_date + "T" + (e.start_time || "08:00"), e.title, "calendar.html"]), ...(ev.data || []).map(e => [e.starts_at, (e.kind === "parent_meeting" ? "Parent meeting" : "Inclusion observation") + (e.status === "proposed" ? " (to confirm)" : ""), "inclusion.html"]),
       ...(pl.data || []).map(x => [x.review_date + "T08:00:00", "Support plan review", "inclusion.html#reviews"])].sort((a, b) => a[0].localeCompare(b[0])).slice(0, 6);
     const box = document.getElementById("ovEvents");
     if (box) box.innerHTML = rows.length ? rows.map(r => `<a class="ovev" href="${r[2]}"><span class="ovdate"><b>${new Date(r[0]).getDate()}</b>${new Date(r[0]).toLocaleDateString("en-GB", { month: "short" })}</span><span>${esc(r[1])}<br><small class="note">${new Date(r[0]).toLocaleDateString("en-GB", { weekday: "long" })}</small></span></a>`).join("")
-      : '<p class="note" style="margin:0">Nothing in the next three weeks. The school calendar is coming soon.</p>';
+      : '<p class="note" style="margin:0">Nothing in the next three weeks. <a href="calendar.html">Open the calendar</a></p>';
   } catch (_) { const box = document.getElementById("ovEvents"); if (box) box.innerHTML = '<p class="note" style="margin:0">Nothing coming up.</p>'; }
   // Student progress from TwigNest, term by term
   const ch = document.getElementById("ovChart");
