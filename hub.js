@@ -25,7 +25,7 @@
     ["overview", "Overview", "index.html", null],
     ["students", "Students", "students.html", "twignest"],
     ["attendance", "Attendance", "attendance.html", null],
-    ["behaviour", "Behaviour", "behaviour.html", null],
+    ["behaviour", "Behaviour", "behaviour.html", "behaviour"],
     ["planning", "Planning", "planning.html", "planning"],
     ["assessments", "Assessments", "twignest/", "twignest"],
     ["grownest", "GrowNest", "grownest/app.html", "grownest"],
@@ -37,7 +37,7 @@
     ["inclusion", "Inclusion", "inclusion.html", "inclusion"],
     ["wellbeing", "Wellbeing", "wellbeing.html", "wellbeing"],
     ["evidence", "Evidence packs", "evidence.html", "evidence"],
-    ["conferences", "Parent conferences", "conferences.html", null],
+    ["conferences", "Parent conferences", "conferences.html", "conferences"],
     ["label", ""],
     ["settings", "Settings", "settings.html", null]
   ];

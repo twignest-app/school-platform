@@ -73,7 +73,7 @@ h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
 <main id="app"><p class="note">Loading…</p></main>
 <div class="toast" id="toast" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=9"></script>
+<script src="hub.js?v=10"></script>
 <script src="getstarted.js?v=1"></script>
 <script>
 const PLATFORM = "Nestopia";
@@ -96,7 +96,8 @@ const ALL = [["twignest", "TwigNest"], ["grownest", "GrowNest"], ["planning", "P
   app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Settings</h1><p class="note">${esc(s.name)} · Everything you set up for your school, in one place.</p></div></div>
     <section class="card" id="start" style="margin-bottom:16px"><h2>🚀 Getting started</h2><p class="note" style="margin:0 0 4px">The steps to get your school ready. Each one ticks itself off when it’s done.</p><div id="gs"><p class="note">Checking…</p></div></section>
     <section class="card" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Staff and roles</h2>${on.includes("twignest") ? '<a class="btn ghost small" href="twignest/#staff">Approve staff and change roles →</a>' : ""}</div><div id="staffList" style="margin-top:10px"><p class="note">Loading…</p></div></section>
-    <section class="card" id="pp" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">👪 Parent portal</h2><span class="note">Parents sign in at <b>nestopia.school/parent.html</b></span></div><div id="ppBody" style="margin-top:10px"><p class="note">Loading…</p></div></section>
+    <section class="card" id="plan" style="margin-bottom:16px"><h2 style="margin:0 0 8px">⭐ Your plan</h2><div id="planBody"><p class="note">Loading…</p></div></section>
+    ${on.includes("parents") ? "" : "<!--"}<section class="card" id="pp" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">👪 Parent portal</h2><span class="note">Parents sign in at <b>nestopia.school/parent.html</b></span></div><div id="ppBody" style="margin-top:10px"><p class="note">Loading…</p></div></section>${on.includes("parents") ? "" : "-->"}
     <div class="set">
       <section class="card"><h2>Your school</h2><p style="margin:0"><b>${esc(s.name)}</b>${s.country ? " · " + esc(s.country) : ""}</p>
         <p class="note" style="margin:12px 0 6px">Teachers join with this code:</p><button class="code" id="code" title="Copy the code">${esc(s.join_code || "")}</button>
@@ -117,10 +118,31 @@ const ALL = [["twignest", "TwigNest"], ["grownest", "GrowNest"], ["planning", "P
     document.getElementById("staffList").innerHTML = list.length ? `<div class="tablewrap"><table class="reg" style="width:100%;border-collapse:collapse"><tr><th style="text-align:left">Name</th><th style="text-align:left">Role</th><th style="text-align:left">Teams</th><th style="text-align:left">Status</th></tr>${list.map(x => `<tr><td style="padding:8px 4px;border-top:1px solid var(--line)"><b>${esc(x.full_name || "")}</b><br><span class="note">${esc(x.email || "")}</span></td><td style="border-top:1px solid var(--line)">${esc(R[x.role] || x.role || "")}</td>
       <td style="border-top:1px solid var(--line)"><div class="mods">${x.inclusion_head ? "<span>Inclusion head</span>" : x.inclusion_lead ? "<span>Inclusion team</span>" : ""}${x.safeguarding_lead ? "<span>🔒 Safeguarding lead</span>" : ""}${x.wellbeing_team ? "<span>Wellbeing team</span>" : ""}</div></td>
       <td style="border-top:1px solid var(--line)">${x.active ? '<span class="note">Active</span>' : '<b style="color:#B07A1E">Waiting for approval</b>'}</td></tr>`).join("")}</table></div>` : '<p class="note">No staff yet.</p>'; })();
-  parentPortal(s);
+  if (on.includes("parents") && document.getElementById("ppBody")) parentPortal(s);
+  planCard(s, p);
   document.getElementById("code").onclick = async () => { try { await navigator.clipboard.writeText(s.join_code); toast("Code copied"); } catch (_) {} };
   hubInit("settings");
 })();
+async function planCard(s, me){
+  const box = document.getElementById("planBody"); if (!box) return;
+  const { data: plans, error } = await sb.from("nest_plans").select("*").eq("active", true).order("sort");
+  if (error) { box.innerHTML = '<p class="note">Plans aren’t set up yet.</p>'; return; }
+  const mine = (plans || []).find(x => x.id === s.plan_id), ST = { trial: "Free trial", active: "Active", past_due: "Payment due", cancelled: "Cancelled" };
+  const { data: rq } = await sb.from("plan_requests").select("plan_id,status,created_at").eq("school_id", String(s.id)).eq("status", "pending");
+  const pending = (rq || [])[0];
+  const trialLeft = s.trial_ends ? Math.ceil((new Date(s.trial_ends + "T00:00:00") - new Date()) / 864e5) : null;
+  box.innerHTML = `<p style="margin:0"><b style="font-size:20px">${esc(mine ? mine.name : "No plan chosen yet")}</b> <span class="note">· ${ST[s.subscription_status] || "Free trial"}</span></p>
+    ${(s.subscription_status || "trial") === "trial" && trialLeft != null ? `<p style="margin:6px 0 0;color:${trialLeft < 0 ? "#B4473A" : trialLeft <= 7 ? "#A86C12" : "inherit"}">${trialLeft < 0 ? "Your free trial has ended. Choose a plan below to keep using Nestopia." : `Your free trial ends in <b>${trialLeft} day${trialLeft === 1 ? "" : "s"}</b> (${esc(s.trial_ends)}).`}</p>` : ""}
+    ${s.renews_on ? `<p class="note" style="margin:4px 0 0">Renews on ${esc(s.renews_on)}</p>` : ""}
+    ${pending ? `<p class="note" style="margin:8px 0 0">⏳ You asked to change to <b>${esc(((plans || []).find(x => x.id === pending.plan_id) || {}).name || "another plan")}</b>. The Nestopia team will confirm it soon.</p>` : ""}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px">${(plans || []).map(pl => `<div style="border:2px solid ${pl.id === s.plan_id ? "var(--plum)" : "var(--line)"};border-radius:14px;padding:12px 14px;background:var(--card)">
+      <b>${esc(pl.name)}</b>${pl.highlight ? ' <span class="mods"><span>Most popular</span></span>' : ""}<br><span class="note">${esc(pl.price_text || "")}</span>
+      <ul class="note" style="margin:8px 0;padding-left:18px">${(pl.features || []).map(f => `<li>${esc(f)}</li>`).join("")}</ul>
+      ${pl.id === s.plan_id ? '<b style="color:var(--plum)">✓ Your plan</b>' : me.role === "school_lead" && !pending ? `<button class="btn ghost small" data-req="${pl.id}">Request this plan</button>` : ""}</div>`).join("")}</div>`;
+  box.querySelectorAll("[data-req]").forEach(b => b.onclick = async () => { const note = prompt("Anything we should know? (optional, for example: number of students)", ""); if (note === null) return;
+    const { error: e2 } = await sb.from("plan_requests").insert({ school_id: String(s.id), plan_id: b.dataset.req, requested_by: me.id, note: note.trim() || null });
+    if (e2) return toast(e2.message); toast("Request sent. The Nestopia team will confirm it."); planCard(s, me); });
+}
 async function parentPortal(s){
   const box = document.getElementById("ppBody");
   const D = { reports: ["Report cards (approved comments only)", true], attendance: ["Attendance", true], merits: ["Merits", true], incidents: ["Behaviour incidents", false], calendar: ["School calendar", true], conferences: ["Booking parent conferences", true] };

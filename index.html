@@ -384,6 +384,14 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
 .ovnote .btn{padding:6px 12px;font-size:14px;margin-top:6px}
 @media (max-width:1000px){.ovcards{grid-template-columns:repeat(2,minmax(0,1fr))}.ovgrid{grid-template-columns:1fr}}
 @media (max-width:520px){.ovcards{grid-template-columns:1fr}}
+
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;align-items:stretch}
+.plan{background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:10px}
+.plan.hl{border:2px solid var(--navy,#2A3A5E);box-shadow:0 14px 40px rgba(30,40,80,.12)}
+.plan h3{margin:0;font-size:22px}.plan .price{font-size:18px;font-weight:800;color:var(--navy,#2A3A5E)}
+.plan ul{margin:4px 0 8px;padding-left:20px;color:var(--muted)}.plan li{margin:4px 0}
+.plan .badge{align-self:flex-start;font-size:12px;font-weight:800;border-radius:99px;padding:3px 10px;background:var(--amber-soft,#FBEBD5);color:#8A5A10}
+.nav a{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -426,7 +434,7 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
   <div class="wrap">
     <a class="logo" href="#top" aria-label="Nestopia home"><svg aria-hidden="true"><use href="#bird"/></svg><span><b>Nest<i>op</i>ia</b><small>POWERED BY THINKNEST</small></span></a>
     <nav class="nav" aria-label="Main">
-      <a href="#top">Home</a><a href="#ecosystem">Our Ecosystem</a><a href="#features">Features</a><a href="#family">About ThinkNest</a><a href="#founders">Founders</a><a href="#" data-demo>Contact</a>
+      <a href="#top">Home</a><a href="#ecosystem">Ecosystem</a><a href="#inside">Features</a><a href="#pricing">Plans</a><a href="#family">About</a><a href="#founders">Founders</a><a href="#" data-demo>Contact</a>
     </nav>
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="siteTop" id="menuBtn">Menu</button>
     <div class="top-acts"><button class="btn text" type="button" data-auth="signin">Sign in</button>
@@ -539,37 +547,18 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
 
 <section class="band inside" id="inside">
   <div class="wrap">
-    <div class="sec-head center reveal"><p class="eyebrow">A LOOK INSIDE</p>
-      <h2 class="serif">Your School. A Clearer View.</h2>
-      <p>Everything you need to know, exactly where you need it.</p><p class="demo">Illustrative demo interface and sample data, not live school information.</p></div>
-    <div class="app reveal" aria-label="Illustrative example of the Nestopia School Hub">
-      <div class="chrome"><i style="background:#F4B9A6"></i><i style="background:#F2D89A"></i><i style="background:#A8DCC3"></i>&nbsp;&nbsp;NESTOPIA / SCHOOL HUB<span class="demo-tag">Demo preview</span></div>
-      <div class="grid">
-        <nav aria-hidden="true">
-          <span class="on"><svg><use href="#i-home"/></svg>Overview</span><span><svg><use href="#i-users"/></svg>Students</span><span><svg><use href="#i-check"/></svg>Attendance</span>
-          <span><svg><use href="#i-book"/></svg>Planning</span><span><svg><use href="#i-clip"/></svg>Assessments</span><span><svg><use href="#i-sprout"/></svg>GrowNest</span>
-          <span><svg><use href="#i-chart"/></svg>TwigNest</span><span><svg><use href="#i-file"/></svg>Reports</span><span><svg><use href="#i-cal"/></svg>Calendar</span><span><svg><use href="#i-gear"/></svg>Settings</span>
-        </nav>
-        <div class="main">
-          <div class="welcome"><div><small>YOUR CONNECTED SCHOOL</small><h3>Welcome back, Sarah!</h3></div><em>● Illustrative demo</em></div>
-          <div class="kpis">
-            <div class="kpi"><small>Attendance today</small><b>96%</b><em style="color:var(--green)">↗ Steady this week</em></div>
-            <div class="kpi"><small>Active students</small><b>1,240</b><em style="color:var(--muted);font-weight:400">Across your school</em></div>
-            <div class="kpi"><small>Upcoming observations</small><b>8</b><em style="color:var(--lav)">In GrowNest</em></div>
-            <div class="kpi"><small>Pending planning tasks</small><b>5</b><em style="color:var(--amber)">Ready to review</em></div>
-          </div>
-          <div class="two">
-            <div class="box"><h4>Student progress <small>Sample overview</small></h4>
-              <svg viewBox="0 0 480 170"><path d="M0 60H480M0 105H480M0 150H480" stroke="var(--line)"/><path class="draw" d="M10 140c30-10 50-6 80-14s50-40 90-34 40-2 70-24 50-20 80-10 30-24 60-28 20 14 60-14" fill="none" stroke="#6AA9E0" stroke-width="5" stroke-linecap="round"/><path class="draw d2" d="M10 156c40-14 70-10 100-14s40-16 80-12 40-14 80-12 50-6 80-18 30 6 50-10 30 4 46-14" fill="none" stroke="#A8DCC3" stroke-width="5" stroke-linecap="round"/></svg>
-              <div class="legend"><span><i style="background:#6AA9E0"></i>Attainment</span><span><i style="background:#A8DCC3"></i>Engagement</span></div></div>
-            <div style="display:grid;gap:10px;align-content:start">
-              <div class="box"><h4>Upcoming school events</h4><ul><li>📅 Friday · Community day</li><li>📅 Next week · Planning review</li></ul></div>
-              <div class="box"><h4>Recent notifications</h4><p>Observation feedback is ready to review.</p></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div class="sec-head reveal"><p class="eyebrow">WHAT’S INSIDE</p><h2 class="serif">Everything Your School Needs. In One Nest.</h2>
+      <p>Each part works on its own, and together they give every teacher, leader and family a clearer view.</p></div>
+    <div class="feats"><div class="feat reveal"><div class="ico" style="color:var(--blue-2)"><svg><use href="#i-users"/></svg></div><p class="eyebrow" style="margin:0 0 4px;font-size:11px">Everyday school</p><h3>Students</h3><p>A profile for every student: progress, needs, attendance, behaviour and wellbeing in one place.</p></div><div class="feat reveal"><div class="ico" style="color:var(--green)"><svg><use href="#i-check"/></svg></div><p class="eyebrow" style="margin:0 0 4px;font-size:11px">Everyday school</p><h3>Attendance</h3><p>A 30-second daily register, with today’s absences and students below 95%.</p></div><div class="feat reveal"><div class="ico" style="color:var(--amber)"><svg><use href="#i-star"/></svg></div><p class="eyebrow" style="margin:0 0 4px;font-size:11px">Everyday school</p><h3>Behaviour</h3><p>Merits for the positives, incidents followed up, and patterns by class.</p></div><div class="feat reveal"><div class="ico" style="color:var(--lav)"><svg><use href="#i-cal"/></svg></div><p class="eyebrow" style="margin:0 0 4px;font-size:11px">Everyday school</p><h3>Calendar</h3><p>One school calendar for events, assessments, meetings and reviews.</p></div><div class="feat reveal"><div class="ico" style="color:var(--lav)"><svg><use href="#i-chart"/></svg></div><p class="eyebrow" style="margin:0 0 4px;font-size:11px">Teaching and learning</p><h3>TwigNest</h3><p>Attainment and progress by subject, class and group, against curriculum standards.</p></div><div class="feat reveal"><div class="ico" style="color:var(--blue-2)"><svg><use href="#i-book"/></svg></div><p class="eyebrow" style="margin:0 0 4px;font-size:11px">Teaching and learning</p><h3>Planning and reports</h3><p>Curriculum coverage, report comments by level, and report cards ready to print.</p></div><div class="feat reveal"><div class="ico" style="color:var(--green)"><svg><use href="#i-sprout"/></svg></div><p class="eyebrow" style="margin:0 0 4px;font-size:11px">Teaching and learning</p><h3>GrowNest</h3><p>Lesson observations, learning walks, appraisals and teacher support plans.</p></div><div class="feat reveal"><div class="ico" style="color:var(--rose)"><svg><use href="#i-heart"/></svg></div><p class="eyebrow" style="margin:0 0 4px;font-size:11px">Care and support</p><h3>Inclusion</h3><p>The register, referrals and observations, online IEPs and progress by group.</p></div><div class="feat reveal"><div class="ico" style="color:var(--amber)"><svg><use href="#i-spark"/></svg></div><p class="eyebrow" style="margin:0 0 4px;font-size:11px">Care and support</p><h3>Wellbeing</h3><p>Daily check-ins, concerns, and safeguarding seen only by the safeguarding lead.</p></div><div class="feat reveal"><div class="ico" style="color:var(--rose)"><svg><use href="#i-home"/></svg></div><p class="eyebrow" style="margin:0 0 4px;font-size:11px">Families</p><h3>Parent portal</h3><p>News, messages with teachers, report cards, attendance and merits, in English and Arabic.</p></div><div class="feat reveal"><div class="ico" style="color:var(--blue-2)"><svg><use href="#i-users"/></svg></div><p class="eyebrow" style="margin:0 0 4px;font-size:11px">Families</p><h3>Parent conferences</h3><p>Parents book a time with each teacher. Teachers get a summary of every child.</p></div><div class="feat reveal"><div class="ico" style="color:var(--muted)"><svg><use href="#i-file"/></svg></div><p class="eyebrow" style="margin:0 0 4px;font-size:11px">Leadership</p><h3>Evidence packs</h3><p>Inspection evidence for every framework standard, ready as PowerPoint or Word.</p></div></div>
+  </div>
+</section>
+
+<section class="band" id="pricing">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">PLANS</p><h2 class="serif">Choose What Your School Needs.</h2>
+      <p>Start with a free 30-day trial. Every plan includes setup help, training for your staff and support in English and Arabic.</p></div>
+    <div class="plans" id="plansList"><p style="text-align:center;color:var(--muted)">Loading plans…</p></div>
+    <p style="text-align:center;margin-top:18px"><button class="btn" type="button" data-demo>Request a demo</button></p>
   </div>
 </section>
 
@@ -705,7 +694,7 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
 </template>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=9"></script>
+<script src="hub.js?v=10"></script>
 <script src="twcalc.js?v=3"></script>
 <script src="getstarted.js?v=1"></script>
 <script>
@@ -722,7 +711,10 @@ const MODULES = [
   { id: "planning",  name: "Planning",       tint: "var(--blue-soft)",  icon: "i-book",   colour: "var(--blue-2)", desc: "The curriculum coverage map: what each grade has taught and assessed.", url: "planning.html" },
   { id: "inclusion", name: "Inclusion",      tint: "var(--blue-soft)",  icon: "i-heart",  colour: "var(--rose)",   desc: "The inclusion register and support plans: students of determination, gifted and talented and EAL, with targets and reviews.", url: "inclusion.html" },
   { id: "wellbeing", name: "Wellbeing",      tint: "var(--blue-soft)",  icon: "i-spark",  colour: "var(--amber)",  desc: "Short daily check-ins, so the right adult hears when a student needs to talk.", url: "wellbeing.html" },
-  { id: "evidence",  name: "Evidence packs", tint: "var(--blue-soft)",  icon: "i-file",   colour: "var(--muted)",  desc: "Inspection evidence for each framework standard, ready to share as PowerPoint or Word.", url: "evidence.html" }
+  { id: "evidence",  name: "Evidence packs", tint: "var(--blue-soft)",  icon: "i-file",   colour: "var(--muted)",  desc: "Inspection evidence for each framework standard, ready to share as PowerPoint or Word.", url: "evidence.html" },
+  { id: "behaviour",   name: "Behaviour",          tint: "var(--blue-soft)", icon: "i-star", colour: "var(--amber)", desc: "Merits and incidents, with patterns by class.", url: "behaviour.html" },
+  { id: "conferences", name: "Parent conferences", tint: "var(--blue-soft)", icon: "i-users", colour: "var(--blue-2)", desc: "Parents book times with teachers using a code.", url: "conferences.html" },
+  { id: "parents",     name: "Parent portal",      tint: "var(--blue-soft)", icon: "i-home", colour: "var(--rose)", desc: "Parents see news, messages, reports, attendance and merits.", url: "parent.html" },
 ];
 const ROLES = { admin: "Admin", school_lead: "School leader", coordinator: "Coordinator", teacher: "Teacher", checker: "Buddy checker" };
 
@@ -771,6 +763,14 @@ function landingView(){
       if (error) return show(msg, "Your request couldn’t be sent: " + friendly(error), "err");
       f.reset(); show(msg, "Thank you. Your request has been sent, and we’ll be in touch soon.", "ok");
     }); };
+  // plans from the admin's plan list
+  (async () => { const box = document.getElementById("plansList"); if (!box) return;
+    const { data, error } = await sb.from("nest_plans").select("name,tagline,price_text,features,highlight,sort").eq("active", true).order("sort");
+    if (error || !data || !data.length) { box.innerHTML = '<p style="text-align:center;color:var(--muted)">Contact us for plans and prices.</p>'; return; }
+    box.innerHTML = data.map(p => `<div class="plan ${p.highlight ? "hl" : ""}">${p.highlight ? '<span class="badge">Most popular</span>' : ""}<h3 class="serif">${esc(p.name)}</h3>${p.tagline ? `<p style="margin:0;color:var(--muted)">${esc(p.tagline)}</p>` : ""}<p class="price" style="margin:0">${esc(p.price_text || "Price on request")}</p>
+      <ul>${(p.features || []).map(f => `<li>${esc(f)}</li>`).join("")}</ul><button class="btn ${p.highlight ? "" : "light"}" type="button" data-demo-plan="${esc(p.name)}" style="margin-top:auto">Request a demo</button></div>`).join("");
+    box.querySelectorAll("[data-demo-plan]").forEach(b => b.addEventListener("click", () => { show(msg, ""); f.hidden = false; const m = document.getElementById("d_msg"); if (m && !m.value) m.value = "We’re interested in the " + b.dataset.demoPlan + " plan."; dlg.showModal(); }));
+  })();
   const yr = document.getElementById("yr"); if (yr) yr.textContent = new Date().getFullYear();
   if (location.hash && location.hash.length > 1) { const t = document.getElementById(location.hash.slice(1)); if (t) setTimeout(() => t.scrollIntoView(), 50); }
 }
@@ -1035,6 +1035,9 @@ async function adminView(){
   const { data: schools, error } = await sb.from("schools").select("*").order("created_at", { ascending: false });
   if (error) return show(app, friendly(error), "err");
   const { data: people } = await sb.from("profiles").select("id,full_name,email,school_id,active");
+  const PL = ((await sb.from("nest_plans").select("*").order("sort")).data) || [];
+  const RQ = ((await sb.from("plan_requests").select("*").eq("status", "pending").order("created_at")).data) || [];
+  const SUB = { trial: "Free trial", active: "Active (paid)", past_due: "Payment due", cancelled: "Cancelled" };
   const P = people || [], byId = id => P.find(x => x.id === id);
   const staff = sid => P.filter(x => x.school_id === sid && x.active).length;
   const waiting = schools.filter(s => s.status === "pending"), others = schools.filter(s => s.status !== "pending");
@@ -1053,11 +1056,41 @@ async function adminView(){
       <div class="switches"><h4>Parts switched on for this school</h4><div class="sw">
         ${MODULES.map(m => `<label class="toggle"><span>${esc(m.name)}<small>${m.url ? "Ready" : "Coming soon"}</small></span>
           <input type="checkbox" role="switch" value="${m.id}" ${on.includes(m.id) ? "checked" : ""} aria-label="${esc(m.name)} for ${esc(s.name)}"></label>`).join("")}</div>
-        <div class="saved" aria-live="polite"></div></div></article>`; };
+        <div class="saved" aria-live="polite"></div></div>
+      ${PL.length ? `<div class="switches" style="border-top:1px solid var(--line);margin-top:12px;padding-top:12px"><h4>Plan and subscription</h4>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:end">
+          <label class="note" style="display:grid;gap:4px">Plan <select data-plan>${PL.map(p => `<option value="${p.id}" ${s.plan_id === p.id ? "selected" : ""}>${esc(p.name)}</option>`).join("")}${s.plan_id ? "" : '<option value="" selected>No plan yet</option>'}</select></label>
+          <label class="note" style="display:grid;gap:4px">Status <select data-sub>${Object.entries(SUB).map(([k, v]) => `<option value="${k}" ${(s.subscription_status || "trial") === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+          <label class="note" style="display:grid;gap:4px">Trial ends <input type="date" data-te value="${esc(s.trial_ends || "")}"></label>
+          <label class="note" style="display:grid;gap:4px">Renews on <input type="date" data-rn value="${esc(s.renews_on || "")}"></label>
+          <button class="btn small" data-saveplan>Save plan</button></div>
+        <p class="note" style="margin:6px 0 0">Saving a plan switches on exactly the parts in that plan.${s.trial_ends && (s.subscription_status || "trial") === "trial" ? ` Trial ${new Date(s.trial_ends) < new Date() ? "<b style='color:#B4473A'>ended</b>" : "ends"} ${esc(s.trial_ends)}.` : ""}</p></div>` : ""}</article>`; };
   app.innerHTML = `<div class="phead"><div><h1 class="ptitle serif">Schools</h1><p class="note">Approve schools and choose which parts of Nestopia each one uses.</p></div>
       <div class="summary"><span><b>${schools.length}</b> school${schools.length === 1 ? "" : "s"}</span><span><b>${waiting.length}</b> waiting for approval</span></div></div>
     ${!schools.length ? `<div class="panel"><p class="note" style="margin:0">No schools have registered yet. When a school leader registers, their school appears here for you to approve.</p></div>` : ""}
+    ${RQ.length ? `<div class="panel" style="border-left:5px solid #A86C12;margin-bottom:16px"><h2 style="margin:0 0 8px">Plan change requests (${RQ.length})</h2>${RQ.map(r => { const s = schools.find(x => String(x.id) === String(r.school_id)) || {}, p = PL.find(x => x.id === r.plan_id) || {};
+      return `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line)"><span><b>${esc(s.name || "A school")}</b> would like <b>${esc(p.name || "a plan")}</b>${r.note ? ` · “${esc(r.note)}”` : ""} <span class="note">· ${new Date(r.created_at).toLocaleDateString("en-GB")}</span></span><span><button class="btn small" data-rqok="${r.id}">Approve</button> <button class="btn text small" data-rqno="${r.id}">Decline</button></span></div>`; }).join("")}</div>` : ""}
+    <details class="panel" style="margin-bottom:16px"><summary style="cursor:pointer;font-weight:800;font-size:18px">Plans and prices (${PL.length})</summary><p class="note">These show on the landing page. Each plan switches on its parts when you choose it for a school.</p><div id="plansBox"></div><button class="btn small" id="addPlan" style="margin-top:8px">+ Add a plan</button></details>
     ${waiting.map(card).join("")}${others.map(card).join("")}`;
+  // plans editor
+  const pbox = document.getElementById("plansBox");
+  const planForm = p => `<form class="panel" data-pid="${p.id || ""}" style="margin:10px 0;background:var(--bg,#F6F8FC)"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+      <label class="note" style="display:grid;gap:4px">Name <input name="name" value="${esc(p.name || "")}" required></label><label class="note" style="display:grid;gap:4px">Price (as shown) <input name="price" value="${esc(p.price_text || "")}" placeholder="AED 20 per student a year"></label>
+      <label class="note" style="display:grid;gap:4px">Short description <input name="tag" value="${esc(p.tagline || "")}"></label><label class="note" style="display:grid;gap:4px">Order <input name="sort" type="number" value="${p.sort || 0}"></label></div>
+    <label class="note" style="display:grid;gap:4px;margin-top:8px">What’s included (one per line, shown on the landing page) <textarea name="feat" rows="4">${esc((p.features || []).join("\n"))}</textarea></label>
+    <p class="note" style="margin:8px 0 4px">Parts switched on with this plan:</p><div style="display:flex;flex-wrap:wrap;gap:10px">${MODULES.map(m => `<label style="display:flex;gap:5px;align-items:center;font-weight:700"><input type="checkbox" name="mod" value="${m.id}" ${(p.modules || []).includes(m.id) ? "checked" : ""}> ${esc(m.name)}</label>`).join("")}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px"><label style="display:flex;gap:5px;align-items:center"><input type="checkbox" name="hl" ${p.highlight ? "checked" : ""}> Highlight as most popular</label><label style="display:flex;gap:5px;align-items:center"><input type="checkbox" name="tr" ${p.trial ? "checked" : ""}> Use for new schools’ free trial</label><label style="display:flex;gap:5px;align-items:center"><input type="checkbox" name="ac" ${p.active !== false ? "checked" : ""}> Show on the landing page</label></div>
+    <p style="margin:10px 0 0"><button class="btn small">Save plan</button> <span class="note" data-pmsg></span></p></form>`;
+  pbox.innerHTML = PL.map(planForm).join("");
+  document.getElementById("addPlan").onclick = () => { pbox.insertAdjacentHTML("beforeend", planForm({ active: true })); bindPlans(); };
+  const bindPlans = () => pbox.querySelectorAll("form").forEach(f => f.onsubmit = async e => { e.preventDefault();
+    const row = { name: f.name.value.trim(), price_text: f.price.value.trim() || null, tagline: f.tag.value.trim() || null, sort: +f.sort.value || 0, features: f.feat.value.split("\n").map(x => x.trim()).filter(Boolean), modules: [...f.querySelectorAll("input[name=mod]:checked")].map(x => x.value), highlight: f.hl.checked, trial: f.tr.checked, active: f.ac.checked };
+    const { error } = f.dataset.pid ? await sb.from("nest_plans").update(row).eq("id", f.dataset.pid) : await sb.from("nest_plans").insert(row);
+    f.querySelector("[data-pmsg]").textContent = error ? "Not saved: " + friendly(error) : "Saved. Schools on this plan get these parts when you next save their plan."; });
+  bindPlans();
+  app.querySelectorAll("[data-rqok],[data-rqno]").forEach(b => b.onclick = () => busy(b, async () => { const id = b.dataset.rqok || b.dataset.rqno, r = RQ.find(x => x.id === id);
+    if (b.dataset.rqok) { const { error } = await sb.rpc("set_school_plan", { p_school: String(r.school_id), p_plan: r.plan_id, p_status: null, p_trial_ends: null, p_renews: null, p_note: null }); if (error) return alert(friendly(error)); }
+    await sb.from("plan_requests").update({ status: b.dataset.rqok ? "approved" : "declined" }).eq("id", id); adminView(); }));
   app.querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => {
     try { await navigator.clipboard.writeText(b.dataset.copy); const t = b.textContent; b.textContent = "Copied"; setTimeout(() => { b.textContent = t; }, 1200); } catch (_) {} });
   app.querySelectorAll(".school").forEach(art => {
@@ -1065,7 +1098,14 @@ async function adminView(){
     art.querySelectorAll("[data-st]").forEach(b => b.onclick = () => busy(b, async () => {
       if (b.dataset.st === "suspended" && !confirm("Suspend this school? Its staff lose access until you reactivate it.")) return;
       const { error } = await sb.rpc("set_school_status", { p_school: sid, p_status: b.dataset.st });
-      if (error) return alert(friendly(error)); adminView(); }));
+      if (error) return alert(friendly(error));
+      const sc = schools.find(x => String(x.id) === String(sid)), tp = PL.find(p => p.trial) || PL[PL.length - 1];
+      if (b.dataset.st === "active" && sc && !sc.plan_id && tp) await sb.rpc("set_school_plan", { p_school: String(sid), p_plan: tp.id, p_status: "trial", p_trial_ends: null, p_renews: null, p_note: null });
+      adminView(); }));
+    const sp = art.querySelector("[data-saveplan]");
+    if (sp) sp.onclick = () => busy(sp, async () => { const pid = art.querySelector("[data-plan]").value; if (!pid) return alert("Choose a plan first.");
+      const { error } = await sb.rpc("set_school_plan", { p_school: String(sid), p_plan: pid, p_status: art.querySelector("[data-sub]").value, p_trial_ends: art.querySelector("[data-te]").value || null, p_renews: art.querySelector("[data-rn]").value || null, p_note: null });
+      if (error) return alert(friendly(error)); adminView(); });
     art.querySelectorAll(".toggle input").forEach(c => c.onchange = async () => {
       const mods = [...art.querySelectorAll(".toggle input:checked")].map(x => x.value);
       note.textContent = "Saving…";
