@@ -209,11 +209,11 @@ function render(){
       <div class="metric"><span>Reviews due in 14 days</span><b style="color:${due ? "var(--amber)" : "var(--plum)"}">${due}</b></div>
       <div class="metric"><span>SoD without an active plan</span><b style="color:${noPlan ? "var(--red)" : "var(--plum)"}">${noPlan}</b></div>
     </div>
-    <div class="tabs" role="tablist">${[["register", "Register"], ["reviews", "Reviews due"], ...(isLead ? [["team", "Inclusion team"]] : [])].map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}</button>`).join("")}</div>
+    <div class="tabs" role="tablist">${[["register", "Register"], ["reviews", "Reviews due"], ["groups", "Progress by group"], ...(isLead ? [["team", "Inclusion team"]] : [])].map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}</button>`).join("")}</div>
     <div id="pane"></div>`;
   document.getElementById("add").onclick = () => openEntry(null);
   app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; render(); });
-  ({ register: registerPane, reviews: reviewsPane, team: teamPane })[ui.tab]();
+  ({ register: registerPane, reviews: reviewsPane, groups: groupsPane, team: teamPane })[ui.tab]();
 }
 
 function registerPane(){
@@ -602,6 +602,119 @@ function downloadIEP(p, ver, lang){
   toast("Downloaded. It opens in Word, where you can edit or save it as PDF.");
 }
 
+
+/* ---------- Progress by group (uses TwigNest data; the calculations are copied from twignest/school.js, keep them the same) ---------- */
+let TW = null; // { C, R, ST, LV, TG, studs }
+async function loadTwig(){
+  if (TW) return TW;
+  const C = window.SETUP; if (!C || !C.subjects) throw new Error("Finish the school setup in TwigNest first (grades, subjects and grading).");
+  const sIds = new Set(studs.map(s => String(s.id))), R = {}, ST = {}, LV = {}, TG = {};
+  const all = async (t, cols) => { const out = []; for (let f = 0; ; f += 1000) { const { data, error } = await sb.from(t).select(cols).range(f, f + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; } return out; };
+  (await all("results", "student_id,col_id,term,value")).forEach(x => { if (!sIds.has(String(x.student_id))) return; const a = R[x.student_id] = R[x.student_id] || {}; (a[x.col_id] = a[x.col_id] || {})[x.term] = x.value; });
+  (await all("objective_status", "student_id,obj_id,status")).forEach(x => { if (sIds.has(String(x.student_id))) (ST[x.student_id] = ST[x.student_id] || {})[x.obj_id] = x.status; });
+  (await all("student_levels", "student_id,strand_id,term,level")).forEach(x => { if (!sIds.has(String(x.student_id))) return; const a = LV[x.student_id] = LV[x.student_id] || {}; (a[x.strand_id] = a[x.strand_id] || {})[x.term] = x.level; });
+  (await all("taught", "class_id,obj_id")).forEach(x => (TG[x.class_id] = TG[x.class_id] || new Set()).add(x.obj_id));
+  TW = { C, R, ST, LV, TG }; return TW;
+}
+function twCalc(){
+  const { C, R, ST, LV, TG } = TW, esc2 = esc, clamp = n => Math.max(0, Math.min(1, n));
+  const esc_ = esc2;
+  const DEF_OS = [{ code: "s", label: "Secure", short: "✓", kind: "secure" }, { code: "n", label: "Not yet secure", short: "!", kind: "notyet" }, { code: "e", label: "Exceeding", short: "+", kind: "exceed" }];
+  const OS = () => (C && C.objScale && C.objScale.length ? C.objScale : DEF_OS);
+  const osOf = v => OS().find(x => x.code === v) || DEF_OS.find(x => x.code === v) || { code: v, label: v, short: "?", kind: "secure" };
+  const credit = v => ({ notyet: 0, partial: .5, secure: 1, exceed: 1 })[osOf(v).kind] ?? 1;
+  const isEx = v => osOf(v).kind === "exceed", isGap = v => !!v && credit(v) < 1;
+  const _dc = v => v ? ({ notyet: "n", partial: "p", secure: "s", exceed: "e" })[osOf(v).kind] : "";
+  const _dt = v => v ? esc_(osOf(v).short) : "";
+  const defCode = () => (OS().find(x => x.kind === "secure") || OS()[0]).code;
+  const cycle = v => { const order = [defCode(), ...OS().map(x => x.code).filter(c => c !== defCode())], i = order.indexOf(v); return v === "" || i < 0 ? order[0] : (order[i + 1] ?? ""); };
+  const strands = () => { const o = []; C.subjects.forEach(sb => sb.strands.forEach(st => o.push([sb, st]))); return o; };
+  const clsOf = s => classes.find(c => String(c.id) === String(s.class_id));
+  const objsFor = (c, gid, t) => ((c.objectives || {})[gid] || [])[t] || [];
+  const val = (sid, cid, k) => ((R[sid] || {})[cid] || {})[k];
+  const stat = (sid, oid) => (ST[sid] || {})[oid] || "";
+  function levelFromPct(p) { let lv = 0; C.gradeMin.forEach((x, i) => { if (p >= x) lv = i; }); return lv; }
+  function colEval(s, c, k) {
+    if (c.type === "comment") return null;
+    if (c.type === "objectives") {
+      if (k === "b") return null; const cl = clsOf(s), tg = TG[cl.id] || new Set(); let a = 0, sec = 0, ex = 0;
+      objsFor(c, cl.grade_id, +k).filter(o => tg.has(o.id)).forEach(o => { const v = stat(s.id, o.id); if (v) { a++; sec += credit(v); if (isEx(v)) ex++; } });
+      if (!a) return null; const p = sec / a * 100, e = ex / a * 100; return { band: p < c.belowPct ? -1 : (p >= 90 && e >= c.abovePct) ? 1 : 0, norm: clamp(p / 100) };
+    }
+    const v = val(s.id, c.id, k); if (v === undefined || v === "") return null;
+    const pos = C.gradePos, gm = C.gradeMin, iS = (gm[pos.indexOf("inline")] ?? 50) / 100, aS = (gm[pos.indexOf("above")] ?? 90) / 100;
+    const piece = (x, lo, hi, ls, hs) => x < lo ? iS * clamp((x - (lo - ls)) / ls) * .999 : x < hi ? iS + (aS - iS) * (x - lo) / (hi - lo) : aS + (1 - aS) * clamp((x - hi) / hs);
+    if (c.type === "list") { const i = c.options.indexOf(v); if (i < 0) return null; const n = c.options.length;
+      return { band: i < c.below ? -1 : i >= c.above ? 1 : 0, norm: i < c.below ? iS * (i + .5) / c.below : i < c.above ? iS + (aS - iS) * (i - c.below + .5) / (c.above - c.below) : aS + (1 - aS) * (i - c.above + .5) / (n - c.above) }; }
+    const n = +v; if (isNaN(n)) return null;
+    if (c.type === "standardised") return { band: n < c.below ? -1 : n >= c.above ? 1 : 0, norm: piece(n, c.below, c.above, 30, 15) };
+    if (c.type === "readingAge") return { band: n < c.below ? -1 : n > c.above ? 1 : 0, norm: piece(n, c.below, c.above + .0001, 1.5, 1.5) };
+    return { band: n < c.below ? -1 : n >= c.above ? 1 : 0, norm: clamp(n / c.max) };
+  }
+  function strandEval(s, st, k) {
+    const ev = st.cols.filter(c => k === "b" ? c.baseline : !c.baseline).map(c => colEval(s, c, k)).filter(Boolean); if (!ev.length) return null;
+    const pct = ev.reduce((a, x) => a + x.norm, 0) / ev.length * 100, sug = levelFromPct(pct); return { band: C.gradePos[sug] || "inline", sug };
+  }
+  function level(s, st, k) { const t = ((LV[s.id] || {})[st.id] || {})[k]; if (t !== undefined && t !== null) return t; const e = strandEval(s, st, k); return e ? e.sug : null; }
+  function progress(s, st, t) { const b = level(s, st, "b"), c = level(s, st, String(t)); if (b == null || c == null) return null; const steps = c - b, exp = C.steps * (t + 1) / C.terms.length; return { band: steps < exp - .5 ? "below" : steps > exp + .5 ? "above" : "inline" }; }
+  function onTrack(s, st, t) { const b = level(s, st, "b"), c = level(s, st, String(t)); if (b == null || c == null) return null; const max = C.scale.length - 1; return Math.min(max, Math.round(b + (c - b) / (t + 1) * C.terms.length)) >= Math.min(max, b + C.steps); }
+  function avgBand(s, list, k) { const bs = list.map(st => strandEval(s, st, k)).filter(Boolean).map(e => ({ below: -1, inline: 0, above: 1 })[e.band]); if (!bs.length) return null; const b = bs.reduce((a, x) => a + x, 0) / bs.length; return b < -.33 ? "below" : b > .33 ? "above" : "inline"; }
+  function avgProg(s, list, t) { const ps = list.map(st => progress(s, st, t)).filter(Boolean).map(p => ({ below: -1, inline: 0, above: 1 })[p.band]); if (!ps.length) return null; const b = ps.reduce((a, x) => a + x, 0) / ps.length; return b < -.33 ? "below" : b > .33 ? "above" : "inline"; }
+
+
+  return { strands, avgBand, avgProg, C };
+}
+function groupsPane(){
+  const pane = document.getElementById("pane");
+  pane.innerHTML = '<div class="card"><p class="note">Working out attainment and progress from TwigNest…</p></div>';
+  loadTwig().then(() => drawGroups()).catch(e => { pane.innerHTML = `<div class="card"><div class="msg">${esc(e.message || e)}</div></div>`; });
+}
+function drawGroups(){
+  const pane = document.getElementById("pane"), K = twCalc(), C = K.C;
+  ui.gTerm = ui.gTerm ?? 0; ui.gGrade = ui.gGrade || "all"; ui.gSub = ui.gSub || "all";
+  const sts = ui.gSub === "all" ? K.strands().map(p => p[1]) : (C.subjects.find(s => s.id === ui.gSub || s.name === ui.gSub) || { strands: [] }).strands;
+  const inGrade = s => ui.gGrade === "all" || (cls(s.class_id) || {}).grade_id === ui.gGrade;
+  const base = studs.filter(inGrade), onReg = s => { const r = regOf(s.id); return r && r.active !== false; };
+  const has = (s, f) => { const r = regOf(s.id); return !!(r && r.active !== false && f(r)); };
+  const rows = [["All students", base], ["Not on the register", base.filter(s => !onReg(s))], ["Students of determination", base.filter(s => has(s, r => (r.categories || []).includes("sod")))],
+    ["Gifted and talented", base.filter(s => has(s, r => (r.categories || []).includes("gt")))], ["EAL", base.filter(s => has(s, r => (r.categories || []).includes("eal")))]];
+  const sub = [];
+  SOD_NEEDS.forEach(n => { const l = base.filter(s => has(s, r => (r.sod_needs || []).includes(n))); if (l.length) sub.push(["SoD: " + n, l]); });
+  Object.entries(LEVELS).forEach(([k, v]) => { const l = base.filter(s => has(s, r => r.support_level === k)); if (l.length) sub.push(["Support: " + v[1].split(" (")[0], l]); });
+  EAL_STAGES.forEach(n => { const l = base.filter(s => has(s, r => r.eal_stage === n)); if (l.length) sub.push(["EAL: " + n, l]); });
+  const k = String(ui.gTerm);
+  const stat = list => { const a = { below: 0, inline: 0, above: 0 }, p = { below: 0, inline: 0, above: 0 }; let an = 0, pn = 0;
+    list.forEach(s => { const b = K.avgBand(s, sts, k); if (b) { a[b]++; an++; } const g = K.avgProg(s, sts, +ui.gTerm); if (g) { p[g]++; pn++; } });
+    return { n: list.length, an, pn, inl: an ? Math.round((a.inline + a.above) / an * 100) : null, abv: an ? Math.round(a.above / an * 100) : null, prog: pn ? Math.round((p.inline + p.above) / pn * 100) : null, a, p }; };
+  const all = stat(rows[0][1]);
+  const gap = (x, y) => x == null || y == null ? "" : `<span class="note" style="color:${x - y < -10 ? "var(--red)" : x - y > 10 ? "var(--sage)" : "var(--muted)"};font-weight:800"> (${x - y >= 0 ? "+" : ""}${x - y})</span>`;
+  const bar = (o, n) => { const w = x => n ? o[x] / n * 100 : 0; return `<div class="bar" style="min-width:110px"><i style="width:${w("below")}%;background:var(--red)"></i><i class="a" style="width:${w("inline")}%"></i><i style="width:${w("above")}%;background:var(--plum)"></i></div>`; };
+  const tr = ([name, list], isAll) => { const s = stat(list); return `<tr${isAll ? ' style="font-weight:800"' : ""}><td>${esc(name)}</td><td>${s.n}</td><td>${s.inl == null ? "–" : s.inl + "%" + (isAll ? "" : gap(s.inl, all.inl))}${bar(s.a, s.an)}</td><td>${s.abv == null ? "–" : s.abv + "%"}</td><td>${s.prog == null ? "–" : s.prog + "%" + (isAll ? "" : gap(s.prog, all.prog))}${bar(s.p, s.pn)}</td></tr>`; };
+  // plan targets achieved, by need
+  const tgt = cat => { const ps = plans.filter(p => { const r = regOf(p.student_id); return r && (r.categories || []).includes(cat) && inGrade(stud(p.student_id) || {}); }); const ts = targets.filter(t => ps.some(p => String(p.id) === String(t.plan_id))); return ts.length ? `${ts.filter(t => t.progress === "a").length} of ${ts.length} (${Math.round(ts.filter(t => t.progress === "a").length / ts.length * 100)}%)` : "–"; };
+  const grades = (C.grades || []).filter(g => classes.some(c => c.grade_id === g.id));
+  pane.innerHTML = `<div class="card"><h2>Attainment and progress by group</h2>
+    <p class="note">From TwigNest. Attainment is against curriculum standards; progress is since the baseline. The number in brackets is the gap with all students, in percentage points (red when a group is more than 10 points behind).</p>
+    <div class="row" style="margin:10px 0 14px"><select id="gT" aria-label="Term">${C.terms.map((t, i) => `<option value="${i}" ${+ui.gTerm === i ? "selected" : ""}>${esc(t)}</option>`).join("")}</select>
+      <select id="gG" aria-label="Grade"><option value="all">All grades</option>${grades.map(g => `<option value="${esc(g.id)}" ${ui.gGrade === g.id ? "selected" : ""}>${esc(g.name)}</option>`).join("")}</select>
+      <select id="gS" aria-label="Subject"><option value="all">All subjects</option>${C.subjects.map(s => `<option value="${esc(s.id || s.name)}" ${ui.gSub === (s.id || s.name) ? "selected" : ""}>${esc(s.name)}</option>`).join("")}</select>
+      <button class="btn ghost small" id="gWord">⬇ Word (for evidence)</button></div>
+    <div class="tablewrap"><table class="reg" id="gTable"><tr><th>Group</th><th>Students</th><th>In line or above</th><th>Above</th><th>Expected progress or better</th></tr>
+      ${rows.map((r, i) => tr(r, i === 0)).join("")}
+      ${sub.length ? `<tr><td colspan="5" style="padding-top:16px"><b>More detail</b></td></tr>` + sub.map(r => tr(r, false)).join("") : ""}</table></div>
+    <div class="legend"><span><i style="background:var(--red)"></i>Below</span><span><i style="background:var(--sage)"></i>In line or expected</span><span><i style="background:var(--plum)"></i>Above or better than expected</span></div></div>
+    <div class="card"><h2>Support plan targets achieved</h2><div class="metrics" style="margin:0"><div class="metric"><span>Students of determination</span><b style="font-size:18px">${tgt("sod")}</b></div><div class="metric"><span>Gifted and talented</span><b style="font-size:18px">${tgt("gt")}</b></div><div class="metric"><span>EAL</span><b style="font-size:18px">${tgt("eal")}</b></div></div></div>`;
+  document.getElementById("gT").onchange = e => { ui.gTerm = +e.target.value; drawGroups(); };
+  document.getElementById("gG").onchange = e => { ui.gGrade = e.target.value; drawGroups(); };
+  document.getElementById("gS").onchange = e => { ui.gSub = e.target.value; drawGroups(); };
+  document.getElementById("gWord").onclick = () => {
+    const t = document.getElementById("gTable").cloneNode(true); t.querySelectorAll(".bar").forEach(b => b.remove());
+    const subj = ui.gSub === "all" ? "All subjects" : (C.subjects.find(s => (s.id || s.name) === ui.gSub) || {}).name, gr = ui.gGrade === "all" ? "All grades" : (grades.find(g => g.id === ui.gGrade) || {}).name;
+    const html = `<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif}h1{color:#462D5B;font-size:18pt}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:5px;font-size:10pt;text-align:left}th{background:#EDE6F5}</style></head><body>
+      <h1>Attainment and progress by group</h1><p>${esc(school.name)} · ${esc(C.terms[ui.gTerm])} · ${esc(gr)} · ${esc(subj)}</p><p>Attainment against curriculum standards and progress since baseline, from the school’s assessment data. Numbers in brackets show the gap with all students, in percentage points.</p>${t.outerHTML.replace("<table", '<table width="100%" border="1" cellspacing="0" cellpadding="5"')}</body></html>`;
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + html], { type: "application/msword" })); a.download = "Progress by group - " + C.terms[ui.gTerm] + ".doc"; document.body.appendChild(a); a.click(); a.remove();
+  };
+}
 /* ---------- Teachers: their own students, by class, with strategies (and a printable class summary) ---------- */
 function teacherView(){
   const mine = reg.filter(r => r.active !== false && stud(r.student_id));
