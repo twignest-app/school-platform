@@ -149,7 +149,8 @@ const FW = [
 const fw = ref => FW.find(f => f[0] === ref) || [ref, "", []];
 const KINDS = { photo: "📷 Photo", file: "📄 Document", link: "🔗 Link", note: "📝 Write-up", data: "📊 Data" };
 
-let me, school, isLead = false, packs = [], items = [], urls = {};
+let me, school, isLead = false, packs = [], items = [], urls = {}, gnCounts = {}, gnPhotos = [];
+const KIND_GN = { formal_observation: "Lesson observation", learning_walk: "Learning walk", appraisal: "Appraisal" };
 function fail(t){ app.innerHTML = `<div class="card"><div class="msg">${esc(t)}</div><p style="margin-top:14px"><a class="btn ghost" href="./">← Back to ${esc(PLATFORM)}</a></p></div>`; }
 
 async function start(){
@@ -169,6 +170,7 @@ async function start(){
 async function load(){
   const p = await sb.from("evidence_packs").select("*").eq("school_id", school.id).order("standard"); if (p.error) throw p.error; packs = p.data || [];
   const i = await sb.from("evidence_items").select("*").eq("school_id", school.id).order("position"); if (i.error) throw i.error; items = i.data || [];
+  try { const { data } = await sb.rpc("ev_grownest_counts"); gnCounts = data || {}; } catch (_) { gnCounts = {}; }
 }
 function route(){ const id = new URLSearchParams(location.search).get("pack"); id ? packView(id) : home(); }
 const itemsOf = pid => items.filter(x => String(x.pack_id) === String(pid)).sort((a, b) => (a.position || 0) - (b.position || 0));
@@ -178,8 +180,14 @@ async function signed(path){ if (!path) return null; if (urls[path]) return urls
 function home(){
   app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Evidence packs</h1><p class="note">${esc(school.name)} · Evidence for each standard of the school inspection framework, ready to share as PowerPoint or Word.</p></div>
     ${isLead ? '<button class="btn" id="newPack">+ New evidence pack</button>' : ""}</div>
-    ${packs.length ? `<div class="packs">${packs.map(p => { const n = itemsOf(p.id).length; return `<button class="pk" data-pack="${esc(p.id)}"><span class="ref">SEF EVIDENCE: ${esc(p.standard)}</span><h3 style="margin:6px 0 4px">${esc(p.title || fw(p.standard)[1])}</h3><p class="note" style="margin:0">${n} piece${n === 1 ? "" : "s"} of evidence${p.year ? " · " + esc(p.year) : ""}</p></button>`; }).join("")}</div>`
+    ${packs.length ? `<div class="packs">${packs.map(p => { const n = itemsOf(p.id).length; return `<button class="pk" data-pack="${esc(p.id)}"><span class="ref">SEF EVIDENCE: ${esc(p.standard)}</span><h3 style="margin:6px 0 4px">${esc(p.title || fw(p.standard)[1])}</h3><p class="note" style="margin:0">${n} piece${n === 1 ? "" : "s"} of evidence${gnCounts[p.standard] ? ` · 📷 ${gnCounts[p.standard]} from GrowNest` : ""}${p.year ? " · " + esc(p.year) : ""}</p></button>`; }).join("")}</div>`
       : `<div class="card empty"><p class="note">No evidence packs yet.${isLead ? " Start one for the standard you’re working on." : " Your school leaders will start one."}</p></div>`}`;
+  const waiting = Object.entries(gnCounts).filter(([std]) => fw(std)[1] && !packs.some(p => p.standard === std)).sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }));
+  if (waiting.length) app.insertAdjacentHTML("beforeend", `<div class="card" style="margin-top:16px;border-left:5px solid var(--plum)"><h2>📷 Photos from GrowNest waiting for a pack</h2><p class="note" style="margin-top:0">Photos taken in lesson observations and learning walks go to the pack for the standard of the indicator chosen for each photo.</p>
+    ${waiting.map(([std, n]) => `<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding:8px 0"><span><b>${esc(std)} ${esc(fw(std)[1])}</b> <span class="note">· ${n} photo${n === 1 ? "" : "s"}</span></span>${isLead ? `<button class="btn small" data-mk="${esc(std)}">Create the pack</button>` : ""}</div>`).join("")}</div>`);
+  app.querySelectorAll("[data-mk]").forEach(b => b.onclick = async () => { const yr = new Date().getMonth() >= 7 ? new Date().getFullYear() + "–" + (new Date().getFullYear() + 1) : (new Date().getFullYear() - 1) + "–" + new Date().getFullYear();
+    const { data, error } = await sb.from("evidence_packs").insert({ school_id: school.id, standard: b.dataset.mk, year: yr, created_by: me.id }).select().single(); if (error) return toast(error.message);
+    await load(); history.pushState(null, "", "?pack=" + data.id); packView(data.id); });
   app.querySelectorAll("[data-pack]").forEach(b => b.onclick = () => { history.pushState(null, "", "?pack=" + b.dataset.pack); packView(b.dataset.pack); });
   const np = document.getElementById("newPack"); if (np) np.onclick = () => editPack(null);
 }
@@ -218,7 +226,8 @@ async function packView(id){
     ${p.context ? `<div class="card"><h2>Context</h2><p style="margin:0;white-space:pre-line">${esc(p.context)}</p></div>` : ""}
     <div class="card"><h2>What inspectors usually look for</h2><ul class="chk" style="margin:0;padding-left:0;list-style:none">${F[2].map(el => `<li class="${covered(el) ? "ok" : ""}">${covered(el) ? "✅" : "⬜"} ${esc(el)}</li>`).join("")}</ul>
       <p class="note" style="margin:8px 0 0">Tag each piece of evidence with what it shows, and this list fills in.</p></div>
-    <div class="card"><h2>Evidence <span class="note">(${its.length})</span></h2>${its.length ? its.map(evHtml).join("") : '<p class="note" style="margin:0">No evidence yet. Add photos of students’ work and learning, documents, links or a short write-up.</p>'}</div>`;
+    <div class="card"><h2>Evidence <span class="note">(${its.length})</span></h2>${its.length ? its.map(evHtml).join("") : '<p class="note" style="margin:0">No evidence yet. Add photos of students’ work and learning, documents, links or a short write-up.</p>'}</div>
+    <div class="card" id="gnBox"><h2>📷 From GrowNest observations and learning walks</h2><p class="note">Loading photos…</p></div>`;
   document.getElementById("back").onclick = () => { history.pushState(null, "", "evidence.html"); home(); };
   const ep = document.getElementById("editP"); if (ep) ep.onclick = () => editPack(p);
   document.getElementById("addE").onclick = () => editItem(p, null);
@@ -227,9 +236,26 @@ async function packView(id){
   app.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => editItem(p, items.find(x => String(x.id) === b.dataset.edit)));
   app.querySelectorAll("[data-up],[data-down]").forEach(b => b.onclick = async () => { const list = its, k = list.findIndex(x => String(x.id) === (b.dataset.up || b.dataset.down)), j = b.dataset.up ? k - 1 : k + 1; if (j < 0 || j >= list.length) return;
     await Promise.all([sb.from("evidence_items").update({ position: j }).eq("id", list[k].id), sb.from("evidence_items").update({ position: k }).eq("id", list[j].id)]); await load(); packView(p.id); });
+  await gnSection(p);
   for (const im of app.querySelectorAll("img[data-path]")) { const u = await signed(im.dataset.path); if (u) im.src = u; }
   for (const a of app.querySelectorAll("a[data-path]")) { const u = await signed(a.dataset.path); if (u) a.href = u; }
 }
+async function gnSection(p){
+  const box = document.getElementById("gnBox"); if (!box) return;
+  try { const { data, error } = await sb.rpc("ev_grownest_photos", { p_standard: p.standard }); if (error) throw error; gnPhotos = data || []; } catch (e) { box.innerHTML = '<h2>📷 From GrowNest</h2><p class="note" style="margin:0">Photos from GrowNest need the database step for this update.</p>'; gnPhotos = []; return; }
+  const hidden = new Set(p.hidden_photos || []), shown = gnPhotos.filter(x => !hidden.has(String(x.id))), hid = gnPhotos.filter(x => hidden.has(String(x.id)));
+  const card = (x, isHidden) => `<div style="border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card);${isHidden ? "opacity:.5" : ""}"><img data-path="${esc(x.path)}" alt="${esc(x.caption || x.indicator || "Evidence photo")}" style="width:100%;height:160px;object-fit:cover;background:var(--empty);display:block">
+    <div style="padding:10px 12px"><b style="font-size:14px">${esc(x.caption || x.indicator || "Photo")}</b><br><span class="note" style="font-size:12.5px">${esc([x.ref, x.indicator].filter(Boolean).join(" "))}<br>${esc([KIND_GN[x.kind] || "Observation", x.grade, x.subject].filter(Boolean).join(" · "))}${x.date ? " · " + fmt(x.date) : ""}</span>
+    ${isLead ? `<p style="margin:8px 0 0"><button class="btn ghost small" data-hide="${esc(x.id)}">${isHidden ? "Show in the pack" : "Hide from the pack"}</button></p>` : ""}</div></div>`;
+  box.innerHTML = `<h2>📷 From GrowNest observations and learning walks <span class="note">(${shown.length})</span></h2>
+    <p class="note" style="margin-top:0">Photos tagged with a ${esc(p.standard)} indicator in GrowNest appear here automatically, and go into the PowerPoint and Word. Teachers’ names are never shown.</p>
+    ${shown.length ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">${shown.map(x => card(x, false)).join("")}</div>` : '<p class="note" style="margin:0">No photos yet for this standard. In GrowNest, choose a ' + esc(p.standard) + ' indicator for a photo and it will appear here.</p>'}
+    ${hid.length ? `<details style="margin-top:12px"><summary class="note">Hidden from this pack (${hid.length})</summary><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:10px">${hid.map(x => card(x, true)).join("")}</div></details>` : ""}`;
+  box.querySelectorAll("[data-hide]").forEach(b => b.onclick = async () => { const id = b.dataset.hide, set = new Set(p.hidden_photos || []); set.has(id) ? set.delete(id) : set.add(id);
+    const { error } = await sb.from("evidence_packs").update({ hidden_photos: [...set] }).eq("id", p.id); if (error) return toast(error.message); p.hidden_photos = [...set]; await gnSection(p);
+    for (const im of box.querySelectorAll("img[data-path]")) { const u = await signed(im.dataset.path); if (u) im.src = u; } });
+}
+const gnVisible = p => gnPhotos.filter(x => !(p.hidden_photos || []).includes(String(x.id)));
 const evHtml = (i) => `<div class="ev">${i.kind === "photo" && i.file_path ? `<img class="thumb" alt="" data-path="${esc(i.file_path)}">` : `<div class="thumb">${(KINDS[i.kind] || "📄").split(" ")[0]}</div>`}
   <div><b>${esc(i.title)}</b>${i.evidence_date ? ` <span class="note">· ${fmt(i.evidence_date)}</span>` : ""}<p style="margin:4px 0 0">${esc(i.description || "")}</p>
     ${(i.elements || []).length ? `<p style="margin:6px 0 0">${i.elements.map(e => `<span class="tag eal">${esc(e)}</span>`).join("")}</p>` : ""}
@@ -270,6 +296,7 @@ function editItem(p, it){
 async function imgData(path){ try { const u = await signed(path); const b = await (await fetch(u)).blob(); return await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(b); }); } catch (_) { return null; } }
 function imgSize(data){ return new Promise(r => { const im = new Image(); im.onload = () => r([im.naturalWidth, im.naturalHeight]); im.onerror = () => r([4, 3]); im.src = data; }); }
 async function exportPptx(p){
+  try { const { data } = await sb.rpc("ev_grownest_photos", { p_standard: p.standard }); gnPhotos = data || []; } catch (_) {}
   if (typeof PptxGenJS === "undefined") return toast("PowerPoint export couldn’t load. Check your internet connection.");
   toast("Making the PowerPoint…");
   const F = fw(p.standard), its = itemsOf(p.id), P = new PptxGenJS(); P.layout = "LAYOUT_WIDE";
@@ -291,9 +318,17 @@ async function exportPptx(p){
     } else s.addText(txt, { x: 0.6, y: 1.3, w: 12.1, h: 5.6, fontSize: 18, color: INK, valign: "top", fontFace: "Arial" });
     s.addText(`SEF Evidence: ${p.standard}`, { x: 0.6, y: 7.0, w: 6, h: 0.3, fontSize: 10, color: MUT, fontFace: "Arial" });
   }
+  for (const x of gnVisible(p)) {
+    const s = P.addSlide(), d = await imgData(x.path);
+    s.addText(x.caption || x.indicator || "Photo evidence", { x: 0.6, y: 0.35, w: 12.1, h: 0.8, fontSize: 24, bold: true, color: PL, fontFace: "Arial" });
+    if (d) { const [w, hh] = await imgSize(d), k = Math.min(7.2 / w, 5.6 / hh); s.addImage({ data: d, x: 0.6, y: 1.3, w: w * k, h: hh * k }); }
+    s.addText([[x.ref, x.indicator].filter(Boolean).join(" "), [KIND_GN[x.kind] || "Lesson observation", x.grade, x.subject].filter(Boolean).join(" · "), x.date ? fmt(x.date) : ""].filter(Boolean).join("\n"), { x: 8.1, y: 1.3, w: 4.6, h: 5.6, fontSize: 15, color: INK, valign: "top", fontFace: "Arial" });
+    s.addText(`SEF Evidence: ${p.standard}`, { x: 0.6, y: 7.0, w: 6, h: 0.3, fontSize: 10, color: MUT, fontFace: "Arial" });
+  }
   await P.writeFile({ fileName: `SEF Evidence ${p.standard} ${p.title || F[1]}.pptx`.replace(/[\\/:*?"<>|]/g, "") });
 }
 async function exportWord(p){
+  try { const { data } = await sb.rpc("ev_grownest_photos", { p_standard: p.standard }); gnPhotos = data || []; } catch (_) {}
   toast("Making the Word document…");
   const F = fw(p.standard), its = itemsOf(p.id);
   const parts = [];
@@ -301,6 +336,8 @@ async function exportWord(p){
     let img = ""; if (i.kind === "photo" && i.file_path) { const d = await imgData(i.file_path); if (d) img = `<p><img src="${d}" style="max-width:15cm;max-height:10cm"></p>`; }
     parts.push(`<h2>${esc(i.title)}</h2>${img}<p>${esc(i.description || "")}</p>${(i.elements || []).length ? `<p><b>Shows:</b> ${esc(i.elements.join("; "))}</p>` : ""}${i.kind === "link" && i.url ? `<p>${esc(i.url)}</p>` : ""}${i.evidence_date ? `<p style="color:#6B6475">${fmt(i.evidence_date)}</p>` : ""}`);
   }
+  for (const x of gnVisible(p)) { const d = await imgData(x.path);
+    parts.push(`<h2>${esc(x.caption || x.indicator || "Photo evidence")}</h2>${d ? `<p><img src="${d}" style="max-width:15cm;max-height:10cm"></p>` : ""}<p>${esc([x.ref, x.indicator].filter(Boolean).join(" "))}</p><p style="color:#6B6475">${esc([KIND_GN[x.kind] || "Lesson observation", x.grade, x.subject].filter(Boolean).join(" · "))}${x.date ? " · " + fmt(x.date) : ""}</p>`); }
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>SEF Evidence ${esc(p.standard)}</title><style>body{font-family:Arial,sans-serif;font-size:11pt;color:#2A2233}h1{color:#462D5B;font-size:24pt}h2{color:#462D5B;font-size:14pt;border-bottom:2px solid #462D5B;padding-bottom:3px;margin-top:20px}</style></head><body>
     <h1>SEF Evidence: ${esc(p.standard)} ${esc(F[1])}</h1><p><b>${esc([p.title, school.name, p.year].filter(Boolean).join(" · "))}</b></p>
     ${p.context ? `<h2>Context</h2><p>${esc(p.context).replace(/\n/g, "<br>")}</p>` : ""}
