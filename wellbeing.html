@@ -131,7 +131,7 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="hub.js?v=13"></script>
 <script src="wellbeing-concerns.js?v=3"></script>
-<script src="wellbeing-surveys.js?v=1"></script>
+<script src="wellbeing-surveys.js?v=2"></script>
 <script>
 /* Keep this the same as in index.html */
 const PLATFORM = "Nestopia";
@@ -195,14 +195,14 @@ async function load(){
 function render(){
   const myClasses = classes.filter(c => myClassIds.includes(String(c.id)));
   const openC = sg => concerns.filter(c => !!c.safeguarding === sg && c.status !== "closed").length;
-  const tabs = [["today", "Today"], ...(isTeam ? [["concerns", "Concerns" + (openC(false) ? " (" + openC(false) + ")" : "")]] : []), ...(isDSL() ? [["safeguarding", "🔒 Safeguarding" + (openC(true) ? " (" + openC(true) + ")" : "")]] : []), ["surveys", "📋 Surveys"], ...(isTeam ? [["overview", "Overview"]] : []), ...(isLead ? [["team", "Wellbeing team"]] : [])];
+  const tabs = [["today", "Today"], ...(isTeam ? [["concerns", "Concerns" + (openC(false) ? " (" + openC(false) + ")" : "")]] : []), ...(isDSL() ? [["safeguarding", "🔒 Safeguarding" + (openC(true) ? " (" + openC(true) + ")" : "")]] : []), ["surveys", "📋 Surveys"], ...(isTeam ? [["overview", "Overview"], ["evidence", "📁 Evidence"]] : []), ...(isLead ? [["team", "Wellbeing team"]] : [])];
   app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Wellbeing</h1><p class="note">${esc(school.name)} · Short daily check-ins, so the right adult hears when a student needs to talk.</p></div>
     <div class="row"><button class="btn ghost" data-logc="">📝 Log a concern</button>${myClasses.length ? `<select id="kc" aria-label="Class">${myClasses.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("")}</select><button class="btn" id="startK">▶ Start the class check-in</button>` : ""}</div></div>
     ${tabs.length > 1 ? `<div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}</button>`).join("")}</div>` : ""}
     <div id="pane"></div>`;
   const sk = document.getElementById("startK"); if (sk) sk.onclick = () => startKiosk(document.getElementById("kc").value);
   app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; render(); });
-  ({ today: todayPane, concerns: concernsPane, safeguarding: concernsPane, surveys: () => surveysPane(), overview: overviewPane, team: teamPane })[ui.tab]();
+  ({ today: todayPane, concerns: concernsPane, safeguarding: concernsPane, surveys: () => surveysPane(), evidence: () => wbEvidencePane(), overview: overviewPane, team: teamPane })[ui.tab]();
   bindCC(app);
 }
 

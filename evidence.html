@@ -236,6 +236,7 @@ async function packView(id){
   app.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => editItem(p, items.find(x => String(x.id) === b.dataset.edit)));
   app.querySelectorAll("[data-up],[data-down]").forEach(b => b.onclick = async () => { const list = its, k = list.findIndex(x => String(x.id) === (b.dataset.up || b.dataset.down)), j = b.dataset.up ? k - 1 : k + 1; if (j < 0 || j >= list.length) return;
     await Promise.all([sb.from("evidence_items").update({ position: j }).eq("id", list[k].id), sb.from("evidence_items").update({ position: k }).eq("id", list[j].id)]); await load(); packView(p.id); });
+  if (new URLSearchParams(location.search).get("add") === "1") { history.replaceState(null, "", "?pack=" + p.id); setTimeout(() => editItem(p, null), 50); }
   await gnSection(p);
   for (const im of app.querySelectorAll("img[data-path]")) { const u = await signed(im.dataset.path); if (u) im.src = u; }
   for (const a of app.querySelectorAll("a[data-path]")) { const u = await signed(a.dataset.path); if (u) a.href = u; }

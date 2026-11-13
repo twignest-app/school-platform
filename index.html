@@ -910,7 +910,9 @@ async function absenceNoteReminder(p, school){
 }
 // Staff surveys to take
 async function surveyReminder(p, school){
-  try { if (!(school.modules || []).includes("wellbeing")) return; const { data, error } = await sb.rpc("wb_my_staff_surveys"); if (error || !data || !data.length) return;
+  try { if (!(school.modules || []).includes("wellbeing")) return;
+    try { const { data: op } = await sb.rpc("wb_run_schedule"); (op || []).forEach(o => { if (o.email && window.nestMail) nestMail("survey", o.id); }); } catch (_) {}
+    const { data, error } = await sb.rpc("wb_my_staff_surveys"); if (error || !data || !data.length) return;
     const b = document.createElement("div"); b.innerHTML = `<p style="margin:0;font-weight:700">📋 ${esc(data[0].title)}: a short, anonymous staff survey.</p><p style="margin:8px 0 0"><a class="btn" href="wellbeing.html#surveys">Take the survey</a></p>`; placeNote(b); } catch (_) {}
 }
 // Parent messages waiting for a reply
