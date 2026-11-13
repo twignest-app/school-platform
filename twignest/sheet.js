@@ -13,13 +13,15 @@
   const DEF_OS = [{ code: "s", label: "Secure", short: "✓", kind: "secure" }, { code: "n", label: "Not yet secure", short: "!", kind: "notyet" }, { code: "e", label: "Exceeding", short: "+", kind: "exceed" }];
   const gradeLevels = () => { const sc = (C && C.scale) || [], gm = (C && C.gradeMin) || [], gp = (C && C.gradePos) || [];
     return sc.map((n, i) => ({ code: "L" + (i + 1), label: /^\d+$/.test(String(n)) ? "Level " + n : String(n), short: String(n).slice(0, 3), kind: gp[i] === "below" ? "notyet" : gp[i] === "above" ? "exceed" : "secure", pct: gm[i + 1] == null ? gm[i] : (gm[i] + gm[i + 1]) / 2 })); };
-  const useLv = () => !!(C && C.objMode === "levels" && C.scale && C.scale.length);
+  const useLv = () => !!(C && C.scale && C.scale.length && (C.objMode === "levels" || (C.objMode === undefined && C.scale.every(x => /^\d+$/.test(String(x))))));
   const OS = () => (useLv() ? gradeLevels() : C && C.objScale && C.objScale.length ? C.objScale : DEF_OS);
   const osOf = v => OS().find(x => x.code === v) || DEF_OS.find(x => x.code === v) || { code: v, label: v, short: "?", kind: "secure" };
   const credit = v => ({ notyet: 0, partial: .5, secure: 1, exceed: 1 })[osOf(v).kind] ?? 1;
   const markPct = v => { const o = osOf(v); if (o.pct != null) return o.pct; const gl = gradeLevels(), g = o.kind === "notyet" ? gl.filter(x => x.kind === "notyet").pop() : gl.find(x => x.kind === o.kind); return g ? g.pct : credit(v) * 100; };
   const isEx = v => osOf(v).kind === "exceed", isGap = v => !!v && credit(v) < 1;
-  const dotCls = v => v ? ({ notyet: "n", partial: "p", secure: "s", exceed: "e" })[osOf(v).kind] : "";
+  const lvNum = v => { const m = /^L(\d+)$/.exec(v || ""); return m && useLv() ? Math.min(7, +m[1]) : 0; };
+  const dotCls = v => v ? (lvNum(v) ? "l" + lvNum(v) : ({ notyet: "n", partial: "p", secure: "s", exceed: "e" })[osOf(v).kind]) : "";
+  const lvBadge = lv => useLv() && lv != null ? `<span class="badge b-l${Math.min(7, lv + 1)}">${esc(lab(lv))}</span>` : null;
   const dotTxt = v => v ? esc(osOf(v).short) : "";
   const defCode = () => (OS().find(x => x.kind === "secure") || OS()[0]).code;
   const cycle = v => { const order = [defCode(), ...OS().map(x => x.code).filter(c => c !== defCode())], i = order.indexOf(v); return v === "" || i < 0 ? order[0] : (order[i + 1] ?? ""); };
@@ -136,8 +138,8 @@
     visible().forEach(s => {
       const ov = avgEval(s.id, all, k), pr = avgProgress(s.id, all, t), tr = trackCount(s.id, all, t), gp = plan(s.id, t).gaps.filter(g => g.pri < 2).length;
       h += `<tr><td class="namecol"><button class="name" data-prof="${s.id}">${esc(s.full_name)}</button>${s.student_number ? `<span class="sid">${esc(s.student_number)}</span>` : ""}<div class="tags">${(s.groups || []).map(g => `<span class="tag">${esc(g)}</span>`).join("")}</div></td>`;
-      C.subjects.forEach(sb => { const e = avgEval(s.id, sb.strands, k); h += `<td>${e ? badge(e.band, esc(lab(e.lv))) : badge("none", "–")}</td>`; });
-      h += `<td>${ov ? badge(ov.band, esc(lab(ov.lv))) : "–"}</td><td>${pr ? badge(pr.band, signed(pr.steps) + " · " + PROGS[pr.band]) : "–"}</td>
+      C.subjects.forEach(sb => { const e = avgEval(s.id, sb.strands, k); h += `<td>${e ? (lvBadge(e.lv) || badge(e.band, esc(lab(e.lv)))) : badge("none", "–")}</td>`; });
+      h += `<td>${ov ? (lvBadge(ov.lv) || badge(ov.band, esc(lab(ov.lv)))) : "–"}</td><td>${pr ? badge(pr.band, signed(pr.steps) + " · " + PROGS[pr.band]) : "–"}</td>
         <td>${tr.n ? badge(tr.ok === tr.n ? "inline" : tr.ok >= tr.n / 2 ? "none" : "below", `${tr.ok} of ${tr.n}`) : "–"}</td><td>${gp ? badge(gp > 4 ? "below" : "none", gp) : badge("inline", "0")}</td></tr>`;
     });
     const vs = visible(); let okN = 0, known = 0, progN = 0, pk = 0, need = 0;
@@ -435,7 +437,7 @@
   function lvOpts(s, st, k) { const t = tLv(s.id, st.id, k), e = strandEval(s.id, st, k);
     return `<option value="">Auto (${e ? esc(lab(e.sug)) + " · " + e.pct + "%" : "–"})</option>` + C.scale.map((x, i) => `<option value="${i}" ${t === i ? "selected" : ""}>${esc(x)}</option>`).join(""); }
   function summary(s, st) { const k = String(ui.term), lv = level(s.id, st, k), p = progress(s.id, st, ui.term), bd = lv == null ? "none" : (C.gradePos[lv] || "inline");
-    return { pos: badge(bd, lv == null ? "–" : esc(lab(lv))), prog: p ? badge(p.band, (p.steps > 0 ? "+" : "") + p.steps + " · " + PROGS[p.band]) : badge("none", "–") }; }
+    return { pos: lvBadge(lv) || badge(bd, lv == null ? "–" : esc(lab(lv))), prog: p ? badge(p.band, (p.steps > 0 ? "+" : "") + p.steps + " · " + PROGS[p.band]) : badge("none", "–") }; }
 
   const lvRange = band => { const r = C.scale.filter((x, i) => C.gradePos[i] === band); return r.length > 1 ? `${r[0]}–${r[r.length - 1]}` : (r[0] || ""); };
   const allLbl = () => useLv() ? esc(osOf(defCode()).label) : esc(osOf(defCode()).label.toLowerCase());
@@ -451,7 +453,10 @@
 .marks{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.chiprow{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
 .onelist{width:100%;border-collapse:collapse}.onelist td{padding:10px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}.seg button{border:0;background:var(--card);padding:7px 14px;font-weight:700;cursor:pointer;color:var(--ink)}.seg button[aria-pressed="true"]{background:var(--plum);color:#fff}
-.onehead h2{font-size:19px;line-height:1.4;margin:12px 0 10px}`;
+.onehead h2{font-size:19px;line-height:1.4;margin:12px 0 10px}
+.dot.l1,.b-l1{background:#B4473A;border:2px solid #B4473A;color:#fff}.dot.l2,.b-l2{background:#C8623A;border:2px solid #C8623A;color:#fff}.dot.l3,.b-l3{background:#C98A1E;border:2px solid #C98A1E;color:#fff}
+.dot.l4,.b-l4{background:#7FA052;border:2px solid #7FA052;color:#fff}.dot.l5,.b-l5{background:#4F7A47;border:2px solid #4F7A47;color:#fff}.dot.l6,.b-l6{background:#7A5A98;border:2px solid #7A5A98;color:#fff}.dot.l7,.b-l7{background:#462D5B;border:2px solid #462D5B;color:#fff}
+.dot.pick.l1,.dot.pick.l2,.dot.pick.l3,.dot.pick.l4,.dot.pick.l5,.dot.pick.l6,.dot.pick.l7{color:#fff}`;
     document.head.appendChild(st);
   }
   function closePick() { const d = document.getElementById("tnPick"); if (d) d.remove(); }
@@ -506,7 +511,7 @@
       h += `<div class="row" style="margin:6px 0 10px;gap:10px;flex-wrap:wrap"><div class="seg" role="group" aria-label="How to assess"><button data-view="grid" aria-pressed="${ui.view !== "one"}">Whole class grid</button><button data-view="one" aria-pressed="${ui.view === "one"}">One objective at a time</button></div>
         ${ui.view !== "one" ? `<button class="mini" data-more="1" aria-pressed="${!!ui.more}">${ui.more ? "Hide" : "Show"} baseline and teacher levels</button>` : ""}</div>`;
     }
-    h += `<div class="legend"><span><i class="dot" style="width:18px;height:18px"></i>Not assessed</span>${OS().map(x => `<span><i class="dot ${dotCls(x.code)}" style="width:18px;height:18px;font-size:10px">${esc(x.short)}</i>${esc(x.label)}</span>`).join("")}<span>${usePick() ? "Tap a circle to choose a level" : "Tap a circle to change it"}</span><span>Levels ${["below", "inline", "above"].filter(lvRange).map(b => badge(b, esc(lvRange(b)))).join(" ")}</span></div>`;
+    h += `<div class="legend"><span><i class="dot" style="width:18px;height:18px"></i>Not assessed</span>${OS().map(x => `<span><i class="dot ${dotCls(x.code)}" style="width:18px;height:18px;font-size:10px">${esc(x.short)}</i>${esc(x.label)}</span>`).join("")}<span>${usePick() ? "Tap a circle to choose a level" : "Tap a circle to change it"}</span>${useLv() ? "" : `<span>Levels ${["below", "inline", "above"].filter(lvRange).map(b => badge(b, esc(lvRange(b)))).join(" ")}</span>`}</div>`;
     if (!studs.length) { ctx.el.innerHTML = h + `<div class="card"><p class="note">This class has no students yet. The school lead adds them in Classes and students.</p></div>`; return; }
     if (ui.mode === "overview") return renderOverview(h.replace(/<div class="legend">[\s\S]*$/, ""));
     if (ui.mode === "reports") return renderReports(h.replace(/<div class="legend">[\s\S]*$/, ""));

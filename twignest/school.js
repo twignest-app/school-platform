@@ -40,7 +40,7 @@
   const DEF_OS = [{ code: "s", label: "Secure", short: "✓", kind: "secure" }, { code: "n", label: "Not yet secure", short: "!", kind: "notyet" }, { code: "e", label: "Exceeding", short: "+", kind: "exceed" }];
   const gradeLevels = () => { const sc = (C && C.scale) || [], gm = (C && C.gradeMin) || [], gp = (C && C.gradePos) || [];
     return sc.map((n, i) => ({ code: "L" + (i + 1), label: /^\d+$/.test(String(n)) ? "Level " + n : String(n), short: String(n).slice(0, 3), kind: gp[i] === "below" ? "notyet" : gp[i] === "above" ? "exceed" : "secure", pct: gm[i + 1] == null ? gm[i] : (gm[i] + gm[i + 1]) / 2 })); };
-  const useLv = () => !!(C && C.objMode === "levels" && C.scale && C.scale.length);
+  const useLv = () => !!(C && C.scale && C.scale.length && (C.objMode === "levels" || (C.objMode === undefined && C.scale.every(x => /^\d+$/.test(String(x))))));
   const OS = () => (useLv() ? gradeLevels() : C && C.objScale && C.objScale.length ? C.objScale : DEF_OS);
   const osOf = v => OS().find(x => x.code === v) || DEF_OS.find(x => x.code === v) || { code: v, label: v, short: "?", kind: "secure" };
   const credit = v => ({ notyet: 0, partial: .5, secure: 1, exceed: 1 })[osOf(v).kind] ?? 1;
