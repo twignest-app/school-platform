@@ -113,7 +113,7 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 <dialog id="dlg"></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=11"></script>
+<script src="hub.js?v=12"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <script>
 /* Keep this the same as in index.html */
@@ -257,7 +257,7 @@ async function gnSection(p){
 }
 const gnVisible = p => gnPhotos.filter(x => !(p.hidden_photos || []).includes(String(x.id)));
 const evHtml = (i) => `<div class="ev">${i.kind === "photo" && i.file_path ? `<img class="thumb" alt="" data-path="${esc(i.file_path)}">` : `<div class="thumb">${(KINDS[i.kind] || "📄").split(" ")[0]}</div>`}
-  <div><b>${esc(i.title)}</b>${i.evidence_date ? ` <span class="note">· ${fmt(i.evidence_date)}</span>` : ""}<p style="margin:4px 0 0">${esc(i.description || "")}</p>
+  <div><b>${esc(i.title)}</b>${i.evidence_date ? ` <span class="note">· ${fmt(i.evidence_date)}</span>` : ""}<p style="margin:4px 0 0;white-space:pre-line">${esc(i.description || "")}</p>
     ${(i.elements || []).length ? `<p style="margin:6px 0 0">${i.elements.map(e => `<span class="tag eal">${esc(e)}</span>`).join("")}</p>` : ""}
     ${i.kind === "link" && i.url ? `<p class="note" style="margin:6px 0 0"><a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.url)}</a></p>` : ""}${i.kind === "file" && i.file_path ? `<p class="note" style="margin:6px 0 0"><a data-path="${esc(i.file_path)}" target="_blank" rel="noopener">Open the document</a></p>` : ""}</div>
   <div class="row" style="flex-direction:column;gap:4px"><button class="btn ghost small" data-edit="${esc(i.id)}">Edit</button><button class="btn ghost small" data-up="${esc(i.id)}" aria-label="Move up">↑</button><button class="btn ghost small" data-down="${esc(i.id)}" aria-label="Move down">↓</button></div></div>`;

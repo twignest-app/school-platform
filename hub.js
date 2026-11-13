@@ -27,11 +27,12 @@
     ["attendance", "Attendance", "attendance.html", null],
     ["behaviour", "Behaviour", "behaviour.html", "behaviour"],
     ["planning", "Planning", "planning.html", "planning"],
-    ["assessments", "Assessments", "twignest/", "twignest"],
     ["grownest", "GrowNest", "grownest/app.html", "grownest"],
     ["twignest", "TwigNest", "twignest/", "twignest"],
+    ["sub", "Class sheets", "twignest/#sheets", "twignest", false, "twignest"],
+    ["sub", "School view", "twignest/#school", "twignest", false, "twignest"],
+    ["reports", "Report cards", "reports.html", "twignest", false, "twignest"],
     ["messages", "Messages", "messages.html", null],
-    ["reports", "Reports", "reports.html", "twignest"],
     ["calendar", "Calendar", "calendar.html", null],
     ["label", "Support"],
     ["inclusion", "Inclusion", "inclusion.html", "inclusion"],
@@ -51,6 +52,8 @@
   .hubside a:hover{background:var(--bg,#F3F5FA)}
   .hubside a[aria-current="page"]{background:var(--hub-active,#E8EEF8);color:var(--hub-ink,var(--ink))}
   .hubside a.soon{opacity:.5}
+  .hubside a.hsub{padding:7px 12px 7px 44px;font-size:14.5px;font-weight:600;color:var(--muted)}
+  .hubside a.hsub[aria-current="page"]{color:var(--hub-ink,var(--ink));font-weight:800}
   .hubside a .soonlbl{margin-left:auto;font-size:10.5px;font-weight:800;background:var(--line);border-radius:99px;padding:2px 7px}
   .hubmain{min-width:0}
   .hubmain > main{max-width:1180px}
@@ -90,6 +93,7 @@
       const wrap = document.createElement("div"); wrap.className = "hubwrap";
       const side = document.createElement("nav"); side.className = "hubside"; side.setAttribute("aria-label", "School hub");
       side.innerHTML = list.map(n => n[0] === "label" ? `<div class="hlabel">${n[1]}</div>`
+        : n[5] ? `<a href="${n[2]}" data-id="${n[0]}" class="hsub" ${n[0] === active ? 'aria-current="page"' : ""}>${n[1]}</a>`
         : `<a href="${n[2]}" data-id="${n[0]}" class="${n[4] ? "soon" : ""}" ${n[0] === active ? 'aria-current="page"' : ""} ${n[4] ? 'title="Coming soon"' : ""}><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[n[0]] || ""}</svg>${n[1]}${n[4] ? '<span class="soonlbl">Soon</span>' : ""}</a>`).join("");
       side.querySelectorAll("a.soon").forEach(a => a.addEventListener("click", e => { e.preventDefault(); alert(a.textContent.replace("Soon", "").trim() + " is coming soon to the School hub."); }));
       const box = document.createElement("div"); box.className = "hubmain";
