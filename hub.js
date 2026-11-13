@@ -88,13 +88,13 @@
   }
   function translate(root){
     if (!root || LANG !== "ar" && !root.querySelector) return;
-    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: x => x.parentNode && /^(SCRIPT|STYLE|TEXTAREA)$/.test(x.parentNode.nodeName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: x => x.parentNode && (/^(SCRIPT|STYLE|TEXTAREA)$/.test(x.parentNode.nodeName) || (x.parentNode.closest && x.parentNode.closest(".langsw"))) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
     const list = []; let x; while ((x = w.nextNode())) list.push(x); list.forEach(trNode);
     root.querySelectorAll && root.querySelectorAll("[placeholder],[title],[aria-label]").forEach(el => ["placeholder", "title", "aria-label"].forEach(a => { if (!el.hasAttribute(a)) return; const k = "_en_" + a, v = el[k] != null ? el[k] : el.getAttribute(a);
       if (LANG !== "ar") { if (el[k] != null) { el.setAttribute(a, el[k]); el[k] = null; } return; } const t = trCore(String(v).trim()); if (t) { el[k] = v; el.setAttribute(a, t); } }));
   }
   function applyLang(){ document.documentElement.dir = LANG === "ar" ? "rtl" : "ltr"; document.documentElement.lang = LANG; translate(document.body); }
-  function loadAr(cb){ if (window.NEST_AR) return cb(); const s = document.createElement("script"); s.src = "hub-ar.js?v=3"; s.onload = cb; document.head.appendChild(s); }
+  function loadAr(cb){ if (window.NEST_AR) return cb(); const s = document.createElement("script"); s.src = "hub-ar.js?v=5"; s.onload = cb; document.head.appendChild(s); }
   function addSwitch(){
     const hdr = document.querySelector("header"); if (!hdr || hdr.querySelector(".langsw")) return;
     const b = document.createElement("button"); b.type = "button"; b.className = "btn ghost small langsw"; b.textContent = LANG === "ar" ? "English" : "العربية"; b.style.marginInlineEnd = "8px";

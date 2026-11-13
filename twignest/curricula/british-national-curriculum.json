@@ -1,0 +1,1328 @@
+{
+ "id": "british-nc-2014",
+ "name": "British National Curriculum (England, 2014)",
+ "note": "Statutory programmes of study for English, mathematics and science, Years 1 to 6.",
+ "years": [
+  {
+   "key": "1",
+   "name": "Year 1"
+  },
+  {
+   "key": "2",
+   "name": "Year 2"
+  },
+  {
+   "key": "3",
+   "name": "Year 3"
+  },
+  {
+   "key": "4",
+   "name": "Year 4"
+  },
+  {
+   "key": "5",
+   "name": "Year 5"
+  },
+  {
+   "key": "6",
+   "name": "Year 6"
+  }
+ ],
+ "subjects": [
+  {
+   "name": "English",
+   "aliases": [
+    "English",
+    "Literacy",
+    "English Language"
+   ],
+   "strands": [
+    {
+     "name": "Spoken language",
+     "aliases": [
+      "Speaking and listening",
+      "Speaking",
+      "Oracy"
+     ],
+     "years": {
+      "1": [
+       "Listen and respond appropriately to adults and their peers",
+       "Ask relevant questions to extend their understanding and knowledge",
+       "Use relevant strategies to build their vocabulary",
+       "Articulate and justify answers, arguments and opinions",
+       "Give well-structured descriptions, explanations and narratives for different purposes, including for expressing feelings",
+       "Maintain attention and participate actively in collaborative conversations, staying on topic and initiating and responding to comments",
+       "Use spoken language to develop understanding through speculating, hypothesising, imagining and exploring ideas",
+       "Speak audibly and fluently with an increasing command of Standard English",
+       "Participate in discussions, presentations, performances, role play, improvisations and debates",
+       "Gain, maintain and monitor the interest of the listener(s)",
+       "Consider and evaluate different viewpoints, attending to and building on the contributions of others",
+       "Select and use appropriate registers for effective communication."
+      ],
+      "2": [
+       "Listen and respond appropriately to adults and their peers",
+       "Ask relevant questions to extend their understanding and knowledge",
+       "Use relevant strategies to build their vocabulary",
+       "Articulate and justify answers, arguments and opinions",
+       "Give well-structured descriptions, explanations and narratives for different purposes, including for expressing feelings",
+       "Maintain attention and participate actively in collaborative conversations, staying on topic and initiating and responding to comments",
+       "Use spoken language to develop understanding through speculating, hypothesising, imagining and exploring ideas",
+       "Speak audibly and fluently with an increasing command of Standard English",
+       "Participate in discussions, presentations, performances, role play, improvisations and debates",
+       "Gain, maintain and monitor the interest of the listener(s)",
+       "Consider and evaluate different viewpoints, attending to and building on the contributions of others",
+       "Select and use appropriate registers for effective communication."
+      ],
+      "3": [
+       "Listen and respond appropriately to adults and their peers",
+       "Ask relevant questions to extend their understanding and knowledge",
+       "Use relevant strategies to build their vocabulary",
+       "Articulate and justify answers, arguments and opinions",
+       "Give well-structured descriptions, explanations and narratives for different purposes, including for expressing feelings",
+       "Maintain attention and participate actively in collaborative conversations, staying on topic and initiating and responding to comments",
+       "Use spoken language to develop understanding through speculating, hypothesising, imagining and exploring ideas",
+       "Speak audibly and fluently with an increasing command of Standard English",
+       "Participate in discussions, presentations, performances, role play, improvisations and debates",
+       "Gain, maintain and monitor the interest of the listener(s)",
+       "Consider and evaluate different viewpoints, attending to and building on the contributions of others",
+       "Select and use appropriate registers for effective communication."
+      ],
+      "4": [
+       "Listen and respond appropriately to adults and their peers",
+       "Ask relevant questions to extend their understanding and knowledge",
+       "Use relevant strategies to build their vocabulary",
+       "Articulate and justify answers, arguments and opinions",
+       "Give well-structured descriptions, explanations and narratives for different purposes, including for expressing feelings",
+       "Maintain attention and participate actively in collaborative conversations, staying on topic and initiating and responding to comments",
+       "Use spoken language to develop understanding through speculating, hypothesising, imagining and exploring ideas",
+       "Speak audibly and fluently with an increasing command of Standard English",
+       "Participate in discussions, presentations, performances, role play, improvisations and debates",
+       "Gain, maintain and monitor the interest of the listener(s)",
+       "Consider and evaluate different viewpoints, attending to and building on the contributions of others",
+       "Select and use appropriate registers for effective communication."
+      ],
+      "5": [
+       "Listen and respond appropriately to adults and their peers",
+       "Ask relevant questions to extend their understanding and knowledge",
+       "Use relevant strategies to build their vocabulary",
+       "Articulate and justify answers, arguments and opinions",
+       "Give well-structured descriptions, explanations and narratives for different purposes, including for expressing feelings",
+       "Maintain attention and participate actively in collaborative conversations, staying on topic and initiating and responding to comments",
+       "Use spoken language to develop understanding through speculating, hypothesising, imagining and exploring ideas",
+       "Speak audibly and fluently with an increasing command of Standard English",
+       "Participate in discussions, presentations, performances, role play, improvisations and debates",
+       "Gain, maintain and monitor the interest of the listener(s)",
+       "Consider and evaluate different viewpoints, attending to and building on the contributions of others",
+       "Select and use appropriate registers for effective communication."
+      ],
+      "6": [
+       "Listen and respond appropriately to adults and their peers",
+       "Ask relevant questions to extend their understanding and knowledge",
+       "Use relevant strategies to build their vocabulary",
+       "Articulate and justify answers, arguments and opinions",
+       "Give well-structured descriptions, explanations and narratives for different purposes, including for expressing feelings",
+       "Maintain attention and participate actively in collaborative conversations, staying on topic and initiating and responding to comments",
+       "Use spoken language to develop understanding through speculating, hypothesising, imagining and exploring ideas",
+       "Speak audibly and fluently with an increasing command of Standard English",
+       "Participate in discussions, presentations, performances, role play, improvisations and debates",
+       "Gain, maintain and monitor the interest of the listener(s)",
+       "Consider and evaluate different viewpoints, attending to and building on the contributions of others",
+       "Select and use appropriate registers for effective communication."
+      ]
+     }
+    },
+    {
+     "name": "Writing – vocabulary, grammar and punctuation",
+     "aliases": [
+      "Grammar and punctuation",
+      "Grammar",
+      "SPaG",
+      "Writing"
+     ],
+     "years": {
+      "1": [
+       "Leaving spaces between words",
+       "Joining words and joining clauses using and",
+       "Beginning to punctuate sentences using a capital letter and a full stop, question mark or exclamation mark",
+       "Using a capital letter for names of people, places, the days of the week, and the personal pronoun ‘I’",
+       "Learning the grammar for year 1 in English Appendix 2",
+       "Use the grammatical terminology in English Appendix 2 in discussing their writing."
+      ],
+      "2": [
+       "Learning how to use both familiar and new punctuation correctly (see English Appendix 2), including full stops, capital letters, exclamation marks, question marks, commas for lists and apostrophes for contracted forms and the possessive (singular)",
+       "Learn how to use: sentences with different forms: statement, question, exclamation, command",
+       "Learn how to use: expanded noun phrases to describe and specify [for example, the blue butterfly]",
+       "Learn how to use: the present and past tenses correctly and consistently including the progressive form",
+       "Learn how to use: subordination (using when, if, that, or because) and co-ordination (using or, and, or but)",
+       "Learn how to use: the grammar for year 2 in English Appendix 2",
+       "Learn how to use: some features of written Standard English",
+       "Use and understand the grammatical terminology in English Appendix 2 in discussing their writing."
+      ],
+      "3": [
+       "Extending the range of sentences with more than one clause by using a wider range of conjunctions, including when, if, because, although",
+       "Using the present perfect form of verbs in contrast to the past tense",
+       "Choosing nouns or pronouns appropriately for clarity and cohesion and to avoid repetition",
+       "Using conjunctions, adverbs and prepositions to express time and cause",
+       "Using fronted adverbials",
+       "Learning the grammar for years 3 and 4 in English Appendix 2",
+       "Indicate grammatical and other features: using commas after fronted adverbials",
+       "Indicate grammatical and other features: indicating possession by using the possessive apostrophe with plural nouns",
+       "Indicate grammatical and other features: using and punctuating direct speech",
+       "Use and understand the grammatical terminology in English Appendix 2 accurately and appropriately when discussing their writing and reading."
+      ],
+      "4": [
+       "Extending the range of sentences with more than one clause by using a wider range of conjunctions, including when, if, because, although",
+       "Using the present perfect form of verbs in contrast to the past tense",
+       "Choosing nouns or pronouns appropriately for clarity and cohesion and to avoid repetition",
+       "Using conjunctions, adverbs and prepositions to express time and cause",
+       "Using fronted adverbials",
+       "Learning the grammar for years 3 and 4 in English Appendix 2",
+       "Indicate grammatical and other features: using commas after fronted adverbials",
+       "Indicate grammatical and other features: indicating possession by using the possessive apostrophe with plural nouns",
+       "Indicate grammatical and other features: using and punctuating direct speech",
+       "Use and understand the grammatical terminology in English Appendix 2 accurately and appropriately when discussing their writing and reading."
+      ],
+      "5": [
+       "Recognising vocabulary and structures that are appropriate for formal speech and writing, including subjunctive forms",
+       "Using passive verbs to affect the presentation of information in a sentence",
+       "Using the perfect form of verbs to mark relationships of time and cause",
+       "Using expanded noun phrases to convey complicated information concisely",
+       "Using modal verbs or adverbs to indicate degrees of possibility",
+       "Using relative clauses beginning with who, which, where, when, whose, that or with an implied (i.e. omitted) relative pronoun",
+       "Learning the grammar for years 5 and 6 in English Appendix 2",
+       "Indicate grammatical and other features: using commas to clarify meaning or avoid ambiguity in writing",
+       "Indicate grammatical and other features: using hyphens to avoid ambiguity",
+       "Indicate grammatical and other features: using brackets, dashes or commas to indicate parenthesis",
+       "Indicate grammatical and other features: using semi-colons, colons or dashes to mark boundaries between independent clauses",
+       "Indicate grammatical and other features: using a colon to introduce a list",
+       "Indicate grammatical and other features: punctuating bullet points consistently",
+       "Use and understand the grammatical terminology in English Appendix 2 accurately and appropriately in discussing their writing and reading."
+      ],
+      "6": [
+       "Recognising vocabulary and structures that are appropriate for formal speech and writing, including subjunctive forms",
+       "Using passive verbs to affect the presentation of information in a sentence",
+       "Using the perfect form of verbs to mark relationships of time and cause",
+       "Using expanded noun phrases to convey complicated information concisely",
+       "Using modal verbs or adverbs to indicate degrees of possibility",
+       "Using relative clauses beginning with who, which, where, when, whose, that or with an implied (i.e. omitted) relative pronoun",
+       "Learning the grammar for years 5 and 6 in English Appendix 2",
+       "Indicate grammatical and other features: using commas to clarify meaning or avoid ambiguity in writing",
+       "Indicate grammatical and other features: using hyphens to avoid ambiguity",
+       "Indicate grammatical and other features: using brackets, dashes or commas to indicate parenthesis",
+       "Indicate grammatical and other features: using semi-colons, colons or dashes to mark boundaries between independent clauses",
+       "Indicate grammatical and other features: using a colon to introduce a list",
+       "Indicate grammatical and other features: punctuating bullet points consistently",
+       "Use and understand the grammatical terminology in English Appendix 2 accurately and appropriately in discussing their writing and reading."
+      ]
+     }
+    },
+    {
+     "name": "Reading – word reading",
+     "aliases": [
+      "Reading",
+      "Word reading",
+      "Phonics"
+     ],
+     "years": {
+      "1": [
+       "Apply phonic knowledge and skills as the route to decode words",
+       "Respond speedily with the correct sound to graphemes (letters or groups of letters) for all 40+ phonemes, including, where applicable, alternative sounds for graphemes",
+       "Read accurately by blending sounds in unfamiliar words containing GPCs that have been taught",
+       "Read common exception words, noting unusual correspondences between spelling and sound and where these occur in the word",
+       "Read words containing taught GPCs and –s, –es, –ing, –ed, –er and –est endings",
+       "Read other words of more than one syllable that contain taught GPCs",
+       "Read words with contractions [for example, I’m, I’ll, we’ll], and understand that the apostrophe represents the omitted letter(s)",
+       "Read aloud accurately books that are consistent with their developing phonic knowledge and that do not require them to use other strategies to work out words",
+       "Re-read these books to build up their fluency and confidence in word reading."
+      ],
+      "2": [
+       "Continue to apply phonic knowledge and skills as the route to decode words until automatic decoding has become embedded and reading is fluent",
+       "Read accurately by blending the sounds in words that contain the graphemes taught so far, especially recognising alternative sounds for graphemes",
+       "Read accurately words of two or more syllables that contain the same graphemes as above",
+       "Read words containing common suffixes",
+       "Read further common exception words, noting unusual correspondences between spelling and sound and where these occur in the word",
+       "Read most words quickly and accurately, without overt sounding and blending, when they have been frequently encountered",
+       "Read aloud books closely matched to their improving phonic knowledge, sounding out unfamiliar words accurately, automatically and without undue hesitation",
+       "Re-read these books to build up their fluency and confidence in word reading."
+      ],
+      "3": [
+       "Apply their growing knowledge of root words, prefixes and suffixes (etymology and morphology) as listed in English Appendix 1, both to read aloud and to understand the meaning of new words they meet",
+       "Read further exception words, noting the unusual correspondences between spelling and sound, and where these occur in the word."
+      ],
+      "4": [
+       "Apply their growing knowledge of root words, prefixes and suffixes (etymology and morphology) as listed in English Appendix 1, both to read aloud and to understand the meaning of new words they meet",
+       "Read further exception words, noting the unusual correspondences between spelling and sound, and where these occur in the word."
+      ],
+      "5": [
+       "Apply their growing knowledge of root words, prefixes and suffixes (morphology and etymology), as listed in English Appendix 1, both to read aloud and to understand the meaning of new words that they meet."
+      ],
+      "6": [
+       "Apply their growing knowledge of root words, prefixes and suffixes (morphology and etymology), as listed in English Appendix 1, both to read aloud and to understand the meaning of new words that they meet."
+      ]
+     }
+    },
+    {
+     "name": "Reading – comprehension",
+     "aliases": [
+      "Reading",
+      "Comprehension"
+     ],
+     "years": {
+      "1": [
+       "Listening to and discussing a wide range of poems, stories and non-fiction at a level beyond that at which they can read independently",
+       "Being encouraged to link what they read or hear read to their own experiences",
+       "Becoming very familiar with key stories, fairy stories and traditional tales, retelling them and considering their particular characteristics",
+       "Recognising and joining in with predictable phrases",
+       "Learning to appreciate rhymes and poems, and to recite some by heart",
+       "Discussing word meanings, linking new meanings to those already known",
+       "Drawing on what they already know or on background information and vocabulary provided by the teacher",
+       "Checking that the text makes sense to them as they read and correcting inaccurate reading",
+       "Discussing the significance of the title and events",
+       "Making inferences on the basis of what is being said and done",
+       "Predicting what might happen on the basis of what has been read so far",
+       "Participate in discussion about what is read to them, taking turns and listening to what others say",
+       "Explain clearly their understanding of what is read to them."
+      ],
+      "2": [
+       "Listening to, discussing and expressing views about a wide range of contemporary and classic poetry, stories and non-fiction at a level beyond that at which they can read independently",
+       "Discussing the sequence of events in books and how items of information are related",
+       "Becoming increasingly familiar with and retelling a wider range of stories, fairy stories and traditional tales",
+       "Being introduced to non-fiction books that are structured in different ways",
+       "Recognising simple recurring literary language in stories and poetry",
+       "Discussing and clarifying the meanings of words, linking new meanings to known vocabulary",
+       "Discussing their favourite words and phrases",
+       "Continuing to build up a repertoire of poems learnt by heart, appreciating these and reciting some, with appropriate intonation to make the meaning clear",
+       "Drawing on what they already know or on background information and vocabulary provided by the teacher",
+       "Checking that the text makes sense to them as they read and correcting inaccurate reading",
+       "Making inferences on the basis of what is being said and done",
+       "Answering and asking questions",
+       "Predicting what might happen on the basis of what has been read so far",
+       "Participate in discussion about books, poems and other works that are read to them and those that they can read for themselves, taking turns and listening to what others say",
+       "Explain and discuss their understanding of books, poems and other material, both those that they listen to and those that they read for themselves."
+      ],
+      "3": [
+       "Listening to and discussing a wide range of fiction, poetry, plays, non-fiction and reference books or textbooks",
+       "Reading books that are structured in different ways and reading for a range of purposes",
+       "Using dictionaries to check the meaning of words that they have read",
+       "Increasing their familiarity with a wide range of books, including fairy stories, myths and legends, and retelling some of these orally",
+       "Identifying themes and conventions in a wide range of books",
+       "Preparing poems and play scripts to read aloud and to perform, showing understanding through intonation, tone, volume and action",
+       "Discussing words and phrases that capture the reader’s interest and imagination",
+       "Recognising some different forms of poetry [for example, free verse, narrative poetry]",
+       "Checking that the text makes sense to them, discussing their understanding and explaining the meaning of words in context",
+       "Asking questions to improve their understanding of a text",
+       "Drawing inferences such as inferring characters’ feelings, thoughts and motives from their actions, and justifying inferences with evidence",
+       "Predicting what might happen from details stated and implied",
+       "Identifying main ideas drawn from more than one paragraph and summarising these",
+       "Identifying how language, structure, and presentation contribute to meaning",
+       "Retrieve and record information from non-fiction",
+       "Participate in discussion about both books that are read to them and those they can read for themselves, taking turns and listening to what others say."
+      ],
+      "4": [
+       "Listening to and discussing a wide range of fiction, poetry, plays, non-fiction and reference books or textbooks",
+       "Reading books that are structured in different ways and reading for a range of purposes",
+       "Using dictionaries to check the meaning of words that they have read",
+       "Increasing their familiarity with a wide range of books, including fairy stories, myths and legends, and retelling some of these orally",
+       "Identifying themes and conventions in a wide range of books",
+       "Preparing poems and play scripts to read aloud and to perform, showing understanding through intonation, tone, volume and action",
+       "Discussing words and phrases that capture the reader’s interest and imagination",
+       "Recognising some different forms of poetry [for example, free verse, narrative poetry]",
+       "Checking that the text makes sense to them, discussing their understanding and explaining the meaning of words in context",
+       "Asking questions to improve their understanding of a text",
+       "Drawing inferences such as inferring characters’ feelings, thoughts and motives from their actions, and justifying inferences with evidence",
+       "Predicting what might happen from details stated and implied",
+       "Identifying main ideas drawn from more than one paragraph and summarising these",
+       "Identifying how language, structure, and presentation contribute to meaning",
+       "Retrieve and record information from non-fiction",
+       "Participate in discussion about both books that are read to them and those they can read for themselves, taking turns and listening to what others say."
+      ],
+      "5": [
+       "Continuing to read and discuss an increasingly wide range of fiction, poetry, plays, non-fiction and reference books or textbooks",
+       "Reading books that are structured in different ways and reading for a range of purposes",
+       "Increasing their familiarity with a wide range of books, including myths, legends and traditional stories, modern fiction, fiction from our literary heritage, and books from other cultures and traditions",
+       "Recommending books that they have read to their peers, giving reasons for their choices",
+       "Identifying and discussing themes and conventions in and across a wide range of writing",
+       "Making comparisons within and across books",
+       "Learning a wider range of poetry by heart",
+       "Preparing poems and plays to read aloud and to perform, showing understanding through intonation, tone and volume so that the meaning is clear to an audience",
+       "Understand what they read: checking that the book makes sense to them, discussing their understanding and exploring the meaning of words in context",
+       "Understand what they read: asking questions to improve their understanding",
+       "Understand what they read: drawing inferences such as inferring characters’ feelings, thoughts and motives from their actions, and justifying inferences with evidence",
+       "Understand what they read: predicting what might happen from details stated and implied",
+       "Understand what they read: summarising the main ideas drawn from more than one paragraph, identifying key details that support the main ideas",
+       "Understand what they read: identifying how language, structure and presentation contribute to meaning",
+       "Discuss and evaluate how authors use language, including figurative language, considering the impact on the reader",
+       "Distinguish between statements of fact and opinion",
+       "Retrieve, record and present information from non-fiction",
+       "Participate in discussions about books that are read to them and those they can read for themselves, building on their own and others’ ideas and challenging views courteously",
+       "Explain and discuss their understanding of what they have read, including through formal presentations and debates, maintaining a focus on the topic and using notes where necessary",
+       "Provide reasoned justifications for their views."
+      ],
+      "6": [
+       "Continuing to read and discuss an increasingly wide range of fiction, poetry, plays, non-fiction and reference books or textbooks",
+       "Reading books that are structured in different ways and reading for a range of purposes",
+       "Increasing their familiarity with a wide range of books, including myths, legends and traditional stories, modern fiction, fiction from our literary heritage, and books from other cultures and traditions",
+       "Recommending books that they have read to their peers, giving reasons for their choices",
+       "Identifying and discussing themes and conventions in and across a wide range of writing",
+       "Making comparisons within and across books",
+       "Learning a wider range of poetry by heart",
+       "Preparing poems and plays to read aloud and to perform, showing understanding through intonation, tone and volume so that the meaning is clear to an audience",
+       "Understand what they read: checking that the book makes sense to them, discussing their understanding and exploring the meaning of words in context",
+       "Understand what they read: asking questions to improve their understanding",
+       "Understand what they read: drawing inferences such as inferring characters’ feelings, thoughts and motives from their actions, and justifying inferences with evidence",
+       "Understand what they read: predicting what might happen from details stated and implied",
+       "Understand what they read: summarising the main ideas drawn from more than one paragraph, identifying key details that support the main ideas",
+       "Understand what they read: identifying how language, structure and presentation contribute to meaning",
+       "Discuss and evaluate how authors use language, including figurative language, considering the impact on the reader",
+       "Distinguish between statements of fact and opinion",
+       "Retrieve, record and present information from non-fiction",
+       "Participate in discussions about books that are read to them and those they can read for themselves, building on their own and others’ ideas and challenging views courteously",
+       "Explain and discuss their understanding of what they have read, including through formal presentations and debates, maintaining a focus on the topic and using notes where necessary",
+       "Provide reasoned justifications for their views."
+      ]
+     }
+    },
+    {
+     "name": "Writing – transcription",
+     "aliases": [
+      "Spelling",
+      "Transcription"
+     ],
+     "years": {
+      "1": [
+       "Spell: words containing each of the 40+ phonemes already taught",
+       "Spell: common exception words",
+       "Spell: the days of the week",
+       "Name the letiers of the alphabet: naming the letters of the alphabet in order",
+       "Name the letiers of the alphabet: using letter names to distinguish between alternative spellings of the same sound",
+       "Add prefixes and suffixes: using the spelling rule for adding –s or –es as the plural marker for nouns and the third person singular marker for verbs",
+       "Add prefixes and suffixes: using the prefix un–",
+       "Add prefixes and suffixes: using –ing, –ed, –er and –est where no change is needed in the spelling of root words [for example, helping, helped, helper, eating, quicker, quickest]",
+       "Apply simple spelling rules and guidance, as listed in English Appendix 1",
+       "Write from memory simple sentences dictated by the teacher that include words using the GPCs and common exception words taught so far."
+      ],
+      "2": [
+       "Spell: segmenting spoken words into phonemes and representing these by graphemes, spelling many correctly",
+       "Spell: learning new ways of spelling phonemes for which one or more spellings are already known, and learn some words with each spelling, including a few common homophones",
+       "Spell: learning to spell common exception words",
+       "Spell: learning to spell more words with contracted forms",
+       "Spell: learning the possessive apostrophe (singular) [for example, the girl’s book]",
+       "Spell: distinguishing between homophones and near-homophones",
+       "Add suffixes to spell longer words, including –ment, –ness, –ful, –less, –ly",
+       "Apply spelling rules and guidance, as listed in English Appendix 1",
+       "Write from memory simple sentences dictated by the teacher that include words using the GPCs, common exception words and punctuation taught so far."
+      ],
+      "3": [
+       "Use further prefixes and suffixes and understand how to add them (English Appendix 1)",
+       "Spell further homophones",
+       "Spell words that are often misspelt (English Appendix 1)",
+       "Place the possessive apostrophe accurately in words with regular plurals [for example, girls’, boys’] and in words with irregular plurals [for example, children’s]",
+       "Use the first two or three letters of a word to check its spelling in a dictionary",
+       "Write from memory simple sentences, dictated by the teacher, that include words and punctuation taught so far."
+      ],
+      "4": [
+       "Use further prefixes and suffixes and understand how to add them (English Appendix 1)",
+       "Spell further homophones",
+       "Spell words that are often misspelt (English Appendix 1)",
+       "Place the possessive apostrophe accurately in words with regular plurals [for example, girls’, boys’] and in words with irregular plurals [for example, children’s]",
+       "Use the first two or three letters of a word to check its spelling in a dictionary",
+       "Write from memory simple sentences, dictated by the teacher, that include words and punctuation taught so far."
+      ],
+      "5": [
+       "Use further prefixes and suffixes and understand the guidance for adding them",
+       "Spell some words with ‘silent’ letters [for example, knight, psalm, solemn]",
+       "Continue to distinguish between homophones and other words which are often confused",
+       "Use knowledge of morphology and etymology in spelling and understand that the spelling of some words needs to be learnt specifically, as listed in English Appendix 1",
+       "Use dictionaries to check the spelling and meaning of words",
+       "Use the first three or four letters of a word to check spelling, meaning or both of these in a dictionary",
+       "Use a thesaurus."
+      ],
+      "6": [
+       "Use further prefixes and suffixes and understand the guidance for adding them",
+       "Spell some words with ‘silent’ letters [for example, knight, psalm, solemn]",
+       "Continue to distinguish between homophones and other words which are often confused",
+       "Use knowledge of morphology and etymology in spelling and understand that the spelling of some words needs to be learnt specifically, as listed in English Appendix 1",
+       "Use dictionaries to check the spelling and meaning of words",
+       "Use the first three or four letters of a word to check spelling, meaning or both of these in a dictionary",
+       "Use a thesaurus."
+      ]
+     }
+    },
+    {
+     "name": "Writing – handwriting",
+     "aliases": [
+      "Handwriting",
+      "Writing"
+     ],
+     "years": {
+      "1": [
+       "Sit correctly at a table, holding a pencil comfortably and correctly",
+       "Begin to form lower-case letters in the correct direction, starting and finishing in the right place",
+       "Form capital letters",
+       "Form digits 0-9",
+       "Understand which letters belong to which handwriting ‘families’ (i.e. letters that are formed in similar ways) and to practise these."
+      ],
+      "2": [
+       "Form lower-case letters of the correct size relative to one another",
+       "Start using some of the diagonal and horizontal strokes needed to join letters and understand which letters, when adjacent to one another, are best left unjoined",
+       "Write capital letters and digits of the correct size, orientation and relationship to one another and to lower case letters",
+       "Use spacing between words that reflects the size of the letters."
+      ],
+      "3": [
+       "Use the diagonal and horizontal strokes that are needed to join letters and understand which letters, when adjacent to one another, are best left unjoined",
+       "Increase the legibility, consistency and quality of their handwriting [for example, by ensuring that the downstrokes of letters are parallel and equidistant; that lines of writing are spaced sufficiently so that the ascenders and descenders of letters do not touch]."
+      ],
+      "4": [
+       "Use the diagonal and horizontal strokes that are needed to join letters and understand which letters, when adjacent to one another, are best left unjoined",
+       "Increase the legibility, consistency and quality of their handwriting [for example, by ensuring that the downstrokes of letters are parallel and equidistant; that lines of writing are spaced sufficiently so that the ascenders and descenders of letters do not touch]."
+      ],
+      "5": [
+       "Write legibly, fluently and with increasing speed: choosing which shape of a letter to use when given choices and deciding whether or not to join specific letters",
+       "Write legibly, fluently and with increasing speed: choosing the writing implement that is best suited for a task."
+      ],
+      "6": [
+       "Write legibly, fluently and with increasing speed: choosing which shape of a letter to use when given choices and deciding whether or not to join specific letters",
+       "Write legibly, fluently and with increasing speed: choosing the writing implement that is best suited for a task."
+      ]
+     }
+    },
+    {
+     "name": "Writing – composition",
+     "aliases": [
+      "Writing",
+      "Composition"
+     ],
+     "years": {
+      "1": [
+       "Write sentences: saying out loud what they are going to write about",
+       "Write sentences: composing a sentence orally before writing it",
+       "Write sentences: sequencing sentences to form short narratives",
+       "Write sentences: re-reading what they have written to check that it makes sense",
+       "Discuss what they have written with the teacher or other pupils",
+       "Read aloud their writing clearly enough to be heard by their peers and the teacher."
+      ],
+      "2": [
+       "Develop positive attitudes towards and stamina for writing: writing narratives about personal experiences and those of others (real and fictional)",
+       "Develop positive attitudes towards and stamina for writing: writing about real events",
+       "Develop positive attitudes towards and stamina for writing: writing poetry",
+       "Develop positive attitudes towards and stamina for writing: writing for different purposes",
+       "Consider what they are going to write before beginning: planning or saying out loud what they are going to write about",
+       "Consider what they are going to write before beginning: writing down ideas and/or key words, including new vocabulary",
+       "Consider what they are going to write before beginning: encapsulating what they want to say, sentence by sentence",
+       "Evaluating their writing with the teacher and other pupils",
+       "Re-reading to check that their writing makes sense and that verbs to indicate time are used correctly and consistently, including verbs in the continuous form",
+       "Proof-reading to check for errors in spelling, grammar and punctuation [for example, ends of sentences punctuated correctly]",
+       "Read aloud what they have written with appropriate intonation to make the meaning clear."
+      ],
+      "3": [
+       "Plan their writing: discussing writing similar to that which they are planning to write in order to understand and learn from its structure, vocabulary and grammar",
+       "Plan their writing: discussing and recording ideas",
+       "Draft and write: composing and rehearsing sentences orally (including dialogue), progressively building a varied and rich vocabulary and an increasing range of sentence structures (English Appendix 2)",
+       "Draft and write: organising paragraphs around a theme",
+       "Draft and write: in narratives, creating settings, characters and plot",
+       "Draft and write: in non-narrative material, using simple organisational devices [for example, headings and sub-headings]",
+       "Evaluate and edit: assessing the effectiveness of their own and others’ writing and suggesting improvements",
+       "Evaluate and edit: proposing changes to grammar and vocabulary to improve consistency, including the accurate use of pronouns in sentences",
+       "Proof-read for spelling and punctuation errors",
+       "Read aloud their own writing, to a group or the whole class, using appropriate intonation and controlling the tone and volume so that the meaning is clear."
+      ],
+      "4": [
+       "Plan their writing: discussing writing similar to that which they are planning to write in order to understand and learn from its structure, vocabulary and grammar",
+       "Plan their writing: discussing and recording ideas",
+       "Draft and write: composing and rehearsing sentences orally (including dialogue), progressively building a varied and rich vocabulary and an increasing range of sentence structures (English Appendix 2)",
+       "Draft and write: organising paragraphs around a theme",
+       "Draft and write: in narratives, creating settings, characters and plot",
+       "Draft and write: in non-narrative material, using simple organisational devices [for example, headings and sub-headings]",
+       "Evaluate and edit: assessing the effectiveness of their own and others’ writing and suggesting improvements",
+       "Evaluate and edit: proposing changes to grammar and vocabulary to improve consistency, including the accurate use of pronouns in sentences",
+       "Proof-read for spelling and punctuation errors",
+       "Read aloud their own writing, to a group or the whole class, using appropriate intonation and controlling the tone and volume so that the meaning is clear."
+      ],
+      "5": [
+       "Plan their writing: identifying the audience for and purpose of the writing, selecting the appropriate form and using other similar writing as models for their own",
+       "Plan their writing: noting and developing initial ideas, drawing on reading and research where necessary",
+       "Plan their writing: in writing narratives, considering how authors have developed characters and settings in what pupils have read, listened to or seen performed",
+       "Draft and write: selecting appropriate grammar and vocabulary, understanding how such choices can change and enhance meaning",
+       "Draft and write: in narratives, describing settings, characters and atmosphere and integrating dialogue to convey character and advance the action",
+       "Draft and write: précising longer passages",
+       "Draft and write: using a wide range of devices to build cohesion within and across paragraphs",
+       "Draft and write: using further organisational and presentational devices to structure text and to guide the reader [for example, headings, bullet points, underlining]",
+       "Evaluate and edit: assessing the effectiveness of their own and others’ writing",
+       "Evaluate and edit: proposing changes to vocabulary, grammar and punctuation to enhance effects and clarify meaning",
+       "Evaluate and edit: ensuring the consistent and correct use of tense throughout a piece of writing",
+       "Evaluate and edit: ensuring correct subject and verb agreement when using singular and plural, distinguishing between the language of speech and writing and choosing the appropriate register",
+       "Proof-read for spelling and punctuation errors",
+       "Perform their own compositions, using appropriate intonation, volume, and movement so that meaning is clear."
+      ],
+      "6": [
+       "Plan their writing: identifying the audience for and purpose of the writing, selecting the appropriate form and using other similar writing as models for their own",
+       "Plan their writing: noting and developing initial ideas, drawing on reading and research where necessary",
+       "Plan their writing: in writing narratives, considering how authors have developed characters and settings in what pupils have read, listened to or seen performed",
+       "Draft and write: selecting appropriate grammar and vocabulary, understanding how such choices can change and enhance meaning",
+       "Draft and write: in narratives, describing settings, characters and atmosphere and integrating dialogue to convey character and advance the action",
+       "Draft and write: précising longer passages",
+       "Draft and write: using a wide range of devices to build cohesion within and across paragraphs",
+       "Draft and write: using further organisational and presentational devices to structure text and to guide the reader [for example, headings, bullet points, underlining]",
+       "Evaluate and edit: assessing the effectiveness of their own and others’ writing",
+       "Evaluate and edit: proposing changes to vocabulary, grammar and punctuation to enhance effects and clarify meaning",
+       "Evaluate and edit: ensuring the consistent and correct use of tense throughout a piece of writing",
+       "Evaluate and edit: ensuring correct subject and verb agreement when using singular and plural, distinguishing between the language of speech and writing and choosing the appropriate register",
+       "Proof-read for spelling and punctuation errors",
+       "Perform their own compositions, using appropriate intonation, volume, and movement so that meaning is clear."
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "Maths",
+   "aliases": [
+    "Maths",
+    "Mathematics",
+    "Math",
+    "Numeracy"
+   ],
+   "strands": [
+    {
+     "name": "Number and Place Value",
+     "aliases": [
+      "Place value",
+      "Number – number and place value",
+      "Number"
+     ],
+     "years": {
+      "1": [
+       "Count to and across 100, forwards and backwards, beginning with 0 or 1, or from any given number",
+       "Count, read and write numbers to 100 in numerals; count in multiples of twos, fives and tens",
+       "Given a number, identify one more and one less",
+       "Identify and represent numbers using objects and pictorial representations including the number line, and use the language of: equal to, more than, less than (fewer), most, least",
+       "Read and write numbers from 1 to 20 in numerals and words."
+      ],
+      "2": [
+       "Count in steps of 2, 3, and 5 from 0, and in tens from any number, forward and backward",
+       "Recognise the place value of each digit in a two-digit number (tens, ones)",
+       "Identify, represent and estimate numbers using different representations, including the number line",
+       "Compare and order numbers from 0 up to 100; use <, > and = signs",
+       "Read and write numbers to at least 100 in numerals and in words",
+       "Use place value and number facts to solve problems."
+      ],
+      "3": [
+       "Count from 0 in multiples of 4, 8, 50 and 100; find 10 or 100 more or less than a given number",
+       "Recognise the place value of each digit in a three-digit number (hundreds, tens, ones)",
+       "Compare and order numbers up to 1000",
+       "Identify, represent and estimate numbers using different representations",
+       "Read and write numbers up to 1000 in numerals and in words",
+       "Solve number problems and practical problems involving these ideas."
+      ],
+      "4": [
+       "Count in multiples of 6, 7, 9, 25 and 1000",
+       "Find 1000 more or less than a given number",
+       "Count backwards through zero to include negative numbers",
+       "Recognise the place value of each digit in a four-digit number (thousands, hundreds, tens, and ones)",
+       "Order and compare numbers beyond 1000",
+       "Identify, represent and estimate numbers using different representations",
+       "Round any number to the nearest 10, 100 or 1000",
+       "Solve number and practical problems that involve all of the above and with increasingly large positive numbers",
+       "Read Roman numerals to 100 (I to C) and know that over time, the numeral system changed to include the concept of zero and place value."
+      ],
+      "5": [
+       "Read, write, order and compare numbers to at least 1 000 000 and determine the value of each digit",
+       "Count forwards or backwards in steps of powers of 10 for any given number up to 1 000 000",
+       "Interpret negative numbers in context, count forwards and backwards with positive and negative whole numbers, including through zero",
+       "Round any number up to 1 000 000 to the nearest 10, 100, 1000, 10 000 and 100 000",
+       "Solve number problems and practical problems that involve all of the above",
+       "Read Roman numerals to 1000 (M) and recognise years written in Roman numerals."
+      ],
+      "6": [
+       "Read, write, order and compare numbers up to 10 000 000 and determine the value of each digit",
+       "Round any whole number to a required degree of accuracy",
+       "Use negative numbers in context, and calculate intervals across zero",
+       "Solve number and practical problems that involve all of the above."
+      ]
+     }
+    },
+    {
+     "name": "Addition and Subtraction",
+     "aliases": [
+      "Number – addition and subtraction",
+      "Calculation"
+     ],
+     "years": {
+      "1": [
+       "Read, write and interpret mathematical statements involving addition (+), subtraction (–) and equals (=) signs",
+       "Represent and use number bonds and related subtraction facts within 20",
+       "Add and subtract one-digit and two-digit numbers to 20, including zero",
+       "Solve one-step problems that involve addition and subtraction, using concrete objects and pictorial representations, and missing number problems such as 7 = [] - 9."
+      ],
+      "2": [
+       "Solve problems with addition and subtraction: using concrete objects and pictorial representations, including those involving numbers, quantities and measures",
+       "Solve problems with addition and subtraction: applying their increasing knowledge of mental and written methods",
+       "Recall and use addition and subtraction facts to 20 fluently, and derive and use related facts up to 100",
+       "Add and subtract numbers using concrete objects, pictorial representations, and mentally, including: a two-digit number and ones",
+       "Add and subtract numbers using concrete objects, pictorial representations, and mentally, including: a two-digit number and tens",
+       "Add and subtract numbers using concrete objects, pictorial representations, and mentally, including: two two-digit numbers",
+       "Add and subtract numbers using concrete objects, pictorial representations, and mentally, including: adding three one-digit numbers",
+       "Show that addition of two numbers can be done in any order (commutative) and subtraction of one number from another cannot",
+       "Recognise and use the inverse relationship between addition and subtraction and use this to check calculations and solve missing number problems."
+      ],
+      "3": [
+       "Add and subtract numbers mentally, including: a three-digit number and ones",
+       "Add and subtract numbers mentally, including: a three-digit number and tens",
+       "Add and subtract numbers mentally, including: a three-digit number and hundreds",
+       "Add and subtract numbers with up to three digits, using formal written methods of columnar addition and subtraction",
+       "Estimate the answer to a calculation and use inverse operations to check answers",
+       "Solve problems, including missing number problems, using number facts, place value, and more complex addition and subtraction."
+      ],
+      "4": [
+       "Add and subtract numbers with up to 4 digits using the formal written methods of columnar addition and subtraction where appropriate",
+       "Estimate and use inverse operations to check answers to a calculation",
+       "Solve addition and subtraction two-step problems in contexts, deciding which operations and methods to use and why."
+      ],
+      "5": [
+       "Add and subtract whole numbers with more than 4 digits, including using formal written methods (columnar addition and subtraction)",
+       "Add and subtract numbers mentally with increasingly large numbers",
+       "Use rounding to check answers to calculations and determine, in the context of a problem, levels of accuracy",
+       "Solve addition and subtraction multi-step problems in contexts, deciding which operations and methods to use and why."
+      ],
+      "6": [
+       "Solve addition and subtraction multi-step problems in contexts, deciding which operations and methods to use and why"
+      ]
+     }
+    },
+    {
+     "name": "Multiplication and Division",
+     "aliases": [
+      "Number – multiplication and division",
+      "Calculation"
+     ],
+     "years": {
+      "1": [
+       "Solve one-step problems involving multiplication and division, by calculating the answer using concrete objects, pictorial representations and arrays with the support of the teacher."
+      ],
+      "2": [
+       "Recall and use multiplication and division facts for the 2, 5 and 10 multiplication tables, including recognising odd and even numbers",
+       "Calculate mathematical statements for multiplication and division within the multiplication tables and write them using the multiplication (×), division (÷) and equals (=) signs",
+       "Show that multiplication of two numbers can be done in any order (commutative) and division of one number by another cannot",
+       "Solve problems involving multiplication and division, using materials, arrays, repeated addition, mental methods, and multiplication and division facts, including problems in contexts."
+      ],
+      "3": [
+       "Recall and use multiplication and division facts for the 3, 4 and 8 multiplication tables",
+       "Write and calculate mathematical statements for multiplication and division using the multiplication tables that they know, including for two-digit numbers times one-digit numbers, using mental and progressing to formal written methods",
+       "Solve problems, including missing number problems, involving multiplication and division, including positive integer scaling problems and correspondence problems in which n objects are connected to m objects."
+      ],
+      "4": [
+       "Recall multiplication and division facts for multiplication tables up to 12 × 12",
+       "Use place value, known and derived facts to multiply and divide mentally, including: multiplying by 0 and 1; dividing by 1; multiplying together three numbers",
+       "Recognise and use factor pairs and commutativity in mental calculations",
+       "Multiply two-digit and three-digit numbers by a one-digit number using formal written layout",
+       "Solve problems involving multiplying and adding, including using the distributive law to multiply two digit numbers by one digit, integer scaling problems and harder correspondence problems such as n objects are connected to m objects."
+      ],
+      "5": [
+       "Identify multiples and factors, including finding all factor pairs of a number, and common factors of two numbers",
+       "Know and use the vocabulary of prime numbers, prime factors and composite (non-prime) numbers",
+       "Establish whether a number up to 100 is prime and recall prime numbers up to 19",
+       "Multiply numbers up to 4 digits by a one- or two-digit number using a formal written method, including long multiplication for two-digit numbers",
+       "Multiply and divide numbers mentally drawing upon known facts",
+       "Divide numbers up to 4 digits by a one-digit number using the formal written method of short division and interpret remainders appropriately for the context",
+       "Multiply and divide whole numbers and those involving decimals by 10, 100 and 1000",
+       "Recognise and use square numbers and cube numbers, and the notation for squared and cubed",
+       "Solve problems involving multiplication and division including using their knowledge of factors and multiples, squares and cubes",
+       "Solve problems involving addition, subtraction, multiplication and division and a combination of these, including understanding the meaning of the equals sign",
+       "Solve problems involving multiplication and division, including scaling by simple fractions and problems involving simple rates."
+      ],
+      "6": [
+       "Multiply multi-digit numbers up to 4 digits by a two-digit whole number using the formal written method of long multiplication",
+       "Divide numbers up to 4 digits by a two-digit whole number using the formal written method of long division, and interpret remainders as whole number remainders, fractions, or by rounding, as appropriate for the context",
+       "Divide numbers up to 4 digits by a two-digit number using the formal written method of short division where appropriate, interpreting remainders according to the context",
+       "Perform mental calculations, including with mixed operations and large numbers",
+       "Identify common factors, common multiples and prime numbers",
+       "Use their knowledge of the order of operations to carry out calculations involving the four operations",
+       "Solve problems involving addition, subtraction, multiplication and division",
+       "Use estimation to check answers to calculations and determine, in the context of a problem, an appropriate degree of accuracy."
+      ]
+     }
+    },
+    {
+     "name": "Fractions",
+     "aliases": [
+      "Fractions, decimals and percentages",
+      "Fractions and decimals",
+      "Number – fractions"
+     ],
+     "years": {
+      "1": [
+       "Recognise, find and name a half as one of two equal parts of an object, shape or quantity",
+       "Recognise, find and name a quarter as one of four equal parts of an object, shape or quantity."
+      ],
+      "2": [
+       "Recognise, find, name and write fractions and of a length, shape, set of objects or quantity",
+       "Write simple fractions for example, of 6 = 3 and recognise the equivalence of and ."
+      ],
+      "3": [
+       "Count up and down in tenths; recognise that tenths arise from dividing an object into 10 equal parts and in dividing one-digit numbers or quantities by 10",
+       "Recognise, find and write fractions of a discrete set of objects: unit fractions and non-unit fractions with small denominators",
+       "Recognise and use fractions as numbers: unit fractions and non-unit fractions with small denominators",
+       "Recognise and show, using diagrams, equivalent fractions with small denominators",
+       "Add and subtract fractions with the same denominator within one whole [for example, ]",
+       "Compare and order unit fractions, and fractions with the same denominators",
+       "Solve problems that involve all of the above."
+      ],
+      "4": [
+       "Recognise and show, using diagrams, families of common equivalent fractions",
+       "Count up and down in hundredths; recognise that hundredths arise when dividing an object by one hundred and dividing tenths by ten.",
+       "Solve problems involving increasingly harder fractions to calculate quantities, and fractions to divide quantities, including non-unit fractions where the answer is a whole number",
+       "Add and subtract fractions with the same denominator",
+       "Recognise and write decimal equivalents of any number of tenths or hundredths",
+       "Recognise and write decimal equivalents to",
+       "Find the effect of dividing a one- or two-digit number by 10 and 100, identifying the value of the digits in the answer as ones, tenths and hundredths",
+       "Round decimals with one decimal place to the nearest whole number",
+       "Compare numbers with the same number of decimal places up to two decimal places",
+       "Solve simple measure and money problems involving fractions and decimals to two decimal places."
+      ],
+      "5": [
+       "Compare and order fractions whose denominators are all multiples of the same number",
+       "Identify, name and write equivalent fractions of a given fraction, represented visually, including tenths and hundredths",
+       "Recognise mixed numbers and improper fractions and convert from one form to the other and write mathematical statements > 1 as a mixed number [for example, ]",
+       "Add and subtract fractions with the same denominator and denominators that are multiples of the same number",
+       "Multiply proper fractions and mixed numbers by whole numbers, supported by materials and diagrams",
+       "Read and write decimal numbers as fractions [for example, ]",
+       "Recognise and use thousandths and relate them to tenths, hundredths and decimal equivalents",
+       "Round decimals with two decimal places to the nearest whole number and to one decimal place",
+       "Read, write, order and compare numbers with up to three decimal places",
+       "Solve problems involving number up to three decimal places",
+       "Recognise the per cent symbol (%) and understand that per cent relates to ‘number of parts per hundred’, and write percentages as a fraction with denominator 100, and as a decimal",
+       "Solve problems which require knowing percentage and decimal equivalents of and those fractions with a denominator of a multiple of 10 or 25."
+      ],
+      "6": [
+       "Use common factors to simplify fractions; use common multiples to express fractions in the same denomination",
+       "Compare and order fractions, including fractions > 1",
+       "Add and subtract fractions with different denominators and mixed numbers, using the concept of equivalent fractions",
+       "Multiply simple pairs of proper fractions, writing the answer in its simplest form [for example, ]",
+       "Divide proper fractions by whole numbers [for example, ]",
+       "Associate a fraction with division and calculate decimal fraction equivalents [for example, 0.375] for a simple fraction [for example, ]",
+       "Identify the value of each digit in numbers given to three decimal places and multiply and divide numbers by 10, 100 and 1000 giving answers up to three decimal places",
+       "Multiply one-digit numbers with up to two decimal places by whole numbers",
+       "Use written division methods in cases where the answer has up to two decimal places",
+       "Solve problems which require answers to be rounded to specified degrees of accuracy",
+       "Recall and use equivalences between simple fractions, decimals and percentages, including in different contexts."
+      ]
+     }
+    },
+    {
+     "name": "Measurement",
+     "aliases": [
+      "Measures"
+     ],
+     "years": {
+      "1": [
+       "Compare, describe and solve practical problems for: lengths and heights [for example, long/short, longer/shorter, tall/short, double/half]",
+       "Compare, describe and solve practical problems for: mass/weight [for example, heavy/light, heavier than, lighter than]",
+       "Compare, describe and solve practical problems for: capacity and volume [for example, full/empty, more than, less than, half, half full, quarter]",
+       "Compare, describe and solve practical problems for: time [for example, quicker, slower, earlier, later]",
+       "Measure and begin to record the following: lengths and heights",
+       "Measure and begin to record the following: mass/weight",
+       "Measure and begin to record the following: capacity and volume",
+       "Measure and begin to record the following: time (hours, minutes, seconds)",
+       "Recognise and know the value of different denominations of coins and notes",
+       "Sequence events in chronological order using language [for example, before and after, next, first, today, yesterday, tomorrow, morning, afternoon and evening]",
+       "Recognise and use language relating to dates, including days of the week, weeks, months and years",
+       "Tell the time to the hour and half past the hour and draw the hands on a clock face to show these times."
+      ],
+      "2": [
+       "Choose and use appropriate standard units to estimate and measure length/height in any direction (m/cm); mass (kg/g); temperature (°C); capacity (litres/ml) to the nearest appropriate unit, using rulers, scales, thermometers and measuring vessels",
+       "Compare and order lengths, mass, volume/capacity and record the results using >, < and =",
+       "Recognise and use symbols for pounds (£) and pence (p); combine amounts to make a particular value",
+       "Find different combinations of coins that equal the same amounts of money",
+       "Solve simple problems in a practical context involving addition and subtraction of money of the same unit, including giving change",
+       "Compare and sequence intervals of time",
+       "Tell and write the time to five minutes, including quarter past/to the hour and draw the hands on a clock face to show these times",
+       "Know the number of minutes in an hour and the number of hours in a day."
+      ],
+      "3": [
+       "Measure, compare, add and subtract: lengths (m/cm/mm); mass (kg/g); volume/capacity (l/ml)",
+       "Measure the perimeter of simple 2-D shapes",
+       "Add and subtract amounts of money to give change, using both £ and p in practical contexts",
+       "Tell and write the time from an analogue clock, including using Roman numerals from I to XII, and 12-hour and 24-hour clocks",
+       "Estimate and read time with increasing accuracy to the nearest minute; record and compare time in terms of seconds, minutes and hours; use vocabulary such as o’clock, a.m./p.m., morning, afternoon, noon and midnight",
+       "Know the number of seconds in a minute and the number of days in each month, year and leap year",
+       "Compare durations of events [for example to calculate the time taken by particular events or tasks]."
+      ],
+      "4": [
+       "Convert between different units of measure [for example, kilometre to metre; hour to minute]",
+       "Measure and calculate the perimeter of a rectilinear figure (including squares) in centimetres and metres",
+       "Find the area of rectilinear shapes by counting squares",
+       "Estimate, compare and calculate different measures, including money in pounds and pence",
+       "Read, write and convert time between analogue and digital 12- and 24-hour clocks",
+       "Solve problems involving converting from hours to minutes; minutes to seconds; years to months; weeks to days."
+      ],
+      "5": [
+       "Convert between different units of metric measure (for example, kilometre and metre; centimetre and metre; centimetre and millimetre; gram and kilogram; litre and millilitre)",
+       "Understand and use approximate equivalences between metric units and common imperial units such as inches, pounds and pints",
+       "Measure and calculate the perimeter of composite rectilinear shapes in centimetres and metres",
+       "Calculate and compare the area of rectangles (including squares), and including using standard units, square centimetres and square metres and estimate the area of irregular shapes",
+       "Estimate volume [for example, using 1 blocks to build cuboids (including cubes)] and capacity [for example, using water]",
+       "Solve problems involving converting between units of time",
+       "Use all four operations to solve problems involving measure [for example, length, mass, volume, money] using decimal notation, including scaling."
+      ],
+      "6": [
+       "Solve problems involving the calculation and conversion of units of measure, using decimal notation up to three decimal places where appropriate",
+       "Use, read, write and convert between standard units, converting measurements of length, mass, volume and time from a smaller unit of measure to a larger unit, and vice versa, using decimal notation to up to three decimal places",
+       "Convert between miles and kilometres",
+       "Recognise that shapes with the same areas can have different perimeters and vice versa",
+       "Recognise when it is possible to use formulae for area and volume of shapes",
+       "Calculate the area of parallelograms and triangles",
+       "Calculate, estimate and compare volume of cubes and cuboids using standard units, including cubic centimetres and cubic metres , and extending to other units [for example, and ]."
+      ]
+     }
+    },
+    {
+     "name": "Geometry – Properties of Shapes",
+     "aliases": [
+      "Properties of shapes",
+      "Shape",
+      "Geometry"
+     ],
+     "years": {
+      "1": [
+       "Recognise and name common 2-D and 3-D shapes, including: 2-D shapes [for example, rectangles (including squares), circles and triangles]; 3-D shapes [for example, cuboids (including cubes), pyramids and spheres]."
+      ],
+      "2": [
+       "Identify and describe the properties of 2-D shapes, including the number of sides and line symmetry in a vertical line",
+       "Identify and describe the properties of 3-D shapes, including the number of edges, vertices and faces",
+       "Identify 2-D shapes on the surface of 3-D shapes, [for example, a circle on a cylinder and a triangle on a pyramid]",
+       "Compare and sort common 2-D and 3-D shapes and everyday objects."
+      ],
+      "3": [
+       "Draw 2-D shapes and make 3-D shapes using modelling materials; recognise 3-D shapes in different orientations and describe them",
+       "Recognise angles as a property of shape or a description of a turn",
+       "Identify right angles, recognise that two right angles make a half-turn, three make three quarters of a turn and four a complete turn; identify whether angles are greater than or less than a right angle",
+       "Identify horizontal and vertical lines and pairs of perpendicular and parallel lines."
+      ],
+      "4": [
+       "Compare and classify geometric shapes, including quadrilaterals and triangles, based on their properties and sizes",
+       "Identify acute and obtuse angles and compare and order angles up to two right angles by size",
+       "Identify lines of symmetry in 2-D shapes presented in different orientations",
+       "Complete a simple symmetric figure with respect to a specific line of symmetry."
+      ],
+      "5": [
+       "Identify 3-D shapes, including cubes and other cuboids, from 2-D representations",
+       "Know angles are measured in degrees: estimate and compare acute, obtuse and reflex angles",
+       "Draw given angles, and measure them in degrees",
+       "Identify: angles at a point and one whole turn",
+       "Identify: angles at a point on a straight line and a turn",
+       "Identify: other multiples of",
+       "Use the properties of rectangles to deduce related facts and find missing lengths and angles",
+       "Distinguish between regular and irregular polygons based on reasoning about equal sides and angles."
+      ],
+      "6": [
+       "Draw 2-D shapes using given dimensions and angles",
+       "Recognise, describe and build simple 3-D shapes, including making nets",
+       "Compare and classify geometric shapes based on their properties and sizes and find unknown angles in any triangles, quadrilaterals, and regular polygons",
+       "Illustrate and name parts of circles, including radius, diameter and circumference and know that the diameter is twice the radius",
+       "Recognise angles where they meet at a point, are on a straight line, or are vertically opposite, and find missing angles."
+      ]
+     }
+    },
+    {
+     "name": "Geometry – Position and Direction",
+     "aliases": [
+      "Position and direction",
+      "Geometry"
+     ],
+     "years": {
+      "1": [
+       "Describe position, direction and movement, including whole, half, quarter and three-quarter turns."
+      ],
+      "2": [
+       "Order and arrange combinations of mathematical objects in patterns and sequences",
+       "Use mathematical vocabulary to describe position, direction and movement, including movement in a straight line and distinguishing between rotation as a turn and in terms of right angles for quarter, half and three-quarter turns (clockwise and anti-clockwise)."
+      ],
+      "4": [
+       "Describe positions on a 2-D grid as coordinates in the first quadrant",
+       "Describe movements between positions as translations of a given unit to the left/right and up/down",
+       "Plot specified points and draw sides to complete a given polygon."
+      ],
+      "5": [
+       "Identify, describe and represent the position of a shape following a reflection or translation, using the appropriate language, and know that the shape has not changed."
+      ],
+      "6": [
+       "Describe positions on the full coordinate grid (all four quadrants)",
+       "Draw and translate simple shapes on the coordinate plane, and reflect them in the axes."
+      ]
+     }
+    },
+    {
+     "name": "Statistics",
+     "aliases": [
+      "Data handling",
+      "Data"
+     ],
+     "years": {
+      "2": [
+       "Interpret and construct simple pictograms, tally charts, block diagrams and simple tables",
+       "Ask and answer simple questions by counting the number of objects in each category and sorting the categories by quantity",
+       "Ask and answer questions about totalling and comparing categorical data."
+      ],
+      "3": [
+       "Interpret and present data using bar charts, pictograms and tables",
+       "Solve one-step and two-step questions [for example, ‘How many more?’ and ‘How many fewer?’] using information presented in scaled bar charts and pictograms and tables."
+      ],
+      "4": [
+       "Interpret and present discrete and continuous data using appropriate graphical methods, including bar charts and time graphs.",
+       "Solve comparison, sum and difference problems using information presented in bar charts, pictograms, tables and other graphs."
+      ],
+      "5": [
+       "Solve comparison, sum and difference problems using information presented in a line graph",
+       "Complete, read and interpret information in tables, including timetables."
+      ],
+      "6": [
+       "Interpret and construct pie charts and line graphs and use these to solve problems",
+       "Calculate and interpret the mean as an average."
+      ]
+     }
+    },
+    {
+     "name": "Ratio and Proportion",
+     "aliases": [
+      "Ratio"
+     ],
+     "years": {
+      "6": [
+       "Solve problems involving the relative sizes of two quantities where missing values can be found by using integer multiplication and division facts",
+       "Solve problems involving the calculation of percentages [for example, of measures, and such as 15% of 360] and the use of percentages for comparison",
+       "Solve problems involving similar shapes where the scale factor is known or can be found",
+       "Solve problems involving unequal sharing and grouping using knowledge of fractions and multiples."
+      ]
+     }
+    },
+    {
+     "name": "Algebra",
+     "aliases": [],
+     "years": {
+      "6": [
+       "Use simple formulae",
+       "Generate and describe linear number sequences",
+       "Express missing number problems algebraically",
+       "Find pairs of numbers that satisfy an equation with two unknowns",
+       "Enumerate possibilities of combinations of two variables."
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "Science",
+   "aliases": [
+    "Science",
+    "Sciences"
+   ],
+   "strands": [
+    {
+     "name": "Working scientifically",
+     "aliases": [],
+     "years": {
+      "1": [
+       "Asking simple questions and recognising that they can be answered in different ways",
+       "Observing closely, using simple equipment",
+       "Performing simple tests",
+       "Identifying and classifying",
+       "Using their observations and ideas to suggest answers to questions",
+       "Gathering and recording data to help in answering questions."
+      ],
+      "2": [
+       "Asking simple questions and recognising that they can be answered in different ways",
+       "Observing closely, using simple equipment",
+       "Performing simple tests",
+       "Identifying and classifying",
+       "Using their observations and ideas to suggest answers to questions",
+       "Gathering and recording data to help in answering questions."
+      ],
+      "3": [
+       "Asking relevant questions and using different types of scientific enquiries to answer them",
+       "Setting up simple practical enquiries, comparative and fair tests",
+       "Making systematic and careful observations and, where appropriate, taking accurate measurements using standard units, using a range of equipment, including thermometers and data loggers",
+       "Gathering, recording, classifying and presenting data in a variety of ways to help in answering questions",
+       "Recording findings using simple scientific language, drawings, labelled diagrams, keys, bar charts, and tables",
+       "Reporting on findings from enquiries, including oral and written explanations, displays or presentations of results and conclusions",
+       "Using results to draw simple conclusions, make predictions for new values, suggest improvements and raise further questions",
+       "Identifying differences, similarities or changes related to simple scientific ideas and processes",
+       "Using straightforward scientific evidence to answer questions or to support their findings."
+      ],
+      "4": [
+       "Asking relevant questions and using different types of scientific enquiries to answer them",
+       "Setting up simple practical enquiries, comparative and fair tests",
+       "Making systematic and careful observations and, where appropriate, taking accurate measurements using standard units, using a range of equipment, including thermometers and data loggers",
+       "Gathering, recording, classifying and presenting data in a variety of ways to help in answering questions",
+       "Recording findings using simple scientific language, drawings, labelled diagrams, keys, bar charts, and tables",
+       "Reporting on findings from enquiries, including oral and written explanations, displays or presentations of results and conclusions",
+       "Using results to draw simple conclusions, make predictions for new values, suggest improvements and raise further questions",
+       "Identifying differences, similarities or changes related to simple scientific ideas and processes",
+       "Using straightforward scientific evidence to answer questions or to support their findings."
+      ],
+      "5": [
+       "Planning different types of scientific enquiries to answer questions, including recognising and controlling variables where necessary",
+       "Taking measurements, using a range of scientific equipment, with increasing accuracy and precision, taking repeat readings when appropriate",
+       "Recording data and results of increasing complexity using scientific diagrams and labels, classification keys, tables, scatter graphs, bar and line graphs",
+       "Using test results to make predictions to set up further comparative and fair tests",
+       "Reporting and presenting findings from enquiries, including conclusions, causal relationships and explanations of and degree of trust in results, in oral and written forms such as displays and other presentations",
+       "Identifying scientific evidence that has been used to support or refute ideas or arguments."
+      ],
+      "6": [
+       "Planning different types of scientific enquiries to answer questions, including recognising and controlling variables where necessary",
+       "Taking measurements, using a range of scientific equipment, with increasing accuracy and precision, taking repeat readings when appropriate",
+       "Recording data and results of increasing complexity using scientific diagrams and labels, classification keys, tables, scatter graphs, bar and line graphs",
+       "Using test results to make predictions to set up further comparative and fair tests",
+       "Reporting and presenting findings from enquiries, including conclusions, causal relationships and explanations of and degree of trust in results, in oral and written forms such as displays and other presentations",
+       "Identifying scientific evidence that has been used to support or refute ideas or arguments."
+      ]
+     }
+    },
+    {
+     "name": "Plants",
+     "aliases": [],
+     "years": {
+      "1": [
+       "Identify and name a variety of common wild and garden plants, including deciduous and evergreen trees",
+       "Identify and describe the basic structure of a variety of common flowering plants, including trees."
+      ],
+      "2": [
+       "Observe and describe how seeds and bulbs grow into mature plants",
+       "Find out and describe how plants need water, light and a suitable temperature to grow and stay healthy."
+      ],
+      "3": [
+       "Identify and describe the functions of different parts of flowering plants: roots, stem/trunk, leaves and flowers",
+       "Explore the requirements of plants for life and growth (air, light, water, nutrients from soil, and room to grow) and how they vary from plant to plant",
+       "Investigate the way in which water is transported within plants",
+       "Explore the part that flowers play in the life cycle of flowering plants, including pollination, seed formation and seed dispersal."
+      ]
+     }
+    },
+    {
+     "name": "Animals, including humans",
+     "aliases": [],
+     "years": {
+      "1": [
+       "Identify and name a variety of common animals including fish, amphibians, reptiles, birds and mammals",
+       "Identify and name a variety of common animals that are carnivores, herbivores and omnivores",
+       "Describe and compare the structure of a variety of common animals (fish, amphibians, reptiles, birds and mammals, including pets)",
+       "Identify, name, draw and label the basic parts of the human body and say which part of the body is associated with each sense."
+      ],
+      "2": [
+       "Notice that animals, including humans, have offspring which grow into adults",
+       "Find out about and describe the basic needs of animals, including humans, for survival (water, food and air)",
+       "Describe the importance for humans of exercise, eating the right amounts of different types of food, and hygiene."
+      ],
+      "3": [
+       "Identify that animals, including humans, need the right types and amount of nutrition, and that they cannot make their own food; they get nutrition from what they eat",
+       "Identify that humans and some other animals have skeletons and muscles for support, protection and movement."
+      ],
+      "4": [
+       "Describe the simple functions of the basic parts of the digestive system in humans",
+       "Identify the different types of teeth in humans and their simple functions",
+       "Construct and interpret a variety of food chains, identifying producers, predators and prey."
+      ],
+      "5": [
+       "Describe the changes as humans develop to old age."
+      ],
+      "6": [
+       "Identify and name the main parts of the human circulatory system, and describe the functions of the heart, blood vessels and blood",
+       "Recognise the impact of diet, exercise, drugs and lifestyle on the way their bodies function",
+       "Describe the ways in which nutrients and water are transported within animals, including humans."
+      ]
+     }
+    },
+    {
+     "name": "Everyday materials",
+     "aliases": [],
+     "years": {
+      "1": [
+       "Distinguish between an object and the material from which it is made",
+       "Identify and name a variety of everyday materials, including wood, plastic, glass, metal, water, and rock",
+       "Describe the simple physical properties of a variety of everyday materials",
+       "Compare and group together a variety of everyday materials on the basis of their simple physical properties."
+      ]
+     }
+    },
+    {
+     "name": "Seasonal changes",
+     "aliases": [],
+     "years": {
+      "1": [
+       "Observe changes across the four seasons",
+       "Observe and describe weather associated with the seasons and how day length varies."
+      ]
+     }
+    },
+    {
+     "name": "Living things and their habitats",
+     "aliases": [],
+     "years": {
+      "2": [
+       "Explore and compare the differences between things that are living, dead, and things that have never been alive",
+       "Identify that most living things live in habitats to which they are suited and describe how different habitats provide for the basic needs of different kinds of animals and plants, and how they depend on each other",
+       "Identify and name a variety of plants and animals in their habitats, including micro-habitats",
+       "Describe how animals obtain their food from plants and other animals, using the idea of a simple food chain, and identify and name different sources of food."
+      ],
+      "4": [
+       "Recognise that living things can be grouped in a variety of ways",
+       "Explore and use classification keys to help group, identify and name a variety of living things in their local and wider environment",
+       "Recognise that environments can change and that this can sometimes pose dangers to living things."
+      ],
+      "5": [
+       "Describe the differences in the life cycles of a mammal, an amphibian, an insect and a bird",
+       "Describe the life process of reproduction in some plants and animals."
+      ],
+      "6": [
+       "Describe how living things are classified into broad groups according to common observable characteristics and based on similarities and differences, including micro-organisms, plants and animals",
+       "Give reasons for classifying plants and animals based on specific characteristics."
+      ]
+     }
+    },
+    {
+     "name": "Uses of everyday materials",
+     "aliases": [],
+     "years": {
+      "2": [
+       "Identify and compare the suitability of a variety of everyday materials, including wood, metal, plastic, glass, brick, rock, paper and cardboard for particular uses",
+       "Find out how the shapes of solid objects made from some materials can be changed by squashing, bending, twisting and stretching."
+      ]
+     }
+    },
+    {
+     "name": "Rocks",
+     "aliases": [],
+     "years": {
+      "3": [
+       "Compare and group together different kinds of rocks on the basis of their appearance and simple physical properties",
+       "Describe in simple terms how fossils are formed when things that have lived are trapped within rock",
+       "Recognise that soils are made from rocks and organic matter."
+      ]
+     }
+    },
+    {
+     "name": "Light",
+     "aliases": [],
+     "years": {
+      "3": [
+       "Recognise that they need light in order to see things and that dark is the absence of light",
+       "Notice that light is reflected from surfaces",
+       "Recognise that light from the sun can be dangerous and that there are ways to protect their eyes",
+       "Recognise that shadows are formed when the light from a light source is blocked by a solid object",
+       "Find patterns in the way that the size of shadows change."
+      ],
+      "6": [
+       "Recognise that light appears to travel in straight lines",
+       "Use the idea that light travels in straight lines to explain that objects are seen because they give out or reflect light into the eye",
+       "Explain that we see things because light travels from light sources to our eyes or from light sources to objects and then to our eyes",
+       "Use the idea that light travels in straight lines to explain why shadows have the same shape as the objects that cast them."
+      ]
+     }
+    },
+    {
+     "name": "Forces and magnets",
+     "aliases": [],
+     "years": {
+      "3": [
+       "Compare how things move on different surfaces",
+       "Notice that some forces need contact between two objects, but magnetic forces can act at a distance",
+       "Observe how magnets attract or repel each other and attract some materials and not others",
+       "Compare and group together a variety of everyday materials on the basis of whether they are attracted to a magnet, and identify some magnetic materials",
+       "Describe magnets as having two poles",
+       "Predict whether two magnets will attract or repel each other, depending on which poles are facing."
+      ]
+     }
+    },
+    {
+     "name": "States of matter",
+     "aliases": [],
+     "years": {
+      "4": [
+       "Compare and group materials together, according to whether they are solids, liquids or gases",
+       "Observe that some materials change state when they are heated or cooled, and measure or research the temperature at which this happens in degrees Celsius (°C)",
+       "Identify the part played by evaporation and condensation in the water cycle and associate the rate of evaporation with temperature."
+      ]
+     }
+    },
+    {
+     "name": "Sound",
+     "aliases": [],
+     "years": {
+      "4": [
+       "Identify how sounds are made, associating some of them with something vibrating",
+       "Recognise that vibrations from sounds travel through a medium to the ear",
+       "Find patterns between the pitch of a sound and features of the object that produced it",
+       "Find patterns between the volume of a sound and the strength of the vibrations that produced it",
+       "Recognise that sounds get fainter as the distance from the sound source increases."
+      ]
+     }
+    },
+    {
+     "name": "Electricity",
+     "aliases": [],
+     "years": {
+      "4": [
+       "Identify common appliances that run on electricity",
+       "Construct a simple series electrical circuit, identifying and naming its basic parts, including cells, wires, bulbs, switches and buzzers",
+       "Identify whether or not a lamp will light in a simple series circuit, based on whether or not the lamp is part of a complete loop with a battery",
+       "Recognise that a switch opens and closes a circuit and associate this with whether or not a lamp lights in a simple series circuit",
+       "Recognise some common conductors and insulators, and associate metals with being good conductors."
+      ],
+      "6": [
+       "Associate the brightness of a lamp or the volume of a buzzer with the number and voltage of cells used in the circuit",
+       "Compare and give reasons for variations in how components function, including the brightness of bulbs, the loudness of buzzers and the on/off position of switches",
+       "Use recognised symbols when representing a simple circuit in a diagram."
+      ]
+     }
+    },
+    {
+     "name": "Properties and changes of materials",
+     "aliases": [],
+     "years": {
+      "5": [
+       "Compare and group together everyday materials on the basis of their properties, including their hardness, solubility, transparency, conductivity (electrical and thermal), and response to magnets",
+       "Know that some materials will dissolve in liquid to form a solution, and describe how to recover a substance from a solution",
+       "Use knowledge of solids, liquids and gases to decide how mixtures might be separated, including through filtering, sieving and evaporating",
+       "Give reasons, based on evidence from comparative and fair tests, for the particular uses of everyday materials, including metals, wood and plastic",
+       "Demonstrate that dissolving, mixing and changes of state are reversible changes",
+       "Explain that some changes result in the formation of new materials, and that this kind of change is not usually reversible, including changes associated with burning and the action of acid on bicarbonate of soda."
+      ]
+     }
+    },
+    {
+     "name": "Earth and space",
+     "aliases": [],
+     "years": {
+      "5": [
+       "Describe the movement of the Earth, and other planets, relative to the Sun in the solar system",
+       "Describe the movement of the Moon relative to the Earth",
+       "Describe the Sun, Earth and Moon as approximately spherical bodies",
+       "Use the idea of the Earth’s rotation to explain day and night and the apparent movement of the sun across the sky."
+      ]
+     }
+    },
+    {
+     "name": "Forces",
+     "aliases": [],
+     "years": {
+      "5": [
+       "Explain that unsupported objects fall towards the Earth because of the force of gravity acting between the Earth and the falling object",
+       "Identify the effects of air resistance, water resistance and friction, that act between moving surfaces",
+       "Recognise that some mechanisms, including levers, pulleys and gears, allow a smaller force to have a greater effect."
+      ]
+     }
+    },
+    {
+     "name": "Evolution and inheritance",
+     "aliases": [],
+     "years": {
+      "6": [
+       "Recognise that living things have changed over time and that fossils provide information about living things that inhabited the Earth millions of years ago",
+       "Recognise that living things produce offspring of the same kind, but normally offspring vary and are not identical to their parents",
+       "Identify how animals and plants are adapted to suit their environment in different ways and that adaptation may lead to evolution."
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}
