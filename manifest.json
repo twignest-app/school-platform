@@ -1,0 +1,23 @@
+{
+  "name": "Nestopia Parents",
+  "short_name": "Nestopia",
+  "start_url": "parent.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F8F5FC",
+  "theme_color": "#462D5B",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

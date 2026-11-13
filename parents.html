@@ -128,7 +128,7 @@ h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
 <div class="toast" id="toast" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="hub.js?v=13"></script>
-<script src="parents-admin.js?v=2"></script>
+<script src="parents-admin.js?v=3"></script>
 <script>
 const PLATFORM = "Nestopia";
 const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
@@ -156,10 +156,11 @@ const toast = m => { const t = document.getElementById("toast"); t.textContent =
     ${lead ? `<section class="card" style="margin-bottom:16px"><h2 style="margin:0 0 6px">👀 See what parents see</h2><p class="note" style="margin-top:0">Choose a student to see their portal exactly as their parents do.</p>
       <div class="row" style="display:flex;gap:8px;flex-wrap:wrap"><input type="search" id="pvQ" placeholder="Type a student’s name" list="pvList" style="max-width:300px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit"><datalist id="pvList"></datalist><button class="btn small" id="pvGo">Preview</button></div></section>
     <section class="card" id="pp" style="margin-bottom:16px"><h2 style="margin:0 0 8px">Invite families</h2><div id="ppBody"><p class="note">Loading…</p></div></section>
+    <section class="card" id="un" style="margin-bottom:16px"><h2 style="margin:0 0 8px">📚 This unit</h2><div id="unBody"><p class="note">Loading…</p></div></section>
     <section class="card" id="si"><h2 style="margin:0 0 8px">📁 School information</h2><div id="siBody"><p class="note">Loading…</p></div></section>`
     : '<div class="card"><p class="note" style="margin:0">School leaders invite families and choose what parents see. You can reply to parents in <a href="messages.html">Messages</a>.</p></div>'}`;
   if (!lead) return;
-  parentPortal(s); schoolInfoEditor(s, document.getElementById("siBody"));
+  parentPortal(s); schoolInfoEditor(s, document.getElementById("siBody")); unitEditor(s, document.getElementById("unBody"));
   const { data: studs } = await sb.from("students").select("id,full_name,classes(name)").eq("school_id", s.id).eq("archived", false).order("full_name");
   document.getElementById("pvList").innerHTML = (studs || []).map(x => `<option value="${esc(x.full_name + (x.classes ? " · " + x.classes.name : ""))}">`).join("");
   document.getElementById("pvGo").onclick = () => { const v = document.getElementById("pvQ").value, k = (studs || []).find(x => (x.full_name + (x.classes ? " · " + x.classes.name : "")) === v) || (studs || []).find(x => x.full_name.toLowerCase().includes(v.toLowerCase().trim()));

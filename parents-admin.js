@@ -71,3 +71,34 @@ async function schoolInfoEditor(s, box){
   };
   draw();
 }
+
+/* "This unit" for parents: by grade */
+async function unitEditor(s, box){
+  const set = await sb.from("school_setups").select("config").eq("school_id", s.id).order("updated_at", { ascending: false }).limit(1);
+  const grades = (set.data && set.data[0] && set.data[0].config && set.data[0].config.grades) || [];
+  const r = await sb.from("unit_info").select("*").eq("school_id", String(s.id)).order("starts_on", { ascending: false });
+  if (r.error) { box.innerHTML = '<p class="note">“This unit” needs its database step first (Parent portal Part 2 update).</p>'; return; }
+  const units = r.data || [], gName = id => (grades.find(g => g.id === id) || { name: id }).name, today = new Date().toISOString().slice(0, 10);
+  box.innerHTML = `<p class="note" style="margin-top:0">What each grade is learning now, and how families can talk about it at home. Parents see it under <b>Learning</b>.</p>
+    ${units.length ? `<div class="tablewrap"><table class="reg" style="width:100%">${units.map(u => `<tr><td style="padding:8px 4px;border-top:1px solid var(--line)"><b>${esc(u.title)}</b><br><span class="note">${esc(gName(u.grade_id))}${u.starts_on ? " · " + esc(u.starts_on) + (u.ends_on ? " to " + esc(u.ends_on) : "") : ""}${u.starts_on <= today && (!u.ends_on || u.ends_on >= today) ? " · <b>now</b>" : ""}</span></td><td style="border-top:1px solid var(--line);text-align:right"><button class="btn ghost small" data-ue="${u.id}">Edit</button></td></tr>`).join("")}</table></div>` : '<p class="note">No units yet.</p>'}
+    <p style="margin:10px 0 0"><button class="btn small" id="uNew">+ Add a unit</button></p><div id="uForm"></div>`;
+  const form = u => { u = u || {}; const f = box.querySelector("#uForm");
+    f.innerHTML = `<div style="border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px;display:grid;gap:8px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px"><label style="display:grid;gap:4px;font-weight:700">Grade <select id="uG" style="padding:8px;border:1px solid var(--line);border-radius:10px;font:inherit">${grades.map(g => `<option value="${esc(g.id)}" ${u.grade_id === g.id ? "selected" : ""}>${esc(g.name)}</option>`).join("")}</select></label>
+        <label style="display:grid;gap:4px;font-weight:700">Starts <input type="date" id="uS" value="${esc(u.starts_on || "")}" style="padding:8px;border:1px solid var(--line);border-radius:10px;font:inherit"></label><label style="display:grid;gap:4px;font-weight:700">Ends <input type="date" id="uE" value="${esc(u.ends_on || "")}" style="padding:8px;border:1px solid var(--line);border-radius:10px;font:inherit"></label></div>
+      ${[["uT", "Unit title", u.title, 1, "For example: How we organise ourselves"], ["uTh", "Transdisciplinary theme (optional)", u.theme, 1, ""], ["uC", "Central idea", u.central_idea, 2, ""], ["uI", "We will find out about (lines of inquiry)", u.inquiry, 3, ""], ["uH", "Talk about it at home (questions and ideas for families)", u.talk_home, 3, "For example: Ask your child who helps in our community, and how."], ["uV", "Words to use (vocabulary, optional)", u.vocabulary, 1, ""]].map(([id, l, v, rows, ph]) => `<label style="display:grid;gap:4px;font-weight:700">${l}${rows > 1 ? `<textarea id="${id}" rows="${rows}" placeholder="${esc(ph)}" style="padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit">${esc(v || "")}</textarea>` : `<input id="${id}" value="${esc(v || "")}" placeholder="${esc(ph)}" style="padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit">`}</label>`).join("")}
+      <label style="display:grid;gap:4px;font-weight:700">Parent guide (optional) ${u.doc_name ? `<span class="note">Now: ${esc(u.doc_name)}</span>` : ""}<input type="file" id="uD" accept=".pdf,.doc,.docx,.ppt,.pptx,image/*"></label>
+      <div style="display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap"><span>${u.id ? '<button class="btn ghost small" id="uDel">Delete</button>' : ""}</span><span><button class="btn ghost small" id="uX">Cancel</button> <button class="btn small" id="uSave">Save</button></span></div></div>`;
+    const v = id => f.querySelector("#" + id).value.trim();
+    f.querySelector("#uX").onclick = () => f.innerHTML = "";
+    const del = f.querySelector("#uDel"); if (del) del.onclick = async () => { if (!confirm("Delete this unit?")) return; await sb.from("unit_info").delete().eq("id", u.id); unitEditor(s, box); };
+    f.querySelector("#uSave").onclick = async () => { if (!v("uT")) return toast("Add the unit title.");
+      const row = { school_id: String(s.id), grade_id: v("uG"), title: v("uT"), theme: v("uTh") || null, central_idea: v("uC") || null, inquiry: v("uI") || null, talk_home: v("uH") || null, vocabulary: v("uV") || null, starts_on: v("uS") || null, ends_on: v("uE") || null, updated_at: new Date().toISOString() };
+      const file = f.querySelector("#uD").files[0];
+      if (file) { const path = `${s.id}/units/${Date.now()}-${file.name.replace(/[^\w.\-]+/g, "_")}`; const up = await sb.storage.from("parent-media").upload(path, file); if (up.error) return toast(up.error.message); row.doc_path = path; row.doc_name = file.name; }
+      const { error } = u.id ? await sb.from("unit_info").update(row).eq("id", u.id) : await sb.from("unit_info").insert(row); if (error) return toast(error.message);
+      toast("Saved. Parents of this grade can see it."); unitEditor(s, box); };
+    f.scrollIntoView({ behavior: "smooth", block: "nearest" }); };
+  box.querySelector("#uNew").onclick = () => form(null);
+  box.querySelectorAll("[data-ue]").forEach(b => b.onclick = () => form(units.find(u => u.id === b.dataset.ue)));
+}

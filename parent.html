@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Parent portal · Nestopia</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#462D5B"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Nestopia">
 <style>:root{--ink:#2E2440;--muted:#6E6680;--line:#ECE6F3;--bg:#F8F5FC;--card:#fff;--plum:#462D5B;--plum-soft:#EDE6F5;--lav:#EFE9FB;--mint:#E3F4EC;--mint-ink:#2F7A52;--peach:#FDEBDD;--peach-ink:#A5532A;--sky:#E3EEFB;--sky-ink:#2F5E99;--butter:#FFF4D6;--butter-ink:#9A6A10;--rose:#FCE7EE;--rose-ink:#A23C62;--sage:#3F8A4B;--sage-soft:#E4F1E6;--red:#B4473A;--amber:#A86C12}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
 a{color:var(--plum)}
@@ -147,6 +148,7 @@ async function show(id, note){
   document.getElementById("lang").onclick = () => { LANG = LANG === "ar" ? "en" : "ar"; try { localStorage.setItem("nest_lang", LANG); } catch (_) {} show(cur); };
   const bl = document.getElementById("bell"); if (bl) bl.onclick = () => bell();
   await ({ home, learning, attendance, stars: behaviour, messages: msgSection, more })[tab]();
+  if (!PREVIEW) { let seen = true; try { seen = !!localStorage.getItem("nest_tour"); } catch (_) {} if (!seen) setTimeout(tour, 400); }
   applyLang(document.body);
   if (!PREVIEW) todos().then(t => { const n = t.length, b = document.getElementById("bellN"); if (b) { b.hidden = !n; b.textContent = n; } });
 }
@@ -170,6 +172,27 @@ async function bell(){
   document.body.appendChild(d); applyLang(d);
   d.onclick = e => { if (e.target === d || e.target.closest("[data-x]")) d.remove(); const g = e.target.closest("[data-go]"); if (g) { d.remove(); go(g.dataset.go); } };
 }
+// ---------- Welcome tour ----------
+function tour(){
+  const S = [["👋", "Welcome to the parent portal · مرحبًا بك في بوابة أولياء الأمور", "Everything about your child’s school life, in one place. · كل ما يخص حياة طفلك المدرسية في مكان واحد."],
+    ["✅", "Start with Home · ابدأ من الرئيسية", "To do shows anything waiting for you, and Today shows how the day is going. · قائمة «المطلوب منك» تعرض ما ينتظرك."],
+    ["🧭", "Find everything easily · كل شيء سهل الوصول", "Learning, Attendance, Stars, Messages and More are always in the same place. 🔔 shows what’s new. · الأقسام دائمًا في نفس المكان."],
+    ["📲", "Keep it on your phone · احفظها على هاتفك", "Add the portal to your home screen to open it like an app. · أضف البوابة إلى شاشتك الرئيسية لتفتحها كتطبيق."]];
+  let i = 0; const d = document.createElement("div"); d.className = "drawer"; d.style.justifyContent = "center"; d.style.alignItems = "center"; document.body.appendChild(d);
+  const draw = () => { const s = S[i]; d.innerHTML = `<div class="card" style="max-width:420px;margin:16px;text-align:center;padding:26px"><div style="font-size:64px">${s[0]}</div><h2 style="font-size:22px">${s[1]}</h2><p class="muted">${s[2]}</p>
+      <p style="margin:6px 0 14px">${S.map((_, k) => `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:0 3px;background:${k === i ? "var(--plum)" : "var(--line)"}"></span>`).join("")}</p>
+      <div class="row" style="justify-content:center">${i === S.length - 1 ? '<button class="btn ghost" data-inst>📲 Add to home screen · أضف إلى الشاشة</button><button class="btn" data-done>Let’s start · لنبدأ</button>' : '<button class="btn ghost" data-done>Skip · تخطي</button><button class="btn" data-next>Next · التالي</button>'}</div></div>`; applyLang(d); };
+  d.onclick = e => { if (e.target.closest("[data-next]")) { i++; draw(); } if (e.target.closest("[data-done]")) { try { localStorage.setItem("nest_tour", "1"); } catch (_) {} d.remove(); } if (e.target.closest("[data-inst]")) installApp(); };
+  draw();
+}
+let deferredInstall = null; window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferredInstall = e; });
+function installApp(){
+  if (deferredInstall) { deferredInstall.prompt(); deferredInstall = null; return; }
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  alert(ios ? L("On iPhone or iPad: tap the Share button (the square with an arrow), then “Add to Home Screen”.", "على آيفون أو آيباد: اضغط زر المشاركة، ثم «إضافة إلى الشاشة الرئيسية».")
+    : L("In your browser menu (⋮), choose “Add to Home screen” or “Install app”.", "من قائمة المتصفح (⋮) اختر «إضافة إلى الشاشة الرئيسية» أو «تثبيت التطبيق»."));
+}
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 // ---------- Home: today for my child ----------
 async function home(){
   const p = document.getElementById("pane"), first = (view.name || "").split(" ")[0], hr0 = new Date().getHours();
@@ -189,7 +212,25 @@ async function home(){
   p.querySelectorAll("[data-go]").forEach(b => b.onclick = () => go(b.dataset.go));
 }
 // ---------- Learning (Part 2 adds “This unit”) ----------
-async function learning(){ await reports(); }
+const media = async path => { try { const { data } = await sb.storage.from("parent-media").createSignedUrl(path, 3600); return data ? data.signedUrl : null; } catch (_) { return null; } };
+async function learning(){
+  const p = document.getElementById("pane"); let units = [];
+  if (!PREVIEW) try { const r = await sb.rpc("parent_units", { p_student: String(cur) }); units = r.data || []; } catch (_) {}
+  const u = units[0], terms = view.terms || [], cms = view.comments || [], scale = view.scale || [];
+  const lastT = Math.max(-1, ...cms.map(c => +c.term));
+  const glance = lastT >= 0 ? (view.subjects || []).map(sub => { const l = (sub.strands || []).map(st => cms.find(c => c.strand === st.id && +c.term === lastT)).filter(c => c && c.level != null).map(c => +c.level); return l.length ? [sub.name, Math.round(l.reduce((a, b) => a + b, 0) / l.length)] : null; }).filter(Boolean) : [];
+  p.innerHTML = `${u ? `<div class="card tile t-sky"><p class="muted" style="margin:0;font-weight:800">📚 ${u.starts_on && u.starts_on > new Date().toISOString().slice(0, 10) ? "Next unit · الوحدة القادمة" : "This unit · الوحدة الحالية"}${u.theme && u.theme !== u.title ? `<span> · ${esc(u.theme)}</span>` : ""}</p><h2 style="margin:4px 0 8px;font-size:22px">${esc(u.title)}</h2>
+      ${u.central_idea ? `<p style="margin:0 0 10px;font-size:17px">💡 <b>Central idea · الفكرة المركزية</b><br>${esc(u.central_idea)}</p>` : ""}
+      ${u.inquiry ? `<p style="margin:0 0 10px;white-space:pre-line">🔎 <b>We will find out about · سنتعرّف على</b><br>${esc(u.inquiry)}</p>` : ""}
+      ${u.talk_home ? `<div style="background:#fff;border-radius:16px;padding:12px 14px;margin:0 0 10px"><b>🏠 Talk about it at home · تحدّثوا عنها في البيت</b><p style="margin:6px 0 0;white-space:pre-line">${esc(u.talk_home)}</p></div>` : ""}
+      ${u.vocabulary ? `<p style="margin:0 0 10px">🗣️ <b>Words to use · كلمات مفيدة</b><br>${esc(u.vocabulary)}</p>` : ""}
+      ${u.doc_path ? `<button class="btn ghost small" id="uDoc">📄 ${esc(u.doc_name || "Parent guide")}</button>` : ""}</div>` : ""}
+    ${glance.length ? `<div class="card tile t-lav"><h2>🎯 Subjects at a glance · المواد باختصار</h2><p class="muted" style="margin-top:0">${esc(terms[lastT] || "")} · from the latest report · من آخر تقرير</p>${glance.map(([n, lv]) => { const max = Math.max(1, scale.length - 1), pct = Math.round(lv / max * 100);
+      return `<div style="margin:10px 0"><div class="row" style="justify-content:space-between"><b>${esc(n)}</b><span class="muted">${esc(scale[lv] ?? lv)}${scale.length ? " / " + esc(scale[scale.length - 1]) : ""}</span></div><div style="height:12px;border-radius:99px;background:#fff;overflow:hidden;margin-top:4px"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,#B9A6E0,#7C5BB7);border-radius:99px"></i></div></div>`; }).join("")}</div>` : ""}
+    <div id="rep"></div>`;
+  const ud = document.getElementById("uDoc"); if (ud) ud.onclick = async () => { const x = await media(u.doc_path); if (x) window.open(x, "_blank"); };
+  const outer = document.getElementById("pane"), inner = document.getElementById("rep"); outer.id = "paneL"; inner.id = "pane"; reports();
+}
 // ---------- Messages and news together ----------
 async function msgSection(){
   const p = document.getElementById("pane"); sub.m = sub.m || "messages";
@@ -222,9 +263,11 @@ function account(){
   const p = document.getElementById("pane");
   p.innerHTML = `<div class="card"><h2>👨‍👩‍👧 My children · أطفالي</h2>${kids.map(k => `<p style="margin:6px 0;font-size:17px">${avs[k.id] || "🌟"} <b>${esc(k.name)}</b> <span class="muted">· ${esc(k.class || "")}</span></p>`).join("")}<button class="btn ghost small" id="addK">+ Add another child · إضافة طفل</button></div>
     <div class="card"><h2>🌐 Language · اللغة</h2><div class="row"><button class="btn ${LANG === "en" ? "" : "ghost"} small" data-l="en">English</button><button class="btn ${LANG === "ar" ? "" : "ghost"} small" data-l="ar">العربية</button></div></div>
+    <div class="card"><h2>📲 On your phone · على هاتفك</h2><p class="muted" style="margin-top:0">Open the portal like an app, straight from your home screen. · افتح البوابة كتطبيق من شاشتك الرئيسية.</p><button class="btn ghost small" id="inst">📲 Add to home screen · أضف إلى الشاشة الرئيسية</button> <button class="btn ghost small" id="tourB">👋 Show the welcome tour again · عرض الجولة مرة أخرى</button></div>
     <div class="card"><h2>🔑 Password · كلمة المرور</h2><form id="pwf" class="row"><input type="password" id="npw" minlength="8" placeholder="New password · كلمة مرور جديدة" style="max-width:280px" required><button class="btn small">Change · تغيير</button></form></div>
     <div class="card"><p style="margin:0" class="row"><a href="privacy.html">Privacy notice · الخصوصية</a> · <a href="terms.html">Terms · الشروط</a></p><p style="margin:12px 0 0"><button class="btn ghost small" id="out2">Sign out · تسجيل الخروج</button></p></div>`;
   document.getElementById("addK").onclick = () => linkView();
+  document.getElementById("inst").onclick = installApp; document.getElementById("tourB").onclick = tour;
   p.querySelectorAll("[data-l]").forEach(b => b.onclick = () => { LANG = b.dataset.l; try { localStorage.setItem("nest_lang", LANG); } catch (_) {} show(cur); });
   document.getElementById("pwf").onsubmit = async e => { e.preventDefault(); const { error } = await sb.auth.updateUser({ password: document.getElementById("npw").value }); alert(error ? error.message : L("Password changed.", "تم تغيير كلمة المرور.")); };
   document.getElementById("out2").onclick = async () => { await sb.auth.signOut(); location.reload(); };
@@ -236,7 +279,8 @@ async function news(){
   if (error) { p.innerHTML = '<div class="card"><p class="muted" style="margin:0">News isn’t available yet.</p></div>'; return; }
   p.innerHTML = sv.map(s => `<div class="card" style="border-left:5px solid var(--plum)"><h2>📋 ${esc(s.title)}</h2><p class="muted" style="margin-top:0">${esc(s.intro || "A short survey from your child’s school. Your answers are anonymous.")}<span class="ar" dir="rtl" lang="ar">استبيان قصير من المدرسة. إجاباتك مجهولة الهوية.</span></p>
       <form data-sv="${esc(s.id)}">${(s.questions || []).map((q, i) => `<div style="margin:12px 0"><b>${i + 1}. ${esc(q.text)}</b><div class="row" style="margin-top:6px">${q.type === "scale" ? ["Strongly disagree · لا أوافق بشدة", "Disagree · لا أوافق", "Not sure · غير متأكد", "Agree · أوافق", "Strongly agree · أوافق بشدة"].map((l, k) => `<label style="display:flex;gap:5px;align-items:center;font-weight:500;border:1px solid var(--line);border-radius:10px;padding:6px 10px;margin:0"><input type="radio" name="${q.id}" value="${k + 1}" style="width:auto"> ${l}</label>`).join("") : q.type === "yesno" ? ["Yes · نعم", "No · لا"].map((l, k) => `<label style="display:flex;gap:5px;align-items:center;font-weight:500;border:1px solid var(--line);border-radius:10px;padding:6px 12px;margin:0"><input type="radio" name="${q.id}" value="${1 - k}" style="width:auto"> ${l}</label>`).join("") : `<textarea name="${q.id}" rows="2" maxlength="800"></textarea>`}</div></div>`).join("")}
-      <button class="btn">Send · إرسال</button></form></div>`).join("") + `<div class="card"><h2>📢 News from school · أخبار المدرسة</h2>${(data || []).length ? data.map(n => `<div class="news"><b>${n.pinned ? "📌 " : ""}${esc(n.title)}</b><span class="muted" style="font-size:13px"> · ${new Date(n.at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}${n.by ? " · " + esc(n.by) : ""}</span><p>${esc(n.body)}</p></div>`).join("") : '<p class="muted" style="margin:0">No news yet. · لا توجد أخبار بعد.</p>'}</div>`;
+      <button class="btn">Send · إرسال</button></form></div>`).join("") + `<div class="card"><h2>📢 News from school · أخبار المدرسة</h2>${(data || []).length ? data.map(n => `<div class="news"><b>${n.pinned ? "📌 " : ""}${esc(n.title)}</b><span class="muted" style="font-size:13px"> · ${new Date(n.at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}${n.by ? " · " + esc(n.by) : ""}</span><p>${esc(n.body)}</p>${(n.photos || []).length ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:8px">${n.photos.map(ph => `<img data-ph="${esc(ph)}" alt="" style="width:100%;height:130px;object-fit:cover;border-radius:14px;background:var(--lav);cursor:zoom-in">`).join("")}</div>` : ""}</div>`).join("") : '<p class="muted" style="margin:0">No news yet. · لا توجد أخبار بعد.</p>'}</div>`;
+  for (const im of p.querySelectorAll("img[data-ph]")) { const x = await media(im.dataset.ph); if (x) { im.src = x; im.onclick = () => window.open(x, "_blank"); } }
   p.querySelectorAll("[data-sv]").forEach(f => f.onsubmit = async e => { e.preventDefault(); const s = sv.find(x => x.id === f.dataset.sv), a = {};
     (s.questions || []).forEach(q => { if (q.type === "text") { const v = (f[q.id] && f[q.id].value || "").trim(); if (v) a[q.id] = v; } else { const c = f.querySelector(`input[name="${q.id}"]:checked`); if (c) a[q.id] = +c.value; } });
     if (!Object.keys(a).length) return alert("Please answer at least one question. · يُرجى الإجابة عن سؤال واحد على الأقل.");
@@ -281,6 +325,12 @@ function reports(){
 }
 async function attendance(){
   const p = document.getElementById("pane"), a = view.attendance || { days: 0 };
+  let days = []; if (!PREVIEW) try { const r = await sb.rpc("parent_att_days", { p_student: String(cur) }); days = r.data || []; } catch (_) {}
+  const CL = { present: ["#BFE6CF", "Present · حاضر"], late: ["#FFE3A3", "Late · متأخر"], excused: ["#C9DCF5", "Authorised absence · غياب بعذر"], absent: ["#F6C2CE", "Unauthorised absence · غياب بدون عذر"] };
+  const byDay = Object.fromEntries(days.map(x => [x.d, x.s])), months = [...new Set(days.map(x => x.d.slice(0, 7)))];
+  const calHtml = months.length ? `<div class="card tile t-mint"><h2>🗓️ This year · هذا العام</h2><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px">${months.map(m => { const d0 = new Date(m + "-01T00:00:00"), n = new Date(d0.getFullYear(), d0.getMonth() + 1, 0).getDate(), pad = (d0.getDay() + 6) % 7;
+      return `<div style="background:#fff;border-radius:16px;padding:10px"><b style="font-size:14px">${d0.toLocaleDateString(LANG === "ar" ? "ar" : "en-GB", { month: "long", year: "numeric" })}</b><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:6px">${"<i></i>".repeat(pad)}${Array.from({ length: n }, (_, k) => { const dd = m + "-" + String(k + 1).padStart(2, "0"), s = byDay[dd]; return `<i title="${dd}${s ? ": " + CL[s][1] : ""}" style="aspect-ratio:1;border-radius:6px;font-style:normal;font-size:10px;display:grid;place-items:center;background:${s ? CL[s][0] : "#F4F1F8"};color:#555">${k + 1}</i>`; }).join("")}</div></div>`; }).join("")}</div>
+      <p style="margin:10px 0 0" class="row">${Object.values(CL).map(([c, l]) => `<span style="display:inline-flex;align-items:center;gap:5px;font-size:13px"><i style="width:12px;height:12px;border-radius:4px;background:${c}"></i>${l}</span>`).join(" ")}</p></div>` : "";
   let notes = []; if (!PREVIEW) try { const r = await sb.rpc("parent_absence_notes", { p_student: String(cur) }); notes = r.data || []; } catch (_) {}
   const NS = { pending: "⏳ Waiting for the school · بانتظار المدرسة", accepted: "✅ Accepted: authorised absence · تم القبول", declined: "❌ Not accepted · لم يُقبل" };
   const today = new Date().toISOString().slice(0, 10);
@@ -292,7 +342,7 @@ async function attendance(){
         <button class="btn" id="asb">Send to the school · إرسال</button></form></div>
     ${notes.length ? `<div class="card"><h2>Your absence notes · ملاحظاتك</h2><table>${notes.map(n => `<tr><td style="white-space:nowrap">${dshort(n.from)}${n.to !== n.from ? " – " + dshort(n.to) : ""}</td><td>${esc(n.reason)}${n.doc ? ` <span class="muted">· 📎 ${esc(n.doc)}</span>` : ""}<br><span class="muted" style="font-size:13px">${NS[n.status] || ""}</span></td></tr>`).join("")}</table></div>` : ""}`;
   const pc = a.days ? Math.round(a.in / a.days * 100) : null;
-  p.innerHTML = `<div class="card"><h2>Attendance this school year · الحضور هذا العام</h2>${a.days ? `<p class="big" style="margin:0;color:${pc >= 95 ? "var(--sage)" : pc >= 90 ? "var(--amber)" : "var(--red)"}">${pc}%</p><p class="muted" style="margin:4px 0 0">${a.days - a.in} day${a.days - a.in === 1 ? "" : "s"} absent · late ${a.late} time${a.late === 1 ? "" : "s"} · out of ${a.days} school days</p>
+  p.innerHTML = calHtml + `<div class="card"><h2>Attendance this school year · الحضور هذا العام</h2>${a.days ? `<p class="big" style="margin:0;color:${pc >= 95 ? "var(--sage)" : pc >= 90 ? "var(--amber)" : "var(--red)"}">${pc}%</p><p class="muted" style="margin:4px 0 0">${a.days - a.in} day${a.days - a.in === 1 ? "" : "s"} absent · late ${a.late} time${a.late === 1 ? "" : "s"} · out of ${a.days} school days</p>
       ${(a.recent || []).length ? `<table style="margin-top:12px">${a.recent.map(r => `<tr><td>${dshort(r.day)}</td><td>${{ late: "Late · متأخر", absent: "Unauthorised absence · غياب بدون عذر", excused: "Authorised absence · غياب بعذر" }[r.status] || r.status}</td></tr>`).join("")}</table>` : ""}
       <p class="muted" style="margin:12px 0 0">Every school day counts. 95% or more is the goal. · كل يوم دراسي مهم.</p>` : '<p class="muted" style="margin:0">No registers yet this year.</p>'}</div>` + (PREVIEW ? "" : noteCard);
   if (PREVIEW) return;
