@@ -87,7 +87,7 @@ async function show(id, note){
   cur = id || kids[0].id; const { data, error } = PREVIEW ? await sb.rpc("staff_parent_preview", { p_student: String(PREVIEW) }) : await sb.rpc("parent_child_view", { p_student: String(cur) });
   if (error) { app.innerHTML = `<div class="card">${msg(error.message)}</div>`; return; }
   view = data; const S = view.show || {};
-  const tabs = [["news", "📢 News · الأخبار", !PREVIEW], ["messages", "💬 Messages · الرسائل", !PREVIEW], ["reports", "Reports · التقارير", S.reports], ["attendance", "Attendance · الحضور", S.attendance], ["behaviour", "Merits · النقاط", S.merits || S.incidents], ["calendar", "Calendar · التقويم", S.calendar]].filter(t => t[2]);
+  const tabs = [["news", "📢 News · الأخبار", !PREVIEW], ["messages", "💬 Messages · الرسائل", !PREVIEW], ["reports", "Reports · التقارير", S.reports], ["attendance", "Attendance · الحضور", S.attendance], ["behaviour", "⭐ Stars · النجوم", S.merits || S.incidents], ["calendar", "Calendar · التقويم", S.calendar]].filter(t => t[2]);
   if (!tabs.some(t => t[0] === tab)) tab = tabs[0] ? tabs[0][0] : null;
   app.innerHTML = `${PREVIEW ? '<p class="ok" style="background:#FBEBD5;color:#8A5A10">👀 Preview: this is what the parents of this student see (news and messages are not shown in the preview).</p>' : ""}${note ? msg(note, true) : ""}<div class="row" style="justify-content:space-between${PREVIEW ? ";display:none" : ""}">${kids.length > 1 ? `<div class="row">${kids.map(k => `<button class="tab" aria-selected="${String(k.id) === String(cur)}" data-kid="${esc(k.id)}">${esc(k.name.split(" ")[0])}</button>`).join("")}</div>` : "<span></span>"}<button class="btn ghost small" id="add">+ Add another child · إضافة طفل</button></div>
     <h1>${esc(view.name)}${view.arabic_name ? ` <span class="muted" dir="rtl" lang="ar" style="font-size:.7em">${esc(view.arabic_name)}</span>` : ""}</h1>
@@ -177,13 +177,23 @@ async function attendance(){
       attendance(); setTimeout(() => alert("Thank you. The school has your note. · شكرًا، تم إرسال الملاحظة إلى المدرسة."), 50);
     } catch (err) { btn.disabled = false; btn.textContent = "Send to the school · إرسال"; alert(err.message || err); } };
 }
-function behaviour(){
+async function behaviour(){
   const p = document.getElementById("pane"), b = view.behaviour || [], m = b.filter(x => x.kind === "merit"), inc = b.filter(x => x.kind === "incident");
+  let ex = {}; try { const r = await sb.rpc("parent_merit_extras", { p_student: String(PREVIEW || cur) }); ex = r.data || {}; } catch (_) {}
+  const cfg = ex.config || {}, EM = Object.assign({ "Kindness": "💛", "Effort": "💪", "Respect": "🤝", "Responsibility": "🌟", "Excellent work": "🏆", "Leadership": "🦁", "Helping others": "🤲", "Honesty": "🕊️" }, cfg.emojis || {});
+  const BD = cfg.badges && cfg.badges.length ? cfg.badges : [[10, "🥉", "Bronze"], [25, "🥈", "Silver"], [50, "🥇", "Gold"], [100, "🏆", "Champion"]];
   const pts = m.reduce((s, x) => s + (x.points || 1), 0), by = Object.entries(m.reduce((a, x) => (a[x.category] = (a[x.category] || 0) + (x.points || 1), a), {})).sort((a, c) => c[1] - a[1]);
-  p.innerHTML = `<div class="card"><h2>⭐ Merits this year · النقاط هذا العام</h2><p class="big" style="margin:0;color:var(--sage)">⭐ ${pts}</p>${by.length ? `<p style="margin:8px 0 0">${by.map(([k, n]) => `<span class="chip">${esc(k)} · ${n}</span>`).join("")}</p>` : '<p class="muted">No merits yet.</p>'}
-    ${m.length ? `<table style="margin-top:12px">${m.slice(0, 10).map(x => `<tr><td>${dshort(x.day)}</td><td>⭐ ${x.points || 1} · ${esc(x.category)}</td></tr>`).join("")}</table>` : ""}</div>
+  let badge = null; BD.forEach(x => { if (pts >= x[0]) badge = x; }); const nx = BD.find(x => pts < x[0]), prev = badge ? badge[0] : 0;
+  const av = ex.avatar || "⭐", first = (view.name || "").split(" ")[0];
+  p.innerHTML = `<div class="card" style="text-align:center;background:linear-gradient(160deg,#FFF8E7,#F1E9FA)"><div style="font-size:72px;line-height:1">${av}</div>
+      <h2 style="margin:6px 0 0">${esc(first)}’s stars · نجوم ${esc(first)}</h2><p style="font-size:44px;font-weight:800;margin:4px 0;color:#B07A1E">⭐ ${pts}</p>
+      ${badge ? `<p style="margin:0;font-size:20px">${badge[1]} <b>${esc(badge[2])} badge</b></p>` : ""}
+      ${nx ? `<p class="muted" style="margin:8px 0 4px">${nx[0] - pts} more star${nx[0] - pts === 1 ? "" : "s"} to the ${nx[1]} ${esc(nx[2])} badge · ${nx[0] - pts} نجمة للشارة التالية</p><div style="height:14px;border-radius:99px;background:#EEE6F6;overflow:hidden;max-width:360px;margin:0 auto"><i style="display:block;height:100%;width:${Math.round((pts - prev) / (nx[0] - prev) * 100)}%;background:linear-gradient(90deg,#F7B733,#FC4A1A)"></i></div>` : '<p style="margin:8px 0 0">🎉 Every badge earned! · حصل على جميع الشارات!</p>'}</div>
+    <div class="card"><h2>What ${esc(first)} earned stars for · سبب النجوم</h2>${by.length ? `<p style="margin:0">${by.map(([k, n]) => `<span class="chip" style="font-size:15px;padding:6px 12px">${EM[k] || "⭐"} ${esc(k)} · ${n}</span>`).join("")}</p>` : '<p class="muted" style="margin:0">No stars yet this year.</p>'}
+      ${m.length ? `<table style="margin-top:12px">${m.slice(0, 10).map(x => `<tr><td style="white-space:nowrap">${dshort(x.day)}</td><td><span style="font-size:20px">${EM[x.category] || "⭐"}</span> ${esc(x.category)} · +${x.points || 1} ⭐</td></tr>`).join("")}</table>` : ""}</div>
     ${view.show && view.show.incidents ? `<div class="card"><h2>Incidents · المخالفات</h2>${inc.length ? `<table>${inc.slice(0, 10).map(x => `<tr><td>${dshort(x.day)}</td><td><span class="chip inc">${esc({ low: "Low", medium: "Medium", high: "High" }[x.level] || "")}</span> ${esc(x.category)}</td></tr>`).join("")}</table><p class="muted" style="margin:10px 0 0">If you have questions, please contact your child’s teacher.</p>` : '<p class="muted" style="margin:0">None this year. 🎉</p>'}</div>` : ""}`;
 }
+
 function calendar(){
   const p = document.getElementById("pane"), ev = view.events || [];
   p.innerHTML = `<div class="card"><h2>Coming up · القادم</h2>${ev.length ? `<table>${ev.map(e => `<tr><td style="white-space:nowrap">${dshort(e.start)}${e.end && e.end !== e.start ? " – " + dshort(e.end) : ""}</td><td><b>${esc(e.title)}</b>${e.time ? ` <span class="muted">· ${esc(e.time)}</span>` : ""}</td></tr>`).join("")}</table>` : '<p class="muted" style="margin:0">Nothing in the next two months.</p>'}</div>`;

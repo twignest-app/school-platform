@@ -101,6 +101,27 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 .vals{display:flex;flex-wrap:wrap;gap:8px}
 .val{font:inherit;font-weight:800;border:0;border-radius:12px;padding:10px 14px;cursor:pointer;background:#E4F1E6;color:#2E6B3A}
 .lv{font-size:12px;font-weight:800;border-radius:8px;padding:2px 8px}.lv.low{background:#FBEBD5;color:#8A5A10}.lv.medium{background:#FDE0D2;color:#A04A1E}.lv.high{background:#F8E1DE;color:#8E3328}.lv.merit{background:#E4F1E6;color:#2E6B3A}
+.kid{position:relative;text-align:center;padding:14px 10px}
+.kid .av{display:block;font-size:44px;line-height:1.1;margin-bottom:4px}
+.kid .bdg{position:absolute;top:8px;right:8px;font-size:20px}
+.kid .stars{display:inline-block;margin-top:6px;background:#FFF4D6;color:#8A5A10;border-radius:99px;padding:2px 10px;font-weight:800;font-size:13px}
+.val{font-size:15px;padding:12px 16px;border-radius:16px;transition:transform .1s}.val:hover{transform:scale(1.05)}.val .em{font-size:22px;margin-right:6px;vertical-align:-3px}
+#party{position:fixed;inset:0;z-index:80;pointer-events:none;display:grid;place-items:center}
+#party .big{background:#fff;border-radius:28px;padding:22px 34px;box-shadow:0 20px 60px rgba(70,45,91,.25);text-align:center;animation:pop .5s ease}
+#party .big .e{font-size:84px;display:block}#party .big b{font-size:26px;color:var(--plum)}
+#party i{position:fixed;top:-40px;font-style:normal;font-size:28px;animation:fall 1.8s linear forwards}
+@keyframes pop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){#party i{display:none}#party .big{animation:none}}
+#board{position:fixed;inset:0;z-index:70;background:linear-gradient(160deg,#FFF8E7,#F1E9FA);overflow:auto;padding:22px clamp(14px,4vw,48px) 40px}
+#board h1{text-align:center;color:var(--plum);font-size:clamp(28px,4.5vw,48px);margin:6px 0 4px}
+.goal{max-width:760px;margin:10px auto 22px;background:#fff;border-radius:22px;padding:14px 18px;box-shadow:0 6px 24px rgba(70,45,91,.08)}
+.goal .bar{height:22px;border-radius:99px;background:#EEE6F6;overflow:hidden;margin-top:8px}.goal .bar i{display:block;height:100%;background:linear-gradient(90deg,#F7B733,#FC4A1A);border-radius:99px}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.bkid{background:#fff;border-radius:22px;padding:14px 10px;text-align:center;box-shadow:0 4px 16px rgba(70,45,91,.07)}
+.bkid .av{font-size:58px;display:block}.bkid b{font-size:19px}.bkid .stars{font-size:18px;font-weight:800;color:#B07A1E}
+.bkid.shine{outline:3px solid #F7B733}
+.avgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}.avgrid button{font-size:28px;border:2px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer;padding:4px}
 input[type=number]{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;font:inherit}
 
 </style>
@@ -123,6 +144,23 @@ const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "
 const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2600); };
 const ymd = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 const fmt = d => new Date(d + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+const AVATARS = ["🦊", "🐼", "🐨", "🦁", "🐯", "🐸", "🐵", "🦄", "🐙", "🐢", "🐝", "🦉", "🐬", "🦋", "🐰", "🐻", "🐧", "🐱", "🐶", "🦒", "🐘", "🦓", "🐳", "🐞"];
+const EMOJI = { "Kindness": "💛", "Effort": "💪", "Respect": "🤝", "Responsibility": "🌟", "Excellent work": "🏆", "Leadership": "🦁", "Helping others": "🤲", "Honesty": "🕊️" };
+const BADGES = [[10, "🥉", "Bronze"], [25, "🥈", "Silver"], [50, "🥇", "Gold"], [100, "🏆", "Champion"]];
+let avatars = {};
+const avOf = id => avatars[String(id)] || AVATARS[[...String(id)].reduce((a, c) => a + c.charCodeAt(0), 0) % AVATARS.length];
+const emOf = v => ((cfg.emojis || {})[v]) || EMOJI[v] || "⭐";
+const badgesCfg = () => (cfg.badges && cfg.badges.length ? cfg.badges : BADGES);
+const badgeOf = pts => { let b = null; badgesCfg().forEach(x => { if (pts >= x[0]) b = x; }); return b; };
+const nextBadge = pts => badgesCfg().find(x => pts < x[0]);
+const yearStart = () => { const d = new Date(), y = d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1; return y + "-08-01"; };
+const meritPts = (id, since) => evs.filter(e => String(e.student_id) === String(id) && e.kind === "merit" && (!since || e.happened_on >= since)).reduce((a, e) => a + (e.points || 1), 0);
+function party(value, pts, n){
+  const box = document.getElementById("party") || Object.assign(document.createElement("div"), { id: "party" }); document.body.appendChild(box);
+  const e = emOf(value), bits = [e, "⭐", "✨", "🌟", e, "🎉"];
+  box.innerHTML = `<div class="big"><span class="e">${e}</span><b>+${pts} ⭐ ${esc(value)}!</b>${n > 1 ? `<br><span class="note">for ${n} students</span>` : ""}</div>` + Array.from({ length: 26 }, (_, i) => `<i style="left:${Math.random() * 100}vw;animation-delay:${Math.random() * .6}s">${bits[i % bits.length]}</i>`).join("");
+  clearTimeout(party.t); party.t = setTimeout(() => box.innerHTML = "", 2200);
+}
 const DEFAULTS = { merits: ["Kindness", "Effort", "Respect", "Responsibility", "Excellent work", "Leadership", "Helping others", "Honesty"],
   incidents: { low: ["Disrupting learning", "Not following instructions", "Uniform", "Homework not done", "Lateness to lesson"], medium: ["Disrespect to staff", "Unkind words", "Repeated low-level disruption", "Misuse of devices"], high: ["Physical aggression", "Bullying", "Unsafe behaviour", "Damage to property", "Leaving class without permission"] },
   actions: ["Verbal reminder", "Moved seat", "Time out", "Restorative conversation", "Lost break or privilege", "Parents contacted", "Referred to a leader"] };
@@ -157,7 +195,7 @@ async function fetchAll(q){ const out = []; for (let f = 0; ; f += 1000) { const
   if (bs.data && bs.data.config) cfg = Object.assign({}, DEFAULTS, bs.data.config);
   await load(); draw();
 })();
-async function load(){ const since = ymd(new Date(Date.now() - 365 * 864e5)); evs = await fetchAll(() => sb.from("behaviour_events").select("*").eq("school_id", school.id).gte("happened_on", since).order("created_at", { ascending: false })); }
+async function load(){ try { const { data } = await sb.from("bh_avatars").select("student_id,avatar").eq("school_id", String(school.id)); avatars = {}; (data || []).forEach(a => avatars[a.student_id] = a.avatar); } catch (_) {} const since = ymd(new Date(Date.now() - 365 * 864e5)); evs = await fetchAll(() => sb.from("behaviour_events").select("*").eq("school_id", school.id).gte("happened_on", since).order("created_at", { ascending: false })); }
 
 function draw(){
   const tabs = [["log", "Log"], ["recent", lead ? "Recent" : "My classes"], ...(lead ? [["overview", "Overview"], ["settings", "Settings"]] : [])];
@@ -177,11 +215,15 @@ function logPane(){
   pane.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:10px"><div class="row"><select id="lc" aria-label="Class">${choices.map(c => `<option value="${esc(c.id)}" ${String(c.id) === String(ui.cls) ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select>
       <button class="btn ghost small" id="all">Select everyone</button><button class="btn ghost small" id="none">Clear</button></div><span class="note" id="sel">${ui.pick.size} selected</span></div>
     <div class="kids">${kids.map(k => { const w = wk(k.id), m = w.filter(e => e.kind === "merit").reduce((a, e) => a + (e.points || 1), 0), n = w.filter(e => e.kind === "incident").length;
-      return `<button class="kid" data-k="${esc(k.id)}" aria-pressed="${ui.pick.has(String(k.id))}"><b>${esc(k.full_name.split(" ")[0])}</b><small>${esc(k.full_name.split(" ").slice(1).join(" "))}</small><small>⭐ ${m}${n ? ` · ⚠️ ${n}` : ""} this week</small></button>`; }).join("") || '<p class="note">No students.</p>'}</div></div>
+      const yr = meritPts(k.id, yearStart()), bd = badgeOf(yr);
+      return `<button class="kid" data-k="${esc(k.id)}" aria-pressed="${ui.pick.has(String(k.id))}">${bd ? `<span class="bdg" title="${esc(bd[2])} badge">${bd[1]}</span>` : ""}<span class="av">${avOf(k.id)}</span><b>${esc(k.full_name.split(" ")[0])}</b><small>${esc(k.full_name.split(" ").slice(1).join(" "))}</small><span class="stars">⭐ ${yr}</span><small>+${m} this week${n ? ` · ⚠️ ${n}` : ""}</small></button>`; }).join("") || '<p class="note">No students.</p>'}</div>
+    <p style="margin:12px 0 0" class="row"><button class="btn ghost small" id="chars">🎭 Choose characters</button><button class="btn ghost small" id="board1">🌟 Show the class display</button></p></div>
     <div class="card"><h2>⭐ Give a merit</h2><div class="row" style="margin-bottom:8px"><label class="f" style="flex-direction:row;display:flex;gap:8px;align-items:center">Points <input type="number" id="pts" min="1" max="10" value="1" style="width:80px"></label></div>
-      <div class="vals">${cfg.merits.map(v => `<button class="val" data-merit="${esc(v)}">${esc(v)}</button>`).join("")}</div></div>
+      <div class="vals">${cfg.merits.map(v => `<button class="val" data-merit="${esc(v)}"><span class="em">${emOf(v)}</span>${esc(v)}</button>`).join("")}</div></div>
     <div class="card"><div class="row" style="justify-content:space-between"><h2>⚠️ Log an incident</h2><button class="btn" id="inc">Log an incident</button></div><p class="note" style="margin:0">Choose one student, then log what happened.</p></div>`;
   document.getElementById("lc").onchange = e => { ui.cls = e.target.value; ui.pick.clear(); logPane(); };
+  document.getElementById("chars").onclick = () => chooseChars(kids);
+  document.getElementById("board1").onclick = () => classBoard(ui.cls);
   document.getElementById("all").onclick = () => { kids.forEach(k => ui.pick.add(String(k.id))); logPane(); };
   document.getElementById("none").onclick = () => { ui.pick.clear(); logPane(); };
   pane.querySelectorAll("[data-k]").forEach(b => b.onclick = () => { const k = b.dataset.k; ui.pick.has(k) ? ui.pick.delete(k) : ui.pick.add(k); b.setAttribute("aria-pressed", ui.pick.has(k)); document.getElementById("sel").textContent = ui.pick.size + " selected"; });
@@ -190,7 +232,7 @@ function logPane(){
     const pts = Math.max(1, Math.min(10, +document.getElementById("pts").value || 1));
     const rows = [...ui.pick].map(id => { const s = studs.find(x => String(x.id) === id); return { school_id: school.id, student_id: s.id, class_id: s.class_id, kind: "merit", category: b.dataset.merit, points: pts, happened_on: ymd(new Date()), logged_by: me.id }; });
     const { error } = await sb.from("behaviour_events").insert(rows); if (error) return toast(error.message);
-    toast(`⭐ ${b.dataset.merit}: ${pts} point${pts === 1 ? "" : "s"} for ${rows.length} student${rows.length === 1 ? "" : "s"}`); ui.pick.clear(); await load(); logPane();
+    party(b.dataset.merit, pts, rows.length); ui.pick.clear(); await load(); logPane();
   });
   document.getElementById("inc").onclick = () => { if (ui.pick.size !== 1) return toast("Choose exactly one student for an incident."); incidentForm(studs.find(x => String(x.id) === [...ui.pick][0])); };
 }
@@ -251,15 +293,48 @@ function overviewPane(){
 }
 
 /* ---------- Leaders: the school's own values and types ---------- */
+function chooseChars(kids){
+  let cur = null;
+  dlg.innerHTML = `<div class="dlg"><div class="row" style="justify-content:space-between"><h2>🎭 Choose characters</h2><button class="btn ghost small" data-x>Done</button></div><p class="note" style="margin-top:0">Tap a child, then tap their character. Children can choose their own!</p>
+    <div class="kids" id="ck">${kids.map(k => `<button class="kid" data-ck="${esc(k.id)}"><span class="av">${avOf(k.id)}</span><b>${esc(k.full_name.split(" ")[0])}</b></button>`).join("")}</div>
+    <div id="cp" style="margin-top:12px" hidden><p style="margin:0 0 6px;font-weight:700" id="cpn"></p><div class="avgrid">${AVATARS.map(a => `<button type="button" data-av="${a}">${a}</button>`).join("")}</div></div></div>`;
+  dlg.querySelector("[data-x]").onclick = () => { dlg.close(); logPane(); };
+  dlg.querySelectorAll("[data-ck]").forEach(b => b.onclick = () => { cur = b.dataset.ck; dlg.querySelectorAll("[data-ck]").forEach(x => x.setAttribute("aria-pressed", x === b)); document.getElementById("cp").hidden = false; document.getElementById("cpn").textContent = "Character for " + (kids.find(k => String(k.id) === cur) || {}).full_name.split(" ")[0] + ":"; });
+  dlg.querySelectorAll("[data-av]").forEach(b => b.onclick = async () => { if (!cur) return;
+    const { error } = await sb.from("bh_avatars").upsert({ student_id: String(cur), school_id: String(school.id), avatar: b.dataset.av, updated_at: new Date().toISOString() });
+    if (error) return toast(/bh_avatars/.test(error.message) ? "Please run the Behaviour characters database step first." : error.message);
+    avatars[String(cur)] = b.dataset.av; dlg.querySelector(`[data-ck="${cur}"] .av`).textContent = b.dataset.av; });
+  dlg.showModal();
+}
+function classBoard(classId){
+  const c = classes.find(x => String(x.id) === String(classId)) || {}, kids = studs.filter(s => String(s.class_id) === String(classId));
+  const wk = ymd(new Date(Date.now() - 6 * 864e5)), goal = cfg.class_goal || { points: 200, reward: "a class party 🎉" };
+  const total = kids.reduce((a, k) => a + meritPts(k.id, yearStart()), 0), pct = Math.min(100, Math.round(total / (goal.points || 200) * 100));
+  const shining = kids.filter(k => meritPts(k.id, wk) > 0);
+  const el = document.getElementById("board") || Object.assign(document.createElement("div"), { id: "board" }); document.body.appendChild(el); el.hidden = false;
+  el.innerHTML = `<div class="row" style="justify-content:flex-end"><button class="btn ghost small" id="bClose">Close</button></div>
+    <h1>🌟 ${esc(c.name || "Our class")} Superstars 🌟</h1>
+    <div class="goal"><b>🎯 Class goal: ${goal.points} stars = ${esc(goal.reward)}</b><span class="note" style="float:right">${total} of ${goal.points} ⭐</span><div class="bar"><i style="width:${pct}%"></i></div>${pct >= 100 ? '<p style="margin:8px 0 0;text-align:center;font-size:20px">🎉 You did it! 🎉</p>' : ""}</div>
+    ${shining.length ? `<p style="text-align:center;font-size:18px;margin:0 0 14px">✨ <b>This week’s shining stars:</b> ${shining.map(k => avOf(k.id) + " " + esc(k.full_name.split(" ")[0])).join(" · ")}</p>` : ""}
+    <div class="bgrid">${kids.map(k => { const y = meritPts(k.id, yearStart()), b = badgeOf(y), nx = nextBadge(y);
+      return `<div class="bkid ${meritPts(k.id, wk) ? "shine" : ""}"><span class="av">${avOf(k.id)}</span><b>${esc(k.full_name.split(" ")[0])}</b><br><span class="stars">⭐ ${y}</span> ${b ? `<span title="${esc(b[2])}" style="font-size:22px">${b[1]}</span>` : ""}${nx ? `<br><span class="note" style="font-size:12.5px">${nx[0] - y} to ${nx[1]}</span>` : ""}</div>`; }).join("")}</div>
+    <p style="text-align:center;margin-top:18px" class="note">${badgesCfg().map(b => `${b[1]} ${esc(b[2])} ${b[0]}`).join(" · ")}</p>`;
+  try { document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); } catch (_) {}
+  el.querySelector("#bClose").onclick = () => { el.hidden = true; try { document.fullscreenElement && document.exitFullscreen(); } catch (_) {} };
+}
 function settingsPane(){
   const pane = document.getElementById("pane"), L = a => (a || []).join("\n");
   pane.innerHTML = `<form class="card" id="sf"><h2>Your school’s values and incident types</h2><p class="note">One per line. Change these to match your school’s values and behaviour policy.</p>
-    <label class="f">Merit values <textarea name="m" rows="6">${esc(L(cfg.merits))}</textarea></label>
+    <label class="f">Merit values, each with its emoji <span class="note">(one per line, for example: Kindness 💛)</span><textarea name="m" rows="8">${esc(cfg.merits.map(v => v + " " + emOf(v)).join("\n"))}</textarea></label>
+    <div class="two"><label class="f">Badges <span class="note">(stars, emoji, name, one per line)</span><textarea name="bd" rows="4">${esc(badgesCfg().map(b => b.join(" ")).join("\n"))}</textarea></label>
+      <div><label class="f">Class goal (stars) <input type="number" name="gp" min="10" max="5000" value="${(cfg.class_goal || {}).points || 200}"></label><label class="f" style="margin-top:8px">Class reward <input type="text" name="gr" value="${esc((cfg.class_goal || {}).reward || "a class party 🎉")}"></label></div></div>
     <div class="two"><label class="f">Low-level incidents <textarea name="lo" rows="6">${esc(L(cfg.incidents.low))}</textarea></label><label class="f">Medium-level incidents <textarea name="me" rows="6">${esc(L(cfg.incidents.medium))}</textarea></label></div>
     <div class="two"><label class="f">High-level incidents <textarea name="hi" rows="6">${esc(L(cfg.incidents.high))}</textarea></label><label class="f">Actions taken <textarea name="ac" rows="6">${esc(L(cfg.actions))}</textarea></label></div>
     <button class="btn">Save</button></form>`;
   document.getElementById("sf").onsubmit = async e => { e.preventDefault(); const f = e.target, sp = v => v.split("\n").map(x => x.trim()).filter(Boolean);
-    const config = { merits: sp(f.m.value), incidents: { low: sp(f.lo.value), medium: sp(f.me.value), high: sp(f.hi.value) }, actions: sp(f.ac.value) };
+    const ems = {}, merits = sp(f.m.value).map(l => { const m = l.match(/^(.*?)\s+(\S+)$/); if (m && !/[A-Za-z0-9]/.test(m[2])) { ems[m[1].trim()] = m[2]; return m[1].trim(); } return l; });
+    const badges = sp(f.bd.value).map(l => { const m = l.match(/^(\d+)\s+(\S+)\s+(.+)$/); return m ? [+m[1], m[2], m[3].trim()] : null; }).filter(Boolean).sort((a, b) => a[0] - b[0]);
+    const config = { merits, emojis: ems, badges, class_goal: { points: +f.gp.value || 200, reward: f.gr.value.trim() || "a class party 🎉" }, incidents: { low: sp(f.lo.value), medium: sp(f.me.value), high: sp(f.hi.value) }, actions: sp(f.ac.value) };
     const { error } = await sb.from("behaviour_settings").upsert({ school_id: school.id, config, updated_at: new Date().toISOString() }); if (error) return toast(error.message); cfg = Object.assign({}, DEFAULTS, config); toast("Saved"); };
 }
 </script>
