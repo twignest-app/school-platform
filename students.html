@@ -113,6 +113,7 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="hub.js?v=18"></script>
 <script src="twcalc.js?v=2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 /* Keep this the same as in index.html */
 const PLATFORM = "Nestopia";
@@ -125,7 +126,8 @@ const fmt = d => d ? new Date(d + "T00:00:00").toLocaleDateString("en-GB", { day
 const FACES = { 1: "😢", 2: "🙁", 3: "😐", 4: "🙂", 5: "😄" };
 const BAND = { below: "Below", inline: "In line", above: "Above" }, PROGW = { below: "Below expected", inline: "Expected", above: "Better than expected" };
 const CAT = { sod: ["SoD", "sod"], gt: ["G&T", "gt"], eal: ["EAL", "eal"], other: ["Other need", "other"] };
-let me, school, lead = false, classes = [], studs = [], myClassIds = [], reg = [], ui = { q: "", grade: "all", cls: "all", grp: "all" };
+let me, school, lead = false, classes = [], studs = [], myClassIds = [], reg = [], ui = { q: "", grade: "all", cls: "all", grp: "all", gen: "all", tab: "list" };
+const age = d => { if (!d) return null; const b = new Date(d + "T00:00:00"), n = new Date(); let a = n.getFullYear() - b.getFullYear(); if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--; return a; };
 const cls = id => classes.find(c => String(c.id) === String(id)) || {};
 const gName = g => { const G = window.SETUP && (window.SETUP.grades || []).find(x => x.id === g); return G ? G.name : g || ""; };
 const initials = n => String(n || "?").split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase();
@@ -147,10 +149,12 @@ const safe = async (fn, d) => { try { return await fn(); } catch (_) { return d;
   classes = ((await cq).data || []).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
   const { data: ct } = await sb.from("class_teachers").select("class_id").eq("teacher_id", me.id);
   myClassIds = [...new Set((ct || []).map(x => String(x.class_id)))];
-  const cols = "id,full_name,arabic_name,student_number,class_id,groups,archived";
-  studs = lead ? await fetchAll(() => sb.from("students").select(cols).eq("school_id", school.id).eq("archived", false).order("full_name"))
-    : myClassIds.length ? await fetchAll(() => sb.from("students").select(cols).in("class_id", myClassIds).eq("archived", false).order("full_name")) : [];
+  const cols = "id,full_name,arabic_name,student_number,class_id,groups,archived,gender,nationality,emirati,dob";
+  const loadS = c => lead ? fetchAll(() => sb.from("students").select(c).eq("school_id", school.id).eq("archived", false).order("full_name"))
+    : myClassIds.length ? fetchAll(() => sb.from("students").select(c).in("class_id", myClassIds).eq("archived", false).order("full_name")) : Promise.resolve([]);
+  try { studs = await loadS(cols); } catch (_) { studs = await loadS("id,full_name,arabic_name,student_number,class_id,groups,archived"); }
   reg = await safe(() => fetchAll(() => sb.from("inclusion_students").select("student_id,categories,active,support_level").eq("school_id", school.id)), []);
+  window.MED = {}; (await safe(() => fetchAll(() => sb.from("student_medical").select("student_id,allergies").eq("school_id", String(school.id))), [])).forEach(m => { if (m.allergies) MED[m.student_id] = m.allergies; });
   if (window.hubInit) hubInit("students");
   route();
 })();
@@ -165,22 +169,29 @@ function list(){
   if (ui.q) { const q = ui.q.toLowerCase(); rows = rows.filter(s => (s.full_name || "").toLowerCase().includes(q) || (s.arabic_name || "").includes(ui.q) || String(s.student_number || "").toLowerCase().includes(q)); }
   if (ui.grade !== "all") rows = rows.filter(s => cls(s.class_id).grade_id === ui.grade);
   if (ui.cls !== "all") rows = rows.filter(s => String(s.class_id) === ui.cls);
+  if (ui.gen === "boy" || ui.gen === "girl") rows = rows.filter(s => s.gender === ui.gen); else if (ui.gen === "em") rows = rows.filter(s => s.emirati === true); else if (ui.gen === "nonem") rows = rows.filter(s => s.emirati === false); else if (ui.gen === "allergy") rows = rows.filter(s => MED[String(s.id)]);
   if (ui.grp === "reg") rows = rows.filter(s => regOf(s.id)); else if (ui.grp !== "all") rows = rows.filter(s => (regOf(s.id) || { categories: [] }).categories.includes(ui.grp) || (s.groups || []).includes(ui.grp));
   const classOpts = classes.filter(c => (ui.grade === "all" || c.grade_id === ui.grade) && (lead || myClassIds.includes(String(c.id))));
-  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Students</h1><p class="note">${esc(school.name)} · ${lead ? "Every student in the school" : "Students in your classes"} (${studs.length}). Open a student to see everything about them in one place.</p></div></div>
+  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Students</h1><p class="note">${esc(school.name)} · ${lead ? "Every student in the school" : "Students in your classes"} (${studs.length}). Open a student to see everything about them in one place.</p></div>${lead ? '<div class="row"><button class="btn ghost" id="tplB">⬇ Details template</button><button class="btn" id="impB">⬆ Import student details</button></div>' : ""}</div>
+    ${lead ? `<div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="true" data-stab="list">👥 All students</button><button class="tab" role="tab" aria-selected="false" data-stab="groups">📊 Results by group</button></div>` : ""}
     <div class="card"><div class="row" style="margin-bottom:12px"><input type="search" id="q" placeholder="Search a name or student number" value="${esc(ui.q)}" style="max-width:280px">
       ${lead ? `<select id="fg" aria-label="Grade"><option value="all">All grades</option>${grades.map(g => `<option value="${esc(g.id)}" ${ui.grade === g.id ? "selected" : ""}>${esc(g.name)}</option>`).join("")}</select>` : ""}
       <select id="fc" aria-label="Class"><option value="all">All classes</option>${classOpts.map(c => `<option value="${esc(c.id)}" ${ui.cls === String(c.id) ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select>
       <select id="fp" aria-label="Group"><option value="all">All students</option><option value="reg" ${ui.grp === "reg" ? "selected" : ""}>On the inclusion register</option>${Object.entries(CAT).slice(0, 3).map(([k, v]) => `<option value="${k}" ${ui.grp === k ? "selected" : ""}>${v[0]}</option>`).join("")}</select>
+      <select id="fgn" aria-label="More filters"><option value="all">Everyone</option><option value="boy" ${ui.gen === "boy" ? "selected" : ""}>Boys</option><option value="girl" ${ui.gen === "girl" ? "selected" : ""}>Girls</option><option value="em" ${ui.gen === "em" ? "selected" : ""}>Emirati</option><option value="nonem" ${ui.gen === "nonem" ? "selected" : ""}>Non-Emirati</option><option value="allergy" ${ui.gen === "allergy" ? "selected" : ""}>🩺 With allergies</option></select>
       <span class="note">${rows.length} shown</span></div>
     ${rows.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th class="hide-sm">Number</th><th>Class</th><th>Groups</th></tr>${rows.slice(0, 500).map(s => { const r = regOf(s.id), c = cls(s.class_id);
-      return `<tr><td><button class="nm" data-id="${esc(s.id)}">${esc(s.full_name)}</button>${s.arabic_name ? `<br><span class="note" dir="rtl" lang="ar">${esc(s.arabic_name)}</span>` : ""}</td><td class="hide-sm">${esc(s.student_number || "")}</td><td>${esc(c.name || "")}${c.grade_id ? `<br><span class="note">${esc(gName(c.grade_id))}</span>` : ""}</td>
+      return `<tr><td><button class="nm" data-id="${esc(s.id)}">${esc(s.full_name)}</button>${MED[String(s.id)] ? ` <span title="Allergies: ${esc(MED[String(s.id)])}" style="color:var(--red)">🩺</span>` : ""}${s.arabic_name ? `<br><span class="note" dir="rtl" lang="ar">${esc(s.arabic_name)}</span>` : ""}</td><td class="hide-sm">${esc(s.student_number || "")}</td><td>${esc(c.name || "")}${c.grade_id ? `<br><span class="note">${esc(gName(c.grade_id))}</span>` : ""}</td>
         <td>${r ? (r.categories || []).map(k => CAT[k] ? `<span class="tag ${CAT[k][1]}">${CAT[k][0]}</span>` : "").join("") : ""}${(s.groups || []).filter(g => !["SEN", "G&T", "EAL"].includes(g)).map(g => `<span class="tag other">${esc(g)}</span>`).join("")}</td></tr>`; }).join("")}</table></div>${rows.length > 500 ? '<p class="note">Showing the first 500. Search or filter to narrow down.</p>' : ""}`
       : `<p class="note" style="margin:0">${studs.length ? "No students match." : lead ? "No students yet. Add them in TwigNest → Classes and students." : "You don’t have a class linked in TwigNest yet."}</p>`}</div>`;
   const q = document.getElementById("q"); q.oninput = () => { ui.q = q.value; clearTimeout(q.t); q.t = setTimeout(() => { list(); const n = document.getElementById("q"); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }, 250); };
   const fg = document.getElementById("fg"); if (fg) fg.onchange = e => { ui.grade = e.target.value; ui.cls = "all"; list(); };
   document.getElementById("fc").onchange = e => { ui.cls = e.target.value; list(); };
   document.getElementById("fp").onchange = e => { ui.grp = e.target.value; list(); };
+  document.getElementById("fgn").onchange = e => { ui.gen = e.target.value; list(); };
+  const ib = document.getElementById("impB"); if (ib) ib.onclick = importDetails;
+  const tb = document.getElementById("tplB"); if (tb) tb.onclick = template;
+  app.querySelectorAll("[data-stab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.stab; ui.tab === "groups" ? groupsView() : list(); });
   app.querySelectorAll("[data-id]").forEach(b => b.onclick = () => { history.pushState(null, "", "?id=" + b.dataset.id); profile(b.dataset.id); });
   window.scrollTo(0, 0);
 }
@@ -195,16 +206,23 @@ async function profile(id){
     <div class="card"><div class="ph"><div class="av" aria-hidden="true">${esc(initials(s.full_name))}</div><div><h1 class="ptitle" style="margin:0">${esc(s.full_name)}</h1>
       ${s.arabic_name ? `<p class="note" dir="rtl" lang="ar" style="margin:2px 0 0;font-size:17px">${esc(s.arabic_name)}</p>` : ""}
       <p class="note" style="margin:4px 0 0">${esc([c.name, gName(c.grade_id), s.student_number ? "No. " + s.student_number : ""].filter(Boolean).join(" · "))}</p>
+      <p class="note" style="margin:4px 0 0">${esc([s.gender === "boy" ? "Boy" : s.gender === "girl" ? "Girl" : "", s.dob ? "Age " + age(s.dob) + " (born " + fmt(s.dob) + ")" : "", s.nationality || "", s.emirati === true ? "Emirati" : s.emirati === false ? "Non-Emirati" : ""].filter(Boolean).join(" · ")) || (lead ? "Add gender, date of birth and nationality with ✏️ Edit details." : "")}</p>
       <p style="margin:6px 0 0">${r ? (r.categories || []).map(k => CAT[k] ? `<span class="tag ${CAT[k][1]}">${CAT[k][0]}</span>` : "").join("") : ""}${(s.groups || []).filter(g => !["SEN", "G&T", "EAL"].includes(g)).map(g => `<span class="tag other">${esc(g)}</span>`).join("")}</p></div></div><p class="note" id="tch" style="margin:10px 0 0"></p></div>
     <div class="prof"><div class="cols">
       ${on.includes("twignest") ? `<section class="card"><div class="row" style="justify-content:space-between"><h2>Attainment and progress</h2><a class="btn ghost small" href="twignest/">TwigNest →</a></div><div id="tw"><p class="note">Loading…</p></div></section>` : ""}
       ${on.includes("inclusion") ? `<section class="card"><div class="row" style="justify-content:space-between"><h2>Inclusion</h2><a class="btn ghost small" href="inclusion.html${lead ? "#register" : ""}">Inclusion →</a></div><div id="inc"><p class="note">Loading…</p></div></section>` : ""}
     </div><div class="cols">
       ${on.includes("wellbeing") ? `<section class="card"><div class="row" style="justify-content:space-between"><h2>Wellbeing</h2><a class="btn ghost small" href="wellbeing.html">Wellbeing →</a></div><div id="wb"><p class="note">Loading…</p></div></section>` : ""}
+      <section class="card" id="medCard"><div class="row" style="justify-content:space-between"><h2>🩺 Medical</h2>${lead ? '<button class="btn ghost small" data-edit="med">✏️ Edit</button>' : ""}</div><div id="med"><p class="note">Loading…</p></div></section>
+      <section class="card"><div class="row" style="justify-content:space-between"><h2>👪 Family contacts</h2>${lead ? '<button class="btn ghost small" data-edit="fam">✏️ Edit</button>' : ""}</div><div id="fam"><p class="note">Loading…</p></div></section>
       <section class="card"><div class="row" style="justify-content:space-between"><h2>Behaviour</h2><a class="btn ghost small" href="behaviour.html">Behaviour →</a></div><div id="bh"><p class="note">Loading…</p></div></section>
       <section class="card"><div class="row" style="justify-content:space-between"><h2>Attendance</h2><a class="btn ghost small" href="attendance.html">Attendance →</a></div><div id="att"><p class="note">Loading…</p></div></section>
     </div></div>`;
   document.getElementById("bk").onclick = back; window.scrollTo(0, 0);
+  if (lead) document.querySelector(".ph").insertAdjacentHTML("beforeend", '<button class="btn ghost small" id="editDet" style="margin-left:auto">✏️ Edit details</button>');
+  const ed = document.getElementById("editDet"); if (ed) ed.onclick = () => editDetails(s, "det");
+  app.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => editDetails(s, b.dataset.edit));
+  loadFamMed(s);
   // teachers of the class
   safe(async () => { const { data: ct } = await sb.from("class_teachers").select("teacher_id").eq("class_id", s.class_id); const ids = [...new Set((ct || []).map(x => x.teacher_id))]; if (!ids.length) return;
     const { data: ps } = await sb.from("profiles").select("full_name").in("id", ids); document.getElementById("tch").textContent = "Teachers: " + (ps || []).map(x => x.full_name).filter(Boolean).join(", "); });
@@ -265,6 +283,103 @@ async function profile(id){
       <div class="faces30">${days.map(d => { const x = (ch || []).find(y => y.day === d); return `<span title="${fmt(d)}${x ? (x.talk ? " · wanted to talk" : "") : ""}" style="opacity:${x ? 1 : .15}">${x ? FACES[x.mood] : "·"}</span>`; }).join("")}</div>
       <p style="margin:10px 0 0">${open.length ? `📝 ${open.length} open concern${open.length === 1 ? "" : "s"}${open.some(x => x.safeguarding) ? " (including 🔒 safeguarding)" : ""}` : '<span class="note">No open concerns that you can see.</span>'}</p>`;
   }, null);
+}
+async function loadFamMed(s){
+  const [{ data: ct }, { data: md }] = await Promise.all([sb.from("student_contacts").select("*").eq("student_id", String(s.id)).maybeSingle(), sb.from("student_medical").select("*").eq("student_id", String(s.id)).maybeSingle()]);
+  window.CUR_FAM = ct || null; window.CUR_MED = md || null;
+  const wa = n => String(n || "").replace(/[^\d]/g, "");
+  const fam = document.getElementById("fam"), med = document.getElementById("med"); if (!fam) return;
+  fam.innerHTML = ct && (ct.contacts || []).length ? ct.contacts.map(x => `<div style="padding:8px 0;border-bottom:1px solid var(--line)"><b>${esc(x.name || "")}</b> <span class="note">${esc(x.relation || "")}</span><div class="row" style="margin-top:4px">${x.phone ? `<a class="btn ghost small" href="tel:${esc(x.phone)}">📞 ${esc(x.phone)}</a>` : ""}${x.whatsapp || x.phone ? `<a class="btn ghost small" href="https://wa.me/${wa(x.whatsapp || x.phone)}" target="_blank" rel="noopener">WhatsApp</a>` : ""}${x.email ? `<a class="btn ghost small" href="mailto:${esc(x.email)}">✉️ ${esc(x.email)}</a>` : ""}</div></div>`).join("") + (ct.address ? `<p class="note" style="margin:8px 0 0">🏠 ${esc(ct.address)}</p>` : "") : '<p class="note" style="margin:0">No family contacts yet.</p>';
+  if (window.nestLog && md) nestLog("medical", null, s.id);
+  med.innerHTML = md && (md.allergies || md.conditions || md.medication || md.dietary || md.notes || (md.emergency || []).length) ? `${md.allergies ? `<p style="margin:0 0 8px;background:var(--red-soft);color:var(--red);border-radius:10px;padding:8px 10px;font-weight:800">⚠️ Allergies: ${esc(md.allergies)}</p>` : ""}
+      ${[["Medical conditions", md.conditions], ["Medication", md.medication], ["Dietary needs", md.dietary], ["Notes", md.notes]].filter(x => x[1]).map(([l, v]) => `<p style="margin:4px 0"><b>${l}:</b> ${esc(v)}</p>`).join("")}
+      ${(md.emergency || []).length ? `<p style="margin:8px 0 0"><b>In an emergency:</b> ${md.emergency.map(e => `${esc(e.name || "")} (${esc(e.relation || "")}) <a href="tel:${esc(e.phone || "")}">${esc(e.phone || "")}</a>`).join(" · ")}</p>` : ""}` : '<p class="note" style="margin:0">No medical information recorded.</p>';
+}
+function editDetails(s, part){
+  const ct = window.CUR_FAM || { contacts: [] }, md = window.CUR_MED || { emergency: [] }, dl = document.getElementById("dlg") || Object.assign(document.createElement("dialog"), { id: "dlg" }); document.body.appendChild(dl);
+  const ctRow = (x, i) => `<div class="row" data-c="${i}" style="gap:6px;margin:4px 0"><input data-k="name" value="${esc(x.name || "")}" placeholder="Name" style="max-width:170px"><input data-k="relation" value="${esc(x.relation || "")}" placeholder="Mother, father…" style="max-width:130px"><input data-k="phone" value="${esc(x.phone || "")}" placeholder="Phone" style="max-width:150px"><input data-k="email" value="${esc(x.email || "")}" placeholder="Email" style="max-width:190px"></div>`;
+  const em = (md.emergency || [])[0] || {};
+  dl.innerHTML = `<form class="dlg"><h2>✏️ ${esc(s.full_name)}</h2>
+    ${part === "det" ? `<div class="two"><label class="f">Gender <select name="g"><option value="">–</option><option value="boy" ${s.gender === "boy" ? "selected" : ""}>Boy</option><option value="girl" ${s.gender === "girl" ? "selected" : ""}>Girl</option></select></label><label class="f">Date of birth <input type="date" name="dob" value="${esc(s.dob || "")}"></label></div>
+      <div class="two"><label class="f">Nationality <input name="nat" value="${esc(s.nationality || "")}" placeholder="For example: Emirati, Egyptian, Indian"></label><label class="f">Emirati <select name="em"><option value="">–</option><option value="yes" ${s.emirati === true ? "selected" : ""}>Yes</option><option value="no" ${s.emirati === false ? "selected" : ""}>No</option></select></label></div>` : ""}
+    ${part === "fam" ? `<div><b>Family contacts</b><div id="cts">${[...(ct.contacts || []), {}, {}].slice(0, Math.max(2, (ct.contacts || []).length + 1)).map(ctRow).join("")}</div></div><label class="f">Address (optional) <input name="addr" value="${esc(ct.address || "")}"></label>` : ""}
+    ${part === "med" ? `<label class="f">⚠️ Allergies <input name="al" value="${esc(md.allergies || "")}" placeholder="For example: peanuts (EpiPen in the office)"></label><label class="f">Medical conditions <input name="co" value="${esc(md.conditions || "")}" placeholder="For example: asthma"></label>
+      <div class="two"><label class="f">Medication <input name="me" value="${esc(md.medication || "")}"></label><label class="f">Dietary needs <input name="di" value="${esc(md.dietary || "")}"></label></div>
+      <label class="f">Notes <input name="no" value="${esc(md.notes || "")}"></label>
+      <div class="two"><label class="f">Emergency contact <input name="en" value="${esc(em.name || "")}" placeholder="Name"></label><label class="f">Their phone <input name="ep" value="${esc(em.phone || "")}"></label></div><label class="f">Relation <input name="er" value="${esc(em.relation || "")}" placeholder="For example: aunt"></label>
+      <p class="lock">Medical information is seen only by school leaders and ${esc(s.full_name.split(" ")[0])}’s teachers, and every change is recorded in the access log.</p>` : ""}
+    <div class="row" style="justify-content:flex-end"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn">Save</button></div></form>`;
+  const f = dl.querySelector("form"); dl.querySelector("[data-x]").onclick = () => dl.close();
+  f.onsubmit = async e => { e.preventDefault(); let error;
+    if (part === "det") { const row = { gender: f.g.value || null, dob: f.dob.value || null, nationality: f.nat.value.trim() || null, emirati: f.em.value === "yes" ? true : f.em.value === "no" ? false : null };
+      ({ error } = await sb.from("students").update(row).eq("id", s.id)); if (!error) Object.assign(s, row); }
+    if (part === "fam") { const contacts = [...f.querySelectorAll("[data-c]")].map(r => Object.fromEntries([...r.querySelectorAll("[data-k]")].map(i => [i.dataset.k, i.value.trim()]))).filter(x => x.name || x.phone || x.email);
+      ({ error } = await sb.from("student_contacts").upsert({ student_id: String(s.id), school_id: String(school.id), contacts, address: f.addr.value.trim() || null, updated_at: new Date().toISOString() })); }
+    if (part === "med") ({ error } = await sb.from("student_medical").upsert({ student_id: String(s.id), school_id: String(school.id), allergies: f.al.value.trim() || null, conditions: f.co.value.trim() || null, medication: f.me.value.trim() || null, dietary: f.di.value.trim() || null, notes: f.no.value.trim() || null,
+      emergency: f.en.value.trim() || f.ep.value.trim() ? [{ name: f.en.value.trim(), relation: f.er.value.trim(), phone: f.ep.value.trim() }] : [], updated_at: new Date().toISOString() }));
+    if (error) return alert(/student_contacts|student_medical|gender|column/.test(error.message) ? "Please run the student details database step first." : error.message);
+    if (part === "med") { if (f.al.value.trim()) MED[String(s.id)] = f.al.value.trim(); else delete MED[String(s.id)]; }
+    dl.close(); profile(s.id); };
+  dl.showModal();
+}
+// ---------- Import student details from Excel or CSV ----------
+const COLS = ["Student ID", "Name", "Gender", "Date of birth", "Nationality", "Emirati", "Parent 1 name", "Parent 1 relation", "Parent 1 phone", "Parent 1 email", "Parent 2 name", "Parent 2 relation", "Parent 2 phone", "Parent 2 email", "Emergency contact", "Emergency phone", "Allergies", "Medical conditions", "Medication", "Dietary needs"];
+function template(){
+  const rows = [COLS, ...studs.slice(0, 500).map(s => [s.student_number || "", s.full_name, s.gender === "boy" ? "Boy" : s.gender === "girl" ? "Girl" : "", s.dob || "", s.nationality || "", s.emirati === true ? "Yes" : s.emirati === false ? "No" : ""])];
+  if (window.XLSX) { const ws = XLSX.utils.aoa_to_sheet(rows), wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Students"); XLSX.writeFile(wb, "Student details.xlsx"); return; }
+  const q = v => '"' + String(v).replace(/"/g, '""') + '"', a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + rows.map(r => r.map(q).join(",")).join("\n")], { type: "text/csv" })); a.download = "Student details.csv"; document.body.appendChild(a); a.click(); a.remove();
+}
+function importDetails(){
+  const inp = document.createElement("input"); inp.type = "file"; inp.accept = ".xlsx,.xls,.csv";
+  inp.onchange = async () => { const file = inp.files[0]; if (!file) return; if (!window.XLSX) return alert("The Excel reader couldn’t load. Please check your internet connection.");
+    const wb = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true }), rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+    const get = (r, k) => { const key = Object.keys(r).find(x => x.trim().toLowerCase() === k.toLowerCase()); return key == null ? "" : r[key]; };
+    const ymd = v => { if (!v) return null; if (v instanceof Date) return v.toISOString().slice(0, 10); const s = String(v).trim(), m = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/); if (m) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`; return /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : null; };
+    const byNo = Object.fromEntries(studs.filter(s => s.student_number).map(s => [String(s.student_number).trim().toLowerCase(), s])), byName = Object.fromEntries(studs.map(s => [s.full_name.trim().toLowerCase(), s]));
+    const plan = [], missing = [];
+    rows.forEach(r => { const s = byNo[String(get(r, "Student ID")).trim().toLowerCase()] || byName[String(get(r, "Name")).trim().toLowerCase()]; if (!s) { if (get(r, "Name") || get(r, "Student ID")) missing.push(get(r, "Name") || get(r, "Student ID")); return; }
+      const g = String(get(r, "Gender")).trim().toLowerCase(), em = String(get(r, "Emirati")).trim().toLowerCase();
+      const det = { gender: /^(b|boy|m|male|ذكر)$/.test(g) ? "boy" : /^(g|girl|f|female|أنثى)$/.test(g) ? "girl" : undefined, dob: ymd(get(r, "Date of birth")) || undefined, nationality: String(get(r, "Nationality")).trim() || undefined, emirati: /^(yes|y|true|نعم)$/.test(em) ? true : /^(no|n|false|لا)$/.test(em) ? false : undefined };
+      Object.keys(det).forEach(k => det[k] === undefined && delete det[k]);
+      const contacts = [1, 2].map(n => ({ name: String(get(r, `Parent ${n} name`)).trim(), relation: String(get(r, `Parent ${n} relation`)).trim(), phone: String(get(r, `Parent ${n} phone`)).trim(), email: String(get(r, `Parent ${n} email`)).trim() })).filter(x => x.name || x.phone || x.email);
+      const medical = { allergies: String(get(r, "Allergies")).trim(), conditions: String(get(r, "Medical conditions")).trim(), medication: String(get(r, "Medication")).trim(), dietary: String(get(r, "Dietary needs")).trim(), en: String(get(r, "Emergency contact")).trim(), ep: String(get(r, "Emergency phone")).trim() };
+      plan.push([s, det, contacts, medical]); });
+    if (!plan.length) return alert("No students matched. Check that the file has a “Student ID” or “Name” column that matches Nestopia.");
+    if (!confirm(`Update ${plan.length} student${plan.length === 1 ? "" : "s"}?${missing.length ? `\n\n${missing.length} row${missing.length === 1 ? "" : "s"} didn’t match a student: ${missing.slice(0, 8).join(", ")}${missing.length > 8 ? "…" : ""}` : ""}`)) return;
+    let done = 0, errs = 0;
+    for (const [s, det, contacts, m] of plan) {
+      if (Object.keys(det).length) { const { error } = await sb.from("students").update(det).eq("id", s.id); if (error) errs++; else Object.assign(s, det); }
+      if (contacts.length) { const { error } = await sb.from("student_contacts").upsert({ student_id: String(s.id), school_id: String(school.id), contacts, updated_at: new Date().toISOString() }); if (error) errs++; }
+      if (m.allergies || m.conditions || m.medication || m.dietary || m.en || m.ep) { const { error } = await sb.from("student_medical").upsert({ student_id: String(s.id), school_id: String(school.id), allergies: m.allergies || null, conditions: m.conditions || null, medication: m.medication || null, dietary: m.dietary || null, emergency: m.en || m.ep ? [{ name: m.en, relation: "", phone: m.ep }] : [], updated_at: new Date().toISOString() }); if (error) errs++; else if (m.allergies) MED[String(s.id)] = m.allergies; }
+      done++; }
+    alert(errs ? `Updated ${done} students, with ${errs} problem${errs === 1 ? "" : "s"}. If this keeps happening, please run the student details database step.` : `✓ Updated ${done} student${done === 1 ? "" : "s"}.`); list(); };
+  inp.click();
+}
+// ---------- Results by group: gender, Emirati, nationality ----------
+async function groupsView(){
+  app.querySelectorAll("[data-stab]").forEach(b => b.setAttribute("aria-selected", b.dataset.stab === "groups"));
+  const old = document.getElementById("grpBox"); if (old) old.remove();
+  const card = app.querySelector(".card"); if (card) card.remove();
+  app.insertAdjacentHTML("beforeend", '<div id="grpBox"><div class="card"><p class="note">Working it out…</p></div></div>');
+  const box = document.getElementById("grpBox");
+  const T = await safe(() => twigLoad(sb, school.id), null);
+  const y0 = (() => { const d = new Date(), y = d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1; return y + "-08-01"; })();
+  const att = await safe(() => fetchAll(() => sb.from("attendance_marks").select("student_id,status").eq("school_id", school.id).gte("day", y0)), []);
+  const nats = Object.entries(studs.reduce((a, s) => { if (s.nationality) a[s.nationality] = (a[s.nationality] || 0) + 1; return a; }, {})).filter(([, n]) => n >= 5).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([n]) => n);
+  const G = [["All students", s => true], ["Boys", s => s.gender === "boy"], ["Girls", s => s.gender === "girl"], ["Emirati", s => s.emirati === true], ["Non-Emirati", s => s.emirati === false], ...nats.map(n => [n, s => s.nationality === n])];
+  const terms = T ? T.C.terms : [], lastT = T ? Math.max(0, ...T.C.terms.map((t, k) => T.studs.some(st => T.avgBand(st, T.strands().map(p => p[1]), String(k))) ? k : 0)) : 0;
+  const subjects = T ? T.C.subjects : [];
+  const pct = (a, b) => b ? Math.round(a / b * 100) : null, col = v => v == null ? "var(--muted)" : v >= 75 ? "var(--sage)" : v >= 50 ? "var(--amber)" : "var(--red)";
+  const rows = G.map(([name, f]) => { const ids = new Set(studs.filter(f).map(s => String(s.id))), ts = T ? T.studs.filter(x => ids.has(String(x.id))) : [];
+    const perSub = subjects.map(sub => { let a = 0, an = 0, g = 0, gn = 0; ts.forEach(st => { const b = T.avgBand(st, sub.strands, String(lastT)); if (b) { an++; if (b !== "below") a++; } const p = T.avgProg(st, sub.strands, lastT); if (p) { gn++; if (p !== "below") g++; } }); return [pct(a, an), pct(g, gn)]; });
+    const am = att.filter(m => ids.has(String(m.student_id))), ap = am.length ? Math.round(am.filter(m => m.status === "present" || m.status === "late").length / am.length * 100) : null;
+    return [name, ids.size, perSub, ap]; });
+  const unknown = studs.filter(s => !s.gender || s.emirati == null).length;
+  box.innerHTML = `<div class="card"><h2>📊 Results by group · ${esc(terms[lastT] || "")}</h2><p class="note" style="margin-top:0">% of students in line with or above curriculum standards (and making expected progress or better), and attendance this school year. Useful for inspection comparisons by gender and Emirati status.</p>
+    ${unknown ? `<p class="lock">${unknown} student${unknown === 1 ? " has" : "s have"} no gender or Emirati status yet: add them with ⬆ Import student details.</p>` : ""}
+    <div class="tablewrap"><table class="reg"><tr><th>Group</th><th>Students</th>${subjects.map(s => `<th>${esc(s.name)}<br><span class="note">in line+ · progress</span></th>`).join("")}<th>Attendance</th></tr>
+      ${rows.map(([n, c, ps, ap], i) => `<tr${i === 0 ? ' style="font-weight:800"' : ""}><td>${esc(n)}</td><td>${c}</td>${ps.map(([a, g]) => `<td><b style="color:${col(a)}">${a == null ? "–" : a + "%"}</b> <span class="note">· ${g == null ? "–" : g + "%"}</span></td>`).join("")}<td style="color:${ap == null ? "var(--muted)" : ap >= 95 ? "var(--sage)" : ap >= 90 ? "var(--amber)" : "var(--red)"};font-weight:700">${ap == null ? "–" : ap + "%"}</td></tr>`).join("")}</table></div>
+    <p class="note" style="margin:10px 0 0">Nationalities with 5 or more students are shown. The same groups (Boys, Girls, Emirati, Non-Emirati) are in TwigNest → School view.</p></div>`;
 }
 function back(){ history.pushState(null, "", "students.html"); list(); }
 </script>

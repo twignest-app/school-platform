@@ -24,6 +24,8 @@
     const c = await sb.from("classes").select("*").eq("school_id", sid).eq("year", year); if (c.error) throw c.error; classes = c.data;
     const ids = new Set(classes.map(x => x.id));
     studs = (await fetchAll("students", "*")).filter(x => !x.archived && ids.has(x.class_id));
+    // groups worked out from each student's details (gender, Emirati), so results can be compared for inspection
+    studs.forEach(x => { const add = [x.gender === "boy" ? "Boys" : x.gender === "girl" ? "Girls" : null, x.emirati === true ? "Emirati" : x.emirati === false ? "Non-Emirati" : null].filter(Boolean); x.groups = [...(x.groups || []).filter(g => !["Boys", "Girls", "Emirati", "Non-Emirati"].includes(g)), ...add]; });
     const sIds = new Set(studs.map(x => x.id));
     R = {}; ST = {}; LV = {}; TG = {};
     (await fetchAll("results", "student_id,col_id,term,value")).forEach(x => { if (!sIds.has(x.student_id)) return; const a = R[x.student_id] = R[x.student_id] || {}; (a[x.col_id] = a[x.col_id] || {})[x.term] = x.value; });
@@ -90,7 +92,7 @@
   const bar = (c, n) => { const w = x => (c[x] || 0) / (n || 1) * 100; return `<div class="sbar" aria-hidden="true"><i style="width:${w("below")}%;background:var(--red)"></i><i style="width:${w("inline")}%;background:var(--sage)"></i><i style="width:${w("above")}%;background:var(--plum)"></i></div>`; };
   function groupTable(sts, t) {
     let h = `<div class="tablewrap"><table class="small"><tr><th style="text-align:left">Group</th><th>Below</th><th>In line</th><th>Above</th><th>Expected progress or better</th></tr>`;
-    ["All", ...(C.groups || [])].forEach(g => { const gs = filtered(g), r = summarise(gs, sts, t), known = gs.length - r.p.none;
+    ["All", ...[...(C.groups || []), ...["Boys", "Girls", "Emirati", "Non-Emirati"].filter(g => studs.some(x => (x.groups || []).includes(g)))]].forEach(g => { const gs = filtered(g), r = summarise(gs, sts, t), known = gs.length - r.p.none;
       h += `<tr><td style="text-align:left">${g === "All" ? "All students" : esc(g)} (${gs.length})</td><td>${r.a.below}</td><td>${r.a.inline}</td><td>${r.a.above}</td><td>${known ? Math.round((r.p.inline + r.p.above) / known * 100) + "%" : "–"}</td></tr>`; });
     return h + `</table></div>`;
   }
@@ -110,7 +112,7 @@
     const sel = (id, label, opts, cur) => `<label class="fl" for="${id}">${label}</label><select id="${id}" class="fsel">${opts.map(([v, l]) => `<option value="${esc(v)}" ${String(v) === String(cur) ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
     if (ctx.fixedMode) { ui.mode = ctx.fixedMode; if (ui.term === "year") ui.term = 0; } else if (ui.mode === "reports") ui.mode = "subject";
     let h = (ctx.fixedMode ? "" : `<div class="tabs2" role="tablist"><button role="tab" data-smode="subject" aria-selected="${ui.mode === "subject"}">By subject</button><button role="tab" data-smode="strand" aria-selected="${ui.mode === "strand"}">By strand</button></div>`)
-      + `<div class="fbar">${sel("svGrade", "Grade", [["All", "All grades"], ...grades.map(g => [g.id, g.name])], ui.grade)}${sel("svTerm", "Term", (ctx.fixedMode ? [] : [["year", "Whole year (all terms)"]]).concat(C.terms.map((x, i) => [i, x])), t)}${sel("svGrp", "Students", [["All", "All students"], ...(C.groups || []).map(g => [g, g])], ui.group)}</div>`;
+      + `<div class="fbar">${sel("svGrade", "Grade", [["All", "All grades"], ...grades.map(g => [g.id, g.name])], ui.grade)}${sel("svTerm", "Term", (ctx.fixedMode ? [] : [["year", "Whole year (all terms)"]]).concat(C.terms.map((x, i) => [i, x])), t)}${sel("svGrp", "Students", [["All", "All students"], ...[...(C.groups || []), ...["Boys", "Girls", "Emirati", "Non-Emirati"].filter(g => studs.some(x => (x.groups || []).includes(g)))].map(g => [g, g])], ui.group)}</div>`;
     if (!list.length) { ctx.el.innerHTML = h + `<div class="card"><p class="note">No students match these filters yet.</p></div>`; return; }
     if (ui.mode === "reports") { ctx.el.innerHTML = h + reportsTracker(list); return; }
     if (t === "year") { ctx.el.innerHTML = h + yearView(list); return; }

@@ -152,7 +152,7 @@ async function mfaCard(box){
 // ----- Access log: who viewed or changed sensitive records -----
 async function auditCard(box, s){
   if (!box) return;
-  const AREA = { safeguarding: "🔒 Safeguarding", wellbeing: "Wellbeing", inclusion: "Inclusion", iep: "IEP / plan", referral: "Inclusion referral", student: "Student profile", behaviour: "Behaviour file" };
+  const AREA = { safeguarding: "🔒 Safeguarding", wellbeing: "Wellbeing", inclusion: "Inclusion", iep: "IEP / plan", referral: "Inclusion referral", student: "Student profile", behaviour: "Behaviour file", medical: "🩺 Medical information" };
   const ACT = { viewed: "viewed", added: "added", changed: "changed", deleted: "deleted" };
   const r = await sb.from("audit_log").select("*").eq("school_id", String(s.id)).order("at", { ascending: false }).limit(300);
   if (r.error) { box.innerHTML = /audit_log/.test(r.error.message) ? '<p class="note">The access log needs its database step first. Please run the Privacy and safety update in Supabase.</p>' : `<p class="note">${esc(r.error.message)}</p>`; return; }
