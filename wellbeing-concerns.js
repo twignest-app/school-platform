@@ -43,6 +43,7 @@ function openConcern(preStudent){
 /* ---- One concern: the story, actions and status ---- */
 function openConcernCase(id){
   const c = concerns.find(x => String(x.id) === String(id)); if (!c) return;
+  if (window.nestLog) nestLog(c.safeguarding ? "safeguarding" : "wellbeing", c.id, c.student_id);
   const s = stud(c.student_id) || { full_name: "Student" }, canAct = c.safeguarding ? isDSL() : isTeam || c.assigned_to === me.id;
   const acts = cActions.filter(a => String(a.concern_id) === String(c.id)).sort((a, b) => a.created_at.localeCompare(b.created_at));
   const assignees = staff.filter(p => c.safeguarding ? (p.safeguarding_lead || ["school_lead"].includes(p.role)) : (p.wellbeing_team || ["school_lead", "coordinator"].includes(p.role)));
@@ -92,6 +93,7 @@ function myConcernsHtml(){
 /* ---- One student: check-ins over time and concerns ---- */
 function openStudentWB(sid){
   const s = stud(sid); if (!s) return;
+  if (window.nestLog) nestLog("wellbeing", null, sid);
   const days = []; for (let k = 29; k >= 0; k--) { const d = new Date(Date.now() - k * 864e5); days.push(d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0")); }
   const mine = checks.filter(c => String(c.student_id) === String(sid));
   const cs = concerns.filter(c => String(c.student_id) === String(sid));

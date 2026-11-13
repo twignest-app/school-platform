@@ -669,9 +669,10 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
     <div class="cols">
       <div><h4>Explore</h4><a href="grownest/">GrowNest</a><a href="twignest/">TwigNest</a><button type="button" data-auth="signin">School Hub</button></div>
       <div><h4>Connect</h4><a href="#founders">Founders</a><button type="button" data-demo>Contact</button><button type="button" data-demo>Request a Demo</button><a href="https://thinknestonline.com/">ThinkNest</a></div>
+      <div><h4>Legal</h4><a href="privacy.html">Privacy notice</a><a href="terms.html">Terms of use</a><a href="dpa.html">Data processing agreement</a></div>
     </div>
   </div>
-  <div class="wrap legal"><small>© <span id="yr">2026</span> Nestopia · A ThinkNest solution</small></div>
+  <div class="wrap legal"><small>© <span id="yr">2026</span> Nestopia · A ThinkNest solution · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></small></div>
 </footer>
 
 <dialog class="demo" id="demoDlg" aria-labelledby="demoTitle">
@@ -694,7 +695,7 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
 </template>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=10"></script>
+<script src="hub.js?v=11"></script>
 <script src="twcalc.js?v=3"></script>
 <script src="getstarted.js?v=1"></script>
 <script>
@@ -801,7 +802,7 @@ function authView(){
       </form>
       ${authTab === "signin" ? `<p class="note" style="margin:14px 0 0"><button class="link" data-tab="forgot">Forgot your password?</button></p>` : ""}
       ${authTab === "forgot" ? `<p class="note" style="margin:14px 0 0"><button class="link" data-tab="signin">Back to sign in</button></p>` : ""}
-      ${authTab === "signup" ? `<p class="note" style="margin:14px 0 0">After creating your account, you can register your school or join it with your school’s code.</p>` : ""}
+      ${authTab === "signup" ? `<p class="note" style="margin:14px 0 0">After creating your account, you can register your school or join it with your school’s code. By creating an account you agree to the <a href="terms.html" target="_blank">terms of use</a> and <a href="privacy.html" target="_blank">privacy notice</a>.</p>` : ""}
       <div id="authMsg"></div>
     </div></div>`;
   app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { authTab = b.dataset.tab; authView(); });
@@ -1116,10 +1117,29 @@ async function adminView(){
   });
 }
 
+// Two-step log-in: if this account has it switched on, ask for the 6-digit code before opening anything
+async function mfaGate(){
+  try {
+    const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (!aal || aal.nextLevel !== "aal2" || aal.currentLevel === "aal2") return true;
+    const { data: fs } = await sb.auth.mfa.listFactors(); const f0 = ((fs && fs.totp) || []).find(x => x.status === "verified"); if (!f0) return true;
+    shell();
+    app.innerHTML = `<div class="narrow"><div class="panel"><h2 class="serif" style="font-size:26px;color:var(--navy)">🔐 Two-step log-in</h2><p class="note">Open your authenticator app and type the 6-digit code for Nestopia.</p>
+      <form id="mfaF"><label for="mfaC">Code</label><input id="mfaC" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required style="letter-spacing:.3em;font-size:22px;font-weight:800"><button class="btn full" type="submit">Continue</button></form>
+      <p class="note" style="margin:12px 0 0"><button class="link" id="mfaOut">Sign out</button></p><div id="mfaM"></div></div></div>`;
+    document.getElementById("mfaOut").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+    document.getElementById("mfaF").onsubmit = async e => { e.preventDefault();
+      const { error } = await sb.auth.mfa.challengeAndVerify({ factorId: f0.id, code: document.getElementById("mfaC").value.replace(/\s+/g, "") });
+      if (error) return show(document.getElementById("mfaM"), "That code didn’t work. Try the newest code in the app.", "err"); render(); };
+    return false;
+  } catch (_) { return true; }
+}
+
 async function render(){
   if (recovering) return resetView();
   const { data: { session } } = await sb.auth.getSession();
   if (!session) return authView();
+  if (!(await mfaGate())) return;
   shell();
   const { data: p, error } = await sb.from("profiles").select("*").eq("id", session.user.id).single();
   if (error || !p) { app.innerHTML = `<div class="narrow panel"><div class="msg err">Your account couldn’t be loaded. Sign out and sign in again.</div>

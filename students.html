@@ -111,7 +111,7 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 <main id="app"><p class="note">Loading…</p></main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=10"></script>
+<script src="hub.js?v=11"></script>
 <script src="twcalc.js?v=2"></script>
 <script>
 /* Keep this the same as in index.html */
@@ -190,6 +190,7 @@ async function profile(id){
   const s = studs.find(x => String(x.id) === String(id));
   if (!s) { app.innerHTML = '<div class="card"><p class="note">This student isn’t in your list.</p><button class="btn ghost" id="bk">← All students</button></div>'; document.getElementById("bk").onclick = back; return; }
   const c = cls(s.class_id), r = regOf(s.id), on = school.modules || [];
+  if (window.nestLog) nestLog("student", null, s.id);
   app.innerHTML = `<div class="phead"><div><button class="btn ghost small" id="bk">← All students</button></div></div>
     <div class="card"><div class="ph"><div class="av" aria-hidden="true">${esc(initials(s.full_name))}</div><div><h1 class="ptitle" style="margin:0">${esc(s.full_name)}</h1>
       ${s.arabic_name ? `<p class="note" dir="rtl" lang="ar" style="margin:2px 0 0;font-size:17px">${esc(s.arabic_name)}</p>` : ""}

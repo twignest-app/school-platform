@@ -65,6 +65,11 @@
   }
   @media print{.hubside,.hubtoggle{display:none}.hubwrap{display:block}}`;
 
+  // Two-step log-in: on any hub page, if the code hasn't been entered yet, go to the sign-in page to enter it
+  (async () => { try { const c = window.sb || (typeof sb !== "undefined" ? sb : null); if (!c || !c.auth.mfa) return;
+    const { data: aal } = await c.auth.mfa.getAuthenticatorAssuranceLevel(); if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== "aal2" && !/index\.html$|\/$/.test(location.pathname)) location.href = "./"; } catch (_) {} })();
+  // Access log: record that someone opened a sensitive record (safeguarding, wellbeing, inclusion)
+  window.nestLog = function (area, record, student) { try { const c = window.sb || (typeof sb !== "undefined" ? sb : null); if (c) c.rpc("audit_view", { p_area: area, p_record: record == null ? null : String(record), p_student: student == null ? null : String(student) }).then(() => {}, () => {}); } catch (_) {} };
   // Nestopia emails: tell the server what happened; it decides who to email (never blocks the page)
   window.nestMail = function (action, id) { try { const c = window.sb || (typeof sb !== "undefined" ? sb : null); if (c && id) c.functions.invoke("nestopia-mail", { body: { action, id } }).catch(() => {}); } catch (_) {} };
   window.hubInit = async function (active) {
@@ -77,7 +82,7 @@
       const { data: s } = await sbc.from("schools").select("modules,status").eq("id", p.school_id).single();
       if (!s || s.status !== "active") return;
       const on = s.modules || [], lead = ["school_lead", "coordinator", "admin"].includes(p.role);
-      const items = NAV.filter(n => n[0] === "label" || !n[3] || on.includes(n[3])).filter(n => !(n[0] === "settings" && !lead));
+      const items = NAV.filter(n => n[0] === "label" || !n[3] || on.includes(n[3]));
       // drop empty group labels
       const list = items.filter((n, k) => n[0] !== "label" || (items[k + 1] && items[k + 1][0] !== "label"));
       if (!document.getElementById("hubcss")) { const st = document.createElement("style"); st.id = "hubcss"; st.textContent = CSS; document.head.appendChild(st); }

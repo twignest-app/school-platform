@@ -73,7 +73,7 @@ h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
 <main id="app"><p class="note">Loading…</p></main>
 <div class="toast" id="toast" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=10"></script>
+<script src="hub.js?v=11"></script>
 <script src="getstarted.js?v=1"></script>
 <script>
 const PLATFORM = "Nestopia";
@@ -83,7 +83,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const app = document.getElementById("app"), who = document.getElementById("who");
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 2400); };
-const ALL = [["twignest", "TwigNest"], ["grownest", "GrowNest"], ["planning", "Planning"], ["inclusion", "Inclusion"], ["wellbeing", "Wellbeing"], ["evidence", "Evidence packs"]];
+const ALL = [["twignest", "TwigNest"], ["grownest", "GrowNest"], ["planning", "Planning"], ["behaviour", "Behaviour"], ["inclusion", "Inclusion"], ["wellbeing", "Wellbeing"], ["evidence", "Evidence packs"], ["parents", "Parent portal"], ["conferences", "Parent conferences"]];
 (async () => {
   const { data: { session } } = await sb.auth.getSession(); if (!session) { location.href = "./"; return; }
   const { data: p } = await sb.from("profiles").select("*").eq("id", session.user.id).single();
@@ -91,11 +91,14 @@ const ALL = [["twignest", "TwigNest"], ["grownest", "GrowNest"], ["planning", "P
   who.innerHTML = `<span>${esc(p.full_name || p.email)}</span><a class="btn ghost small" href="./">← ${PLATFORM}</a>`;
   const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single();
   const lead = ["school_lead", "coordinator", "admin"].includes(p.role), on = (s && s.modules) || [];
-  if (!lead) { app.innerHTML = '<div class="card"><p class="note" style="margin:0">Settings are for school leaders and coordinators.</p></div>'; hubInit("settings"); return; }
+  if (!lead) { app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Settings</h1><p class="note">Your account</p></div></div><section class="card" style="margin-bottom:16px"><h2 style="margin:0 0 8px">🔐 Two-step log-in</h2><div id="mfaBox"></div></section>${p.safeguarding_lead ? '<section class="card"><h2 style="margin:0 0 8px">🛡️ Access log</h2><div id="audBox"></div></section>' : ""}`;
+    mfaCard(document.getElementById("mfaBox")); if (p.safeguarding_lead) auditCard(document.getElementById("audBox"), s); hubInit("settings"); return; }
   const c = (title, text, links) => `<section class="card"><h2>${title}</h2><p class="note" style="margin:0">${text}</p>${links.map(([h, l]) => `<a class="btn ghost small" href="${h}">${l} →</a>`).join(" ")}</section>`;
   app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Settings</h1><p class="note">${esc(s.name)} · Everything you set up for your school, in one place.</p></div></div>
     <section class="card" id="start" style="margin-bottom:16px"><h2>🚀 Getting started</h2><p class="note" style="margin:0 0 4px">The steps to get your school ready. Each one ticks itself off when it’s done.</p><div id="gs"><p class="note">Checking…</p></div></section>
     <section class="card" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Staff and roles</h2>${on.includes("twignest") ? '<a class="btn ghost small" href="twignest/#staff">Approve staff and change roles →</a>' : ""}</div><div id="staffList" style="margin-top:10px"><p class="note">Loading…</p></div></section>
+    <div class="set" style="margin-bottom:16px"><section class="card"><h2 style="margin:0 0 8px">🔐 Two-step log-in</h2><div id="mfaBox"></div></section>
+      <section class="card"><h2 style="margin:0 0 8px">🛡️ Access log</h2><div id="audBox"></div></section></div>
     <section class="card" id="plan" style="margin-bottom:16px"><h2 style="margin:0 0 8px">⭐ Your plan</h2><div id="planBody"><p class="note">Loading…</p></div></section>
     ${on.includes("parents") ? "" : "<!--"}<section class="card" id="pp" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">👪 Parent portal</h2><span class="note">Parents sign in at <b>nestopia.school/parent.html</b></span></div><div id="ppBody" style="margin-top:10px"><p class="note">Loading…</p></div></section>${on.includes("parents") ? "" : "-->"}
     <div class="set">
@@ -120,9 +123,46 @@ const ALL = [["twignest", "TwigNest"], ["grownest", "GrowNest"], ["planning", "P
       <td style="border-top:1px solid var(--line)">${x.active ? '<span class="note">Active</span>' : '<b style="color:#B07A1E">Waiting for approval</b>'}</td></tr>`).join("")}</table></div>` : '<p class="note">No staff yet.</p>'; })();
   if (on.includes("parents") && document.getElementById("ppBody")) parentPortal(s);
   planCard(s, p);
+  mfaCard(document.getElementById("mfaBox")); auditCard(document.getElementById("audBox"), s);
   document.getElementById("code").onclick = async () => { try { await navigator.clipboard.writeText(s.join_code); toast("Code copied"); } catch (_) {} };
   hubInit("settings");
 })();
+// ----- Two-step log-in for this account -----
+async function mfaCard(box){
+  if (!box || !sb.auth.mfa) return;
+  const { data: fs, error } = await sb.auth.mfa.listFactors();
+  if (error) { box.innerHTML = '<p class="note">Two-step log-in isn’t available right now.</p>'; return; }
+  const on = ((fs && fs.totp) || []).find(x => x.status === "verified");
+  if (on) { box.innerHTML = '<p style="margin:0;color:#3F8A4B;font-weight:800">✅ Two-step log-in is on for your account.</p><p class="note">Each time you sign in, you type a code from your authenticator app.</p><button class="btn ghost small" id="mfaOff">Turn it off</button>';
+    document.getElementById("mfaOff").onclick = async () => { if (!confirm("Turn off two-step log-in? Your account will be less protected.")) return; const { error: e } = await sb.auth.mfa.unenroll({ factorId: on.id }); if (e) return toast(e.message); toast("Two-step log-in is off."); mfaCard(box); }; return; }
+  box.innerHTML = '<p class="note" style="margin-top:0">Protect your account: after your password, you also type a 6-digit code from an app on your phone (Google Authenticator, Microsoft Authenticator or Authy). We strongly recommend it for anyone who sees safeguarding or inclusion records.</p><button class="btn small" id="mfaOn">Turn on two-step log-in</button>';
+  document.getElementById("mfaOn").onclick = async () => {
+    for (const x of ((fs && fs.totp) || []).filter(x => x.status !== "verified")) { try { await sb.auth.mfa.unenroll({ factorId: x.id }); } catch (_) {} }
+    const { data: en, error: e } = await sb.auth.mfa.enroll({ factorType: "totp", friendlyName: "Nestopia " + Date.now() });
+    if (e) return toast(/disabled|not enabled/i.test(e.message || "") ? "Two-step log-in needs switching on in Supabase first (Authentication → Multi-factor)." : e.message);
+    box.innerHTML = `<ol class="note" style="line-height:1.7;margin-top:0"><li>Open your authenticator app and scan this code, or type the key below.</li><li>Type the 6-digit code it shows.</li></ol>
+      <img src="${en.totp.qr_code}" alt="QR code for your authenticator app" style="width:170px;height:170px;background:#fff;border-radius:12px;padding:6px;border:1px solid var(--line)">
+      <p class="note">Key: <code style="word-break:break-all">${esc(en.totp.secret)}</code></p>
+      <input id="mfaCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code" style="max-width:180px;font-size:18px;letter-spacing:.2em;padding:8px 10px;border:1px solid var(--line);border-radius:10px">
+      <button class="btn small" id="mfaChk">Check and turn on</button>`;
+    document.getElementById("mfaChk").onclick = async () => { const { error: ve } = await sb.auth.mfa.challengeAndVerify({ factorId: en.id, code: document.getElementById("mfaCode").value.replace(/\s+/g, "") });
+      if (ve) return toast("That code didn’t work. Try the newest code in the app."); toast("🔐 Two-step log-in is on."); mfaCard(box); };
+  };
+}
+// ----- Access log: who viewed or changed sensitive records -----
+async function auditCard(box, s){
+  if (!box) return;
+  const AREA = { safeguarding: "🔒 Safeguarding", wellbeing: "Wellbeing", inclusion: "Inclusion", iep: "IEP / plan", referral: "Inclusion referral", student: "Student profile" };
+  const ACT = { viewed: "viewed", added: "added", changed: "changed", deleted: "deleted" };
+  const r = await sb.from("audit_log").select("*").eq("school_id", String(s.id)).order("at", { ascending: false }).limit(300);
+  if (r.error) { box.innerHTML = /audit_log/.test(r.error.message) ? '<p class="note">The access log needs its database step first. Please run the Privacy and safety update in Supabase.</p>' : `<p class="note">${esc(r.error.message)}</p>`; return; }
+  const rows = r.data || [], ids = [...new Set(rows.map(x => x.student_id).filter(Boolean))], names = {};
+  for (let k = 0; k < ids.length; k += 200) { const { data } = await sb.from("students").select("id,full_name").in("id", ids.slice(k, k + 200)); (data || []).forEach(x => names[x.id] = x.full_name); }
+  const draw = q => { const t = q.toLowerCase(), list = rows.filter(x => !t || [x.actor_name, names[x.student_id], AREA[x.area]].join(" ").toLowerCase().includes(t)).slice(0, 120);
+    box.querySelector("#audList").innerHTML = list.length ? `<div class="tablewrap" style="max-height:340px;overflow:auto"><table class="reg" style="width:100%">${list.map(x => `<tr><td style="white-space:nowrap" class="note">${new Date(x.at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</td><td><b>${esc(x.actor_name || "Someone")}</b> ${ACT[x.action] || x.action} <b>${esc(AREA[x.area] || x.area)}</b>${x.student_id ? " · " + esc(names[x.student_id] || "a student") : ""}</td></tr>`).join("")}</table></div>` : '<p class="note">Nothing yet.</p>'; };
+  box.innerHTML = `<p class="note" style="margin-top:0">Every time someone opens or changes a safeguarding, wellbeing or inclusion record, it’s written here. Entries can’t be edited or deleted.</p><input type="search" id="audQ" placeholder="Search a staff member or student" style="max-width:280px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit"><div id="audList" style="margin-top:10px"></div>`;
+  draw(""); box.querySelector("#audQ").oninput = e => draw(e.target.value);
+}
 async function planCard(s, me){
   const box = document.getElementById("planBody"); if (!box) return;
   const { data: plans, error } = await sb.from("nest_plans").select("*").eq("active", true).order("sort");

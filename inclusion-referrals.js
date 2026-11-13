@@ -93,6 +93,7 @@ function refBind(root){
 /* ===== One referral: the whole story, with the right buttons for each person ===== */
 function openRefCase(rid){
   const r = refs.find(x => String(x.id) === String(rid)); if (!r) return;
+  if (window.nestLog) nestLog("referral", r.id, r.student_id);
   const s = stud(r.student_id) || { full_name: "Student" }, evs = evOf(r), ev = evs[0], o = obsOf(r), head = isHead(), mine = r.assigned_to === me.id, teacher = r.teacher_id === me.id;
   const step = (done, txt) => `<li style="color:${done ? "var(--ink)" : "var(--muted)"}">${done ? "✅" : "⬜"} ${txt}</li>`;
   const order = ["submitted", "assigned", "scheduling", "scheduled", "observed", "meeting", "next_steps", "closed"], at = order.indexOf(r.status);

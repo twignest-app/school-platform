@@ -114,8 +114,8 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=10"></script>
-<script src="inclusion-referrals.js?v=2"></script>
+<script src="hub.js?v=11"></script>
+<script src="inclusion-referrals.js?v=3"></script>
 <script>
 /* Keep this the same as in index.html */
 const PLATFORM = "Nestopia";
@@ -341,6 +341,7 @@ function openEntry(sid, preStudent){
 /* ---------- One student: needs and plans ---------- */
 function openStudent(sid){
   const s = stud(sid), r = regOf(sid) || {}, c = conf[sid] || {}, cl = cls(s.class_id) || {};
+  if (window.nestLog) nestLog("inclusion", null, sid);
   const ps = plansOf(sid).sort((a, b) => (b.status === "active") - (a.status === "active") || (b.start_date || "").localeCompare(a.start_date || ""));
   dlg.innerHTML = `<div class="dlg"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h2>${esc(s.full_name)}${s.arabic_name ? ` <span dir="rtl" lang="ar" class="note">${esc(s.arabic_name)}</span>` : ""}</h2>
       <p class="note" style="margin:2px 0 0">${esc([cl.name, s.student_number].filter(Boolean).join(" · "))}</p></div><button class="btn ghost small" data-x>Close</button></div>
@@ -497,6 +498,7 @@ let iepBack = null;
 
 function openIEP(pid){
   const p = plans.find(x => String(x.id) === String(pid)); if (!p) return;
+  if (window.nestLog) nestLog("iep", p.id, p.student_id);
   const s = stud(p.student_id), r = regOf(p.student_id) || {}, d = docOf(p), v = p.version || 1, cl = cls(s.class_id) || {};
   const ts = targets.filter(t => String(t.plan_id) === String(p.id));
   const myRead = acks.some(a => String(a.plan_id) === String(p.id) && a.teacher_id === me.id && a.version === v);

@@ -57,7 +57,7 @@ function authView(mode, m, ok){
         <label>Password · كلمة المرور <input id="pw" type="password" required minlength="8" autocomplete="${up ? "new-password" : "current-password"}"></label>
         <button class="btn">${up ? "Create account · إنشاء الحساب" : "Sign in · تسجيل الدخول"}</button></form>
       <p class="row" style="margin:14px 0 0">${up ? `<a href="#" id="sw">I already have an account · لديّ حساب</a>` : `<a href="#" id="sw">Create a parent account · إنشاء حساب</a> · <a href="#" id="fg">Forgot password? · نسيت كلمة المرور؟</a>`}</p></div>
-    <p class="muted">School staff: please use <a href="./">nestopia.school</a>.</p>`;
+    <p class="muted">School staff: please use <a href="./">nestopia.school</a>. · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p>`;
   document.getElementById("sw").onclick = e => { e.preventDefault(); authView(up ? "in" : "up"); };
   const fg = document.getElementById("fg"); if (fg) fg.onclick = async e => { e.preventDefault(); const em = document.getElementById("em").value.trim(); if (!em) return authView("in", "Type your email first, then tap “Forgot password?”."); await sb.auth.resetPasswordForEmail(em, { redirectTo: location.origin + location.pathname }); authView("in", "We’ve emailed you a link to choose a new password. · أرسلنا لك رابطًا لتغيير كلمة المرور.", true); };
   document.getElementById("f").onsubmit = async e => { e.preventDefault(); const em = document.getElementById("em").value.trim(), pw = document.getElementById("pw").value;
