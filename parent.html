@@ -162,9 +162,12 @@ async function todos(){
   cs.forEach(c => (c.days || []).filter(d => !d.seen).concat([...new Set((c.scores || []).map(x => x.d))].filter(d => !(c.days || []).some(y => y.d === d)).map(d => ({ d }))).slice(0, 1).forEach(d => out.push(["📅", "See today’s daily card · شاهد البطاقة اليومية", dshort(d.d), "stars", "t-butter"])));
   ((th.threads) || []).filter(t => t.unread).forEach(t => out.push(["💬", "New reply · رد جديد", t.subject, "messages", "t-rose"]));
   (view.conferences || []).forEach(c => out.push(["📅", "Book a parent–teacher conference · احجز موعد اللقاء", c.title, "book:" + c.code, "t-sky"]));
+  const mt = await safe(async () => (await sb.rpc("parent_meetings", { p_student: String(cur) })).data || [], []);
+  mt.filter(m => m.status === "offered").forEach(m => out.push(["🗓️", "Choose a meeting time · اختر موعد الاجتماع", m.with, "meet", "t-lav"]));
+  window.MEETS = mt;
   return out;
 }
-const go = to => { if (to.startsWith("book:")) location.href = "book.html?c=" + to.slice(5); else { tab = to; show(cur); window.scrollTo(0, 0); } };
+const go = to => { if (to === "meet") { sub.m = "meet"; tab = "messages"; show(cur); window.scrollTo(0, 0); return; } if (to.startsWith("book:")) location.href = "book.html?c=" + to.slice(5); else { tab = to; show(cur); window.scrollTo(0, 0); } };
 async function bell(){
   const t = await todos(), d = document.createElement("div"); d.className = "drawer";
   d.innerHTML = `<div class="in"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🔔 Notifications · الإشعارات</h2><button class="btn ghost small" data-x>✕</button></div>
@@ -198,10 +201,11 @@ async function home(){
   const p = document.getElementById("pane"), first = (view.name || "").split(" ")[0], hr0 = new Date().getHours();
   let today = {}; try { const r = await sb.rpc("parent_today", { p_student: String(PREVIEW || cur) }); today = r.data || {}; } catch (_) {}
   let latest = null; if (!PREVIEW) try { const r = await sb.rpc("parent_news", { p_student: String(cur) }); latest = (r.data || [])[0]; } catch (_) {}
-  const t = PREVIEW ? [] : await todos(), ev = (view.events || []).slice(0, 3);
+  const t = PREVIEW ? [] : await todos(), now0 = new Date().toISOString();
+  const ev = [...(window.MEETS || []).filter(m => m.status === "confirmed" && m.chosen >= now0).map(m => ({ start: m.chosen.slice(0, 10), title: "🗓️ " + L("Meeting with ", "اجتماع مع ") + m.with + " · " + new Date(m.chosen).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) })), ...(view.events || [])].sort((a, b) => a.start.localeCompare(b.start)).slice(0, 3);
   const mark = today.mark, MK = { present: ["✅", "is in school today · في المدرسة اليوم", "t-mint"], late: ["🕘", "arrived late today · وصل متأخرًا اليوم", "t-peach"], absent: ["🏠", "is marked absent today · غائب اليوم", "t-rose"], excused: ["🏠", "has an authorised absence today · غياب بعذر اليوم", "t-sky"] };
   p.innerHTML = `<div class="hello"><span class="av">${avs[cur] || "🌟"}</span><div><p class="muted" style="margin:0">${hr0 < 12 ? "Good morning · صباح الخير" : "Good afternoon · مساء الخير"}</p><h1 style="margin:0">${esc(view.name || "")}</h1><p class="muted" style="margin:2px 0 0">${esc([view.class, view.school].filter(Boolean).join(" · "))}</p></div></div>
-    ${!PREVIEW ? `<div class="quick no-print"><button class="t-sky" data-go="attendance"><span>📨</span>Report an absence · إبلاغ عن غياب</button><button class="t-rose" data-go="messages"><span>💬</span>Message the teacher · راسل المعلم</button><button class="t-lav" data-go="learning"><span>📚</span>Reports · التقارير</button><button class="t-peach" data-go="more"><span>📁</span>School information · معلومات المدرسة</button></div>` : ""}
+    ${!PREVIEW ? `<div class="quick no-print"><button class="t-sky" data-go="attendance"><span>📨</span>Report an absence · إبلاغ عن غياب</button><button class="t-rose" data-go="messages"><span>💬</span>Message the teacher · راسل المعلم</button><button class="t-lav" data-go="meet"><span>🗓️</span>Request a meeting · طلب اجتماع</button><button class="t-peach" data-go="more"><span>📁</span>School information · معلومات المدرسة</button></div>` : ""}
     <div class="grid2">
       <div class="card tile t-peach"><h2>✅ To do · المطلوب منك</h2>${t.length ? t.map(x => `<div class="todo" data-go="${esc(x[3])}"><span class="e">${x[0]}</span><span><b>${esc(x[1])}</b><span class="muted">${esc(x[2])}</span></span></div>`).join("") : '<p style="margin:0">✨ Nothing to do. You’re all caught up! · لا يوجد شيء مطلوب</p>'}</div>
       <div class="card tile ${mark ? MK[mark][2] : "t-mint"}"><h2>🌞 Today · اليوم</h2>${mark ? `<p style="margin:0;font-size:18px">${MK[mark][0]} <b>${esc(first)}</b> ${MK[mark][1]}</p>` : `<p class="muted" style="margin:0">The register hasn’t been taken yet today. · لم يُسجَّل الحضور بعد</p>`}
@@ -210,6 +214,29 @@ async function home(){
       ${latest ? `<div class="card tile t-lav"><h2>📢 Latest news · آخر الأخبار</h2><b>${latest.pinned ? "📌 " : ""}${esc(latest.title)}</b><p style="margin:6px 0 0;white-space:pre-line">${esc(String(latest.body).slice(0, 220))}${String(latest.body).length > 220 ? "…" : ""}</p><p style="margin:8px 0 0"><button class="btn ghost small" data-go="messages">All news · كل الأخبار</button></p></div>` : ""}
     </div>`;
   p.querySelectorAll("[data-go]").forEach(b => b.onclick = () => go(b.dataset.go));
+  if (!PREVIEW) celebrate(p, today);
+}
+async function celebrate(p, today){
+  const out = [], first = (view.name || "").split(" ")[0], key = k => "nest_cel_" + cur + "_" + k, seen = k => { try { return !!localStorage.getItem(key(k)); } catch (_) { return true; } };
+  // a new badge
+  try { const ex = (await sb.rpc("parent_merit_extras", { p_student: String(cur) })).data || {}, cfg = ex.config || {}, BD = cfg.badges && cfg.badges.length ? cfg.badges : [[10, "🥉", "Bronze"], [25, "🥈", "Silver"], [50, "🥇", "Gold"], [100, "🏆", "Champion"]];
+    const pts = (view.behaviour || []).filter(x => x.kind === "merit").reduce((s, x) => s + (x.points || 1), 0); let b = null; BD.forEach(x => { if (pts >= x[0]) b = x; });
+    if (b && !seen("badge_" + b[2])) out.push(["badge_" + b[2], b[1], L(`${first} earned the ${b[2]} badge!`, `حصل ${first} على شارة جديدة!`)]); } catch (_) {}
+  // a star day today on the daily card
+  try { const cs = (await sb.rpc("parent_bh_cards", { p_student: String(cur) })).data || [], d0 = new Date().toISOString().slice(0, 10);
+    if (cs.some(c => (c.days || []).some(d => d.d === d0 && d.star)) && !seen("star_" + d0)) out.push(["star_" + d0, "⭐", L(`A star day for ${first} today!`, `يوم مميز لـ ${first} اليوم!`)]); } catch (_) {}
+  // perfect attendance last month
+  try { const days = (await sb.rpc("parent_att_days", { p_student: String(cur) })).data || [], m = new Date(); m.setDate(0); const ym = m.toISOString().slice(0, 7), md = days.filter(x => x.d.startsWith(ym));
+    if (md.length >= 10 && md.every(x => x.s === "present") && !seen("att_" + ym)) out.push(["att_" + ym, "🌟", L(`Perfect attendance in ${m.toLocaleDateString("en-GB", { month: "long" })}!`, "حضور كامل في الشهر الماضي!")]); } catch (_) {}
+  if (!out.length) return;
+  const box = document.createElement("div"); box.className = "card"; box.style.cssText = "background:linear-gradient(135deg,#FFF4D6,#FCE7EE);text-align:center;position:relative;overflow:hidden";
+  box.innerHTML = out.map(o => `<p style="margin:6px 0;font-size:20px;font-weight:800"><span style="font-size:34px">${o[1]}</span> ${esc(o[2])}</p>`).join("") + '<p style="margin:6px 0 0"><button class="btn small" data-yay>🎉 Yay! · رائع!</button></p>';
+  const hello = p.querySelector(".hello"); hello.after(box); applyLang(box);
+  const burst = document.createElement("div"); burst.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:60"; document.body.appendChild(burst);
+  burst.innerHTML = Array.from({ length: 22 }, (_, i) => `<i style="position:fixed;top:-40px;left:${Math.random() * 100}vw;font-style:normal;font-size:26px;animation:fallP 1.8s linear ${Math.random() * .6}s forwards">${["⭐", "🎉", "✨", "🌟"][i % 4]}</i>`).join("");
+  if (!document.getElementById("fallCss")) { const st = document.createElement("style"); st.id = "fallCss"; st.textContent = "@keyframes fallP{to{transform:translateY(110vh) rotate(360deg)}}@media (prefers-reduced-motion: reduce){[style*=fallP]{display:none}}"; document.head.appendChild(st); }
+  setTimeout(() => burst.remove(), 2600);
+  box.querySelector("[data-yay]").onclick = () => { out.forEach(o => { try { localStorage.setItem(key(o[0]), "1"); } catch (_) {} }); box.remove(); };
 }
 // ---------- Learning (Part 2 adds “This unit”) ----------
 const media = async path => { try { const { data } = await sb.storage.from("parent-media").createSignedUrl(path, 3600); return data ? data.signedUrl : null; } catch (_) { return null; } };
@@ -259,10 +286,37 @@ async function learning(){
 // ---------- Messages and news together ----------
 async function msgSection(){
   const p = document.getElementById("pane"); sub.m = sub.m || "messages";
-  p.innerHTML = `<div class="tabs" role="tablist"><button class="tab" aria-selected="${sub.m === "messages"}" data-m="messages">💬 Messages · الرسائل</button><button class="tab" aria-selected="${sub.m === "news"}" data-m="news">📢 News · الأخبار</button></div><div id="pane2"></div>`;
+  p.innerHTML = `<div class="tabs" role="tablist"><button class="tab" aria-selected="${sub.m === "messages"}" data-m="messages">💬 Messages · الرسائل</button><button class="tab" aria-selected="${sub.m === "news"}" data-m="news">📢 News · الأخبار</button><button class="tab" aria-selected="${sub.m === "meet"}" data-m="meet">🗓️ Meetings · الاجتماعات</button></div><div id="pane2"></div>`;
   p.querySelectorAll("[data-m]").forEach(b => b.onclick = () => { sub.m = b.dataset.m; show(cur); });
   const inner = document.getElementById("pane2"); inner.id = "pane"; p.id = "paneOuter";
-  await (sub.m === "news" ? news() : messages());
+  await (sub.m === "news" ? news() : sub.m === "meet" ? meetings() : messages());
+}
+// ---------- Meetings: request, choose a time ----------
+const fmtAt = d => new Date(d).toLocaleString(LANG === "ar" ? "ar" : "en-GB", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+async function meetings(){
+  const p = document.getElementById("pane"); let list = [], th = {};
+  try { list = (await sb.rpc("parent_meetings", { p_student: String(cur) })).data || []; } catch (_) {}
+  try { th = (await sb.rpc("parent_threads", { p_student: String(cur) })).data || {}; } catch (_) {}
+  const MODE = { in_person: "🏫 At school · في المدرسة", phone: "📞 By phone · هاتفيًا", online: "💻 Online · عن بُعد" }, ST = { requested: "⏳ Waiting for the school to offer times · بانتظار المدرسة", offered: "👉 Choose a time below · اختر موعدًا", confirmed: "✅ Booked · تم الحجز", declined: "The school will contact you · ستتواصل المدرسة معك", cancelled: "Cancelled · ملغى" };
+  p.innerHTML = `${list.map(m => `<div class="card tile ${m.status === "confirmed" ? "t-mint" : m.status === "offered" ? "t-peach" : "t-lav"}"><b>🗓️ ${esc(m.with)}</b> <span class="muted">· ${MODE[m.mode] || ""}</span><p style="margin:6px 0">${esc(m.reason)}</p><p style="margin:0;font-weight:800">${ST[m.status]}</p>
+      ${m.note ? `<p style="margin:6px 0 0">💬 ${esc(m.note)}</p>` : ""}
+      ${m.status === "offered" ? `<div style="display:grid;gap:6px;margin-top:8px">${(m.offered || []).map(t => `<button class="btn ghost" data-pick="${esc(m.id)}|${esc(t)}">${esc(fmtAt(t))}</button>`).join("")}</div>` : ""}
+      ${m.status === "confirmed" ? `<p style="margin:8px 0 0;font-size:18px"><b>${esc(fmtAt(m.chosen))}</b>${m.place ? `<br><span class="muted">${esc(m.place)}</span>` : ""}</p><p class="row" style="margin:8px 0 0"><button class="btn ghost small" data-ics="${esc(m.id)}">📅 Add to my calendar · أضف إلى التقويم</button>` : ""}
+      ${["requested", "offered", "confirmed"].includes(m.status) ? `${m.status === "confirmed" ? "" : '<p class="row" style="margin:8px 0 0">'}<button class="btn ghost small" data-cancel="${esc(m.id)}">Cancel · إلغاء</button></p>` : ""}</div>`).join("")}
+    <div class="card"><h2>🗓️ Request a meeting · طلب اجتماع</h2><p class="muted" style="margin-top:0">Tell us what you’d like to talk about and when suits you. The school will offer you times to choose from. · أخبرنا بالموضوع والوقت المناسب، وستقترح المدرسة مواعيد.</p>
+      <form id="mf"><label>With · مع <select id="mw">${((th.teachers) || []).map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join("")}<option value="">School office · إدارة المدرسة</option></select></label>
+        <label>What would you like to talk about? · موضوع الاجتماع <textarea id="mr" rows="3" required></textarea></label>
+        <label>When suits you? · ما الوقت المناسب؟ <input id="mp" placeholder="For example: Monday or Wednesday mornings · مثال: صباح الاثنين أو الأربعاء"></label>
+        <label>How · كيف <select id="mm"><option value="in_person">🏫 At school · في المدرسة</option><option value="phone">📞 By phone · هاتفيًا</option><option value="online">💻 Online · عن بُعد</option></select></label>
+        <button class="btn">Send the request · إرسال الطلب</button></form></div>`;
+  document.getElementById("mf").onsubmit = async e => { e.preventDefault(); const { error } = await sb.rpc("parent_meeting_request", { p_student: String(cur), p_teacher: document.getElementById("mw").value || null, p_reason: document.getElementById("mr").value, p_prefs: document.getElementById("mp").value, p_mode: document.getElementById("mm").value });
+    if (error) return alert(error.message); meetings(); setTimeout(() => alert(L("Sent. The school will offer you some times soon.", "تم الإرسال. ستقترح المدرسة مواعيد قريبًا.")), 50); };
+  p.querySelectorAll("[data-pick]").forEach(b => b.onclick = async () => { const [id, t] = b.dataset.pick.split("|"); const { error } = await sb.rpc("parent_meeting_choose", { p_meeting: id, p_at: t }); if (error) return alert(error.message); meetings(); });
+  p.querySelectorAll("[data-cancel]").forEach(b => b.onclick = async () => { if (!confirm(L("Cancel this meeting?", "إلغاء هذا الاجتماع؟"))) return; await sb.rpc("parent_meeting_cancel", { p_meeting: b.dataset.cancel }); meetings(); });
+  p.querySelectorAll("[data-ics]").forEach(b => b.onclick = () => { const m = list.find(x => x.id === b.dataset.ics), f = d => new Date(d).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+    const L2 = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Nestopia//Meetings//EN", "BEGIN:VEVENT", "UID:meet-" + m.id + "@nestopia.school", "DTSTAMP:" + f(new Date()), "DTSTART:" + f(m.chosen), "DTEND:" + f(new Date(new Date(m.chosen).getTime() + (m.minutes || 20) * 60e3)), "SUMMARY:Meeting with " + m.with, "LOCATION:" + (m.place || view.school || ""), "END:VEVENT", "END:VCALENDAR"];
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([L2.join("\r\n")], { type: "text/calendar" })); a.download = "meeting.ics"; document.body.appendChild(a); a.click(); a.remove(); });
+  applyLang(p);
 }
 // ---------- More: calendar, school information, my account ----------
 async function more(){
@@ -349,10 +403,25 @@ function reports(){
   if (term == null || !has[term]) term = has.lastIndexOf(true);
   if (term < 0) { p.innerHTML = '<div class="card"><p class="muted" style="margin:0">No report has been shared yet this year.<span class="ar" dir="rtl" lang="ar">لم يتم نشر أي تقرير بعد.</span></p></div>'; return; }
   const lab = lv => lv == null ? "" : ((view.scale || [])[lv] ?? lv);
-  p.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Report · ${esc(terms[term])}</h2><div class="row">${terms.map((t, k) => has[k] ? `<button class="tab" aria-selected="${k === term}" data-term="${k}">${esc(t)}</button>` : "").join("")}<button class="btn ghost small" onclick="window.print()">🖨 Print</button></div></div>
+  p.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Report · ${esc(terms[term])}</h2><div class="row">${terms.map((t, k) => has[k] ? `<button class="tab" aria-selected="${k === term}" data-term="${k}">${esc(t)}</button>` : "").join("")}<button class="btn ghost small" id="repPdf">📄 Save as PDF · حفظ PDF</button></div></div>
     <table style="margin-top:10px"><tr><th>Subject · المادة</th><th>Level · المستوى</th><th>Comment · التعليق</th></tr>${(view.subjects || []).map(sub => { const rows = (sub.strands || []).map(st => [st, cms.find(c => c.strand === st.id && String(c.term) === String(term))]).filter(x => x[1]);
       return rows.length ? `<tr><td colspan="3" style="background:var(--plum-soft);font-weight:800">${esc(sub.name)}</td></tr>` + rows.map(([st, c]) => `<tr><td><b>${esc(st.name)}</b></td><td style="text-align:center">${esc(lab(c.level))}</td><td ${sub.lang === "ar" ? 'dir="rtl" lang="ar"' : ""}>${esc(c.text)}</td></tr>`).join("") : ""; }).join("")}</table></div>`;
   p.querySelectorAll("[data-term]").forEach(b => b.onclick = () => { term = +b.dataset.term; reports(); });
+  const pdf = document.getElementById("repPdf"); if (pdf) pdf.onclick = () => {
+    const a = view.attendance || {}, ap = a.days ? Math.round(a.in / a.days * 100) : null, lab2 = lv => lv == null ? "" : ((view.scale || [])[lv] ?? lv);
+    const rows = (view.subjects || []).map(sub => { const r = (sub.strands || []).map(st => [st, cms.find(c => c.strand === st.id && String(c.term) === String(term))]).filter(x => x[1]); if (!r.length) return "";
+      return `<tr><td colspan="3" class="sub">${esc(sub.name)}</td></tr>` + r.map(([st, c]) => `<tr><td><b>${esc(st.name)}</b></td><td class="lv">${esc(lab2(c.level))}</td><td ${sub.lang === "ar" ? 'dir="rtl" lang="ar"' : ""}>${esc(c.text)}</td></tr>`).join(""); }).join("");
+    const w = window.open("", "_blank"); if (!w) return alert(L("Please allow pop-ups to save the report.", "يُرجى السماح بالنوافذ المنبثقة لحفظ التقرير."));
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(view.name)} · ${esc(terms[term] || "")} report</title><style>@page{margin:14mm}body{font-family:Arial,sans-serif;color:#222;font-size:11pt}
+      .hd{background:#462D5B;color:#fff;border-radius:10px;padding:14px 18px}.hd b{font-size:20pt}.info{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin:12px 0;padding:10px 14px;border:1px solid #ddd;border-radius:10px}
+      table{width:100%;border-collapse:collapse}td,th{border:1px solid #ccc;padding:7px;vertical-align:top;text-align:left}th{background:#462D5B;color:#fff}.sub{background:#EFE9FB;font-weight:bold}.lv{text-align:center;width:9%}
+      .ft{margin-top:14px;color:#777;font-size:9pt;text-align:center}@media print{.np{display:none}}</style></head><body>
+      <p class="np" style="background:#FFF4D6;padding:10px;border-radius:8px">To save as a PDF: choose <b>Save as PDF</b> (or <b>Print → Save to Files</b> on iPhone). · لحفظ الملف: اختر «حفظ بصيغة PDF».</p>
+      <div class="hd"><b>${esc(view.school || "")}</b><br>Report card · ${esc(terms[term] || "")}</div>
+      <div class="info"><div><b>Student:</b> ${esc(view.name || "")}${view.arabic_name ? ` <span dir="rtl" lang="ar">(${esc(view.arabic_name)})</span>` : ""}</div><div><b>Class:</b> ${esc(view.class || "")}</div><div><b>Teacher(s):</b> ${esc((view.teachers || []).join(", "))}</div><div><b>Attendance this year:</b> ${ap == null ? "–" : ap + "%"}</div></div>
+      <table><tr><th>Subject</th><th>Level</th><th>Comment</th></tr>${rows}</table><p class="ft">Shared with families through the Nestopia parent portal · ${new Date().toLocaleDateString("en-GB")}</p>
+      <script>window.onload = () => setTimeout(() => window.print(), 300);<\/script></body></html>`);
+    w.document.close(); };
 }
 async function attendance(){
   const p = document.getElementById("pane"), a = view.attendance || { days: 0 };

@@ -165,6 +165,9 @@ async function load(){
     const pr = await safe(() => sb.from("inclusion_plans").select("review_date,title,kind").eq("school_id", school.id).eq("status", "active").gte("review_date", ymd(from)).lte("review_date", ymd(to)), {});
     (pr.data || []).forEach(x => evs.push({ cat: "inclusion", title: "Support plan review", start: x.review_date, end: x.review_date, link: "inclusion.html#reviews" }));
   }
+  // parent meetings booked through the parent portal (each teacher sees their own; leaders see all)
+  { const pm = await safe(() => sb.from("pm_meetings").select("chosen,parent_name,mode,place,teacher_id").eq("school_id", String(school.id)).eq("status", "confirmed").gte("chosen", from.toISOString()).lte("chosen", to.toISOString()), {});
+    (pm.data || []).forEach(x => evs.push({ cat: "parents", title: "Meeting with " + (x.parent_name || "a parent"), start: x.chosen.slice(0, 10), end: x.chosen.slice(0, 10), time: new Date(x.chosen).toTimeString().slice(0, 5), note: x.place, link: "messages.html" })); }
   // GrowNest (leaders): observations and teacher support plans ending
   if (mods.includes("grownest") && lead) {
     const ob = await safe(() => sb.from("observations").select("observed_on,type").gte("observed_on", ymd(from)).lte("observed_on", ymd(to)), {});

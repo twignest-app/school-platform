@@ -119,7 +119,7 @@ const app = document.getElementById("app"), who = document.getElementById("who")
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2600); };
 const ago = d => new Date(d).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-let me, school, lead = false, grades = [], classes = [], myClassIds = [], staffN = {}, ui = { tab: "messages", open: null, filter: "mine" };
+let me, school, lead = false, grades = [], classes = [], myClassIds = [], staffN = {}, ui = { tab: location.hash === "#meet" ? "meet" : "messages", open: null, filter: "mine" };
 const cls = id => classes.find(c => String(c.id) === String(id)) || {};
 function fail(t){ app.innerHTML = `<div class="card"><div class="msg">${esc(t)}</div></div>`; }
 
@@ -142,9 +142,9 @@ function fail(t){ app.innerHTML = `<div class="card"><div class="msg">${esc(t)}<
 })();
 function draw(){
   app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Messages</h1><p class="note">${esc(school.name)} · Messages from parents, and news for families.</p></div><a class="btn ghost" href="settings.html#pp">👪 Invite parents</a></div>
-    <div class="tabs" role="tablist">${[["messages", "💬 Parent messages"], ["news", "📢 School news"]].map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}</button>`).join("")}</div><div id="pane"><p class="note">Loading…</p></div>`;
+    <div class="tabs" role="tablist">${[["messages", "💬 Parent messages"], ["meet", "🗓️ Meeting requests"], ["news", "📢 School news"]].map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}</button>`).join("")}</div><div id="pane"><p class="note">Loading…</p></div>`;
   app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; ui.open = null; draw(); });
-  ui.tab === "messages" ? (ui.open ? thread(ui.open) : inbox()) : newsPane();
+  ui.tab === "messages" ? (ui.open ? thread(ui.open) : inbox()) : ui.tab === "meet" ? meetPane() : newsPane();
 }
 async function inbox(){
   const pane = document.getElementById("pane");
@@ -175,6 +175,29 @@ async function thread(id){
   const cl = document.getElementById("cl"); if (cl) cl.onclick = async () => { await sb.from("pm_threads").update({ status: t.status === "closed" ? "open" : "closed" }).eq("id", id); thread(id); };
   const rf = document.getElementById("rf"); if (rf) rf.onsubmit = async e => { e.preventDefault(); const { error } = await sb.rpc("staff_reply", { p_thread: id, p_body: document.getElementById("rb").value });
     if (error) return toast(error.message); if (window.nestMail) nestMail("pmsg", id); toast("Sent. The parent will get an email."); thread(id); };
+}
+async function meetPane(){
+  const pane = document.getElementById("pane");
+  const r = await sb.from("pm_meetings").select("*").eq("school_id", String(school.id)).order("created_at", { ascending: false }).limit(200);
+  if (r.error) { pane.innerHTML = `<div class="card"><div class="msg">${/pm_meetings/.test(r.error.message) ? "Meeting requests need their database step first." : esc(r.error.message)}</div></div>`; return; }
+  const list = (r.data || []).filter(x => lead || x.teacher_id === me.id), ids = [...new Set(list.map(x => x.student_id))], names = {};
+  if (ids.length) { const { data } = await sb.from("students").select("id,full_name,class_id").in("id", ids); (data || []).forEach(s => names[s.id] = s); }
+  const MODE = { in_person: "🏫 At school", phone: "📞 Phone", online: "💻 Online" }, ST = { requested: ["Needs times", "gt"], offered: ["Waiting for the parent", "eal"], confirmed: ["Booked", "eal"], declined: ["Declined", "other"], cancelled: ["Cancelled", "other"] };
+  const at = d => new Date(d).toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  pane.innerHTML = `<div class="card"><h2>🗓️ Meeting requests</h2><p class="note" style="margin-top:0">Parents ask for a meeting in their portal. Offer up to 3 times; they choose one, and it appears on your Calendar.</p>
+    ${list.length ? list.map(x => { const s = names[x.student_id] || {}; return `<div style="border-top:1px solid var(--line);padding:12px 0"><div class="row" style="justify-content:space-between"><b>${esc(x.parent_name || "Parent")} · about ${esc(s.full_name || "")} (${esc(cls(s.class_id).name || "")})</b><span class="tag ${ST[x.status][1]}">${ST[x.status][0]}</span></div>
+      <p style="margin:4px 0">${esc(x.reason)}</p><p class="note" style="margin:0">${MODE[x.mode] || ""}${x.prefs ? " · Suits them: " + esc(x.prefs) : ""} · to ${esc(x.teacher_id ? staffN[x.teacher_id] || "a teacher" : "School office")} · asked ${new Date(x.created_at).toLocaleDateString("en-GB")}</p>
+      ${x.status === "confirmed" ? `<p style="margin:6px 0 0;font-weight:800">✅ ${at(x.chosen)}${x.place ? " · " + esc(x.place) : ""}</p>` : ""}
+      ${x.status === "offered" ? `<p class="note" style="margin:6px 0 0">Offered: ${(x.offered || []).map(at).join(" · ")}</p>` : ""}
+      ${x.status === "requested" && (lead || x.teacher_id === me.id) ? `<div data-off="${x.id}" style="display:grid;gap:6px;margin-top:8px"><div class="row">${[0, 1, 2].map(k => `<input type="datetime-local" data-t="${k}" style="max-width:230px">`).join("")}</div>
+        <div class="row"><input type="text" data-pl placeholder="${x.mode === "online" ? "Meeting link" : x.mode === "phone" ? "We’ll call you on…" : "Where, e.g. Grade 2 classroom"}" style="max-width:300px"><input type="text" data-nt placeholder="A note for the parent (optional)" style="flex:1;min-width:200px"></div>
+        <div class="row"><button class="btn small" data-send="${x.id}">Offer these times</button><button class="btn ghost small" data-dec="${x.id}">I’ll contact them instead</button></div></div>` : ""}</div>`; }).join("") : '<p class="note" style="margin:0">No meeting requests.</p>'}</div>`;
+  pane.querySelectorAll("[data-send]").forEach(b => b.onclick = async () => { const box = pane.querySelector(`[data-off="${b.dataset.send}"]`), times = [...box.querySelectorAll("[data-t]")].map(i => i.value).filter(Boolean).map(v => new Date(v).toISOString());
+    if (!times.length) return toast("Add at least one time.");
+    const { error } = await sb.from("pm_meetings").update({ status: "offered", offered: times, place: box.querySelector("[data-pl]").value.trim() || null, staff_note: box.querySelector("[data-nt]").value.trim() || null, updated_at: new Date().toISOString() }).eq("id", b.dataset.send);
+    if (error) return toast(error.message); toast("Sent. The parent will choose a time in their portal."); meetPane(); });
+  pane.querySelectorAll("[data-dec]").forEach(b => b.onclick = async () => { const n = prompt("A short note for the parent (for example: I’ll call you tomorrow)", ""); if (n === null) return;
+    await sb.from("pm_meetings").update({ status: "declined", staff_note: n.trim() || null, updated_at: new Date().toISOString() }).eq("id", b.dataset.dec); meetPane(); });
 }
 async function newsPane(){
   const pane = document.getElementById("pane");

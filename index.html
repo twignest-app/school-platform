@@ -897,7 +897,7 @@ function homeView(p, school){
   if (window.hubInit) hubInit("overview");
   overviewData(p, school, lead);
   if (["school_lead", "admin"].includes(p.role) && typeof gsSteps === "function") gsSteps(sb, school).then(steps => { const b = document.getElementById("gsBox"); if (b && steps.some(s => !s[2])) { b.innerHTML = gsHtml(steps, true); b.hidden = false; } }).catch(() => {});
-  Promise.all([inclusionReminder(p, school), wellbeingReminder(p, school), behaviourReminder(p, school), messagesReminder(p, school), surveyReminder(p, school), absenceNoteReminder(p, school)]).then(() => {
+  Promise.all([inclusionReminder(p, school), wellbeingReminder(p, school), behaviourReminder(p, school), messagesReminder(p, school), surveyReminder(p, school), absenceNoteReminder(p, school), meetingReminder(p, school)]).then(() => {
     const n = document.querySelectorAll("#hubnotes > div").length;
     const t = document.getElementById("ovTask"); if (t) t.textContent = n;
     const e = document.getElementById("ovNoNotes"); if (e) e.hidden = n > 0;
@@ -914,6 +914,12 @@ async function surveyReminder(p, school){
     try { const { data: op } = await sb.rpc("wb_run_schedule"); (op || []).forEach(o => { if (o.email && window.nestMail) nestMail("survey", o.id); }); } catch (_) {}
     const { data, error } = await sb.rpc("wb_my_staff_surveys"); if (error || !data || !data.length) return;
     const b = document.createElement("div"); b.innerHTML = `<p style="margin:0;font-weight:700">📋 ${esc(data[0].title)}: a short, anonymous staff survey.</p><p style="margin:8px 0 0"><a class="btn" href="wellbeing.html#surveys">Take the survey</a></p>`; placeNote(b); } catch (_) {}
+}
+// Meeting requests from parents waiting for times
+async function meetingReminder(p, school){
+  try { const lead = ["school_lead", "coordinator", "admin"].includes(p.role); const { data, error } = await sb.from("pm_meetings").select("teacher_id").eq("school_id", String(school.id)).eq("status", "requested"); if (error || !data) return;
+    const n = data.filter(x => x.teacher_id === p.id || (!x.teacher_id && lead)).length; if (!n) return;
+    const b = document.createElement("div"); b.innerHTML = `<p style="margin:0;font-weight:700">🗓️ ${n} meeting request${n === 1 ? "" : "s"} from parents: please offer some times.</p><p style="margin:8px 0 0"><a class="btn" href="messages.html#meet">Open meeting requests</a></p>`; placeNote(b); } catch (_) {}
 }
 // Parent messages waiting for a reply
 async function messagesReminder(p, school){
