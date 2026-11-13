@@ -8,7 +8,7 @@
  <div id="msg" class="msg hide" role="status"></div>
  <button class="btn primary" id="confirm" style="width:100%;margin-top:8px" disabled><span class="t-en">Confirm</span><span class="t-ar">تأكيد</span></button>
 </div></main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261112h"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261112h"></script><script src="../hub-lang.js?v=2"></script>
 <script>
 const q=new URLSearchParams(location.search);const token=q.get("t");let choice=q.get("c");
 const pick=c=>{choice=c;document.querySelectorAll(".choice").forEach(b=>b.setAttribute("aria-pressed",b.dataset.c===c));$("confirm").disabled=!c;};

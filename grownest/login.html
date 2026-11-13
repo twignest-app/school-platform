@@ -10,7 +10,7 @@
  </form>
  <p style="margin-top:16px"><a href="#" id="forgot"><span class="t-en">Forgot your password?</span><span class="t-ar">نسيت كلمة المرور؟</span></a></p>
 </div></main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261112h"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="gn.js?v=20261112h"></script><script src="../hub-lang.js?v=2"></script>
 <script>
 sb.auth.getSession().then(({data})=>{if(data.session)location.href="app.html";});
 $("form").addEventListener("submit",async e=>{e.preventDefault();const m=$("msg");$("submit").disabled=true;
