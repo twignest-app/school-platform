@@ -89,7 +89,8 @@
     const ev = st.cols.filter(c => k === "b" ? c.baseline : !c.baseline).map(c => colEval(s, c, k)).filter(Boolean); if (!ev.length) return null;
     const pct = ev.reduce((a, x) => a + x.norm, 0) / ev.length * 100, sug = levelFromPct(pct); return { band: C.gradePos[sug] || "inline", sug };
   }
-  function level(s, st, k) { const t = ((LV[s.id] || {})[st.id] || {})[k]; if (t !== undefined && t !== null) return t; const e = strandEval(s, st, k); return e ? e.sug : null; }
+  const baseIsLv = st => { const b = st.cols.filter(c => c.baseline); return b.length === 1 && b[0].type === "list" && !!b[0].lv; };
+  function level(s, st, k) { const t = k === "b" && baseIsLv(st) ? null : ((LV[s.id] || {})[st.id] || {})[k]; if (t !== undefined && t !== null) return t; const e = strandEval(s, st, k); return e ? e.sug : null; }
   function progress(s, st, t) { const b = level(s, st, "b"), c = level(s, st, String(t)); if (b == null || c == null) return null; const steps = c - b, exp = C.steps * (t + 1) / C.terms.length; return { band: steps < exp - .5 ? "below" : steps > exp + .5 ? "above" : "inline" }; }
   function onTrack(s, st, t) { const b = level(s, st, "b"), c = level(s, st, String(t)); if (b == null || c == null) return null; const max = C.scale.length - 1; return Math.min(max, Math.round(b + (c - b) / (t + 1) * C.terms.length)) >= Math.min(max, b + C.steps); }
   function avgBand(s, list, k) { const bs = list.map(st => strandEval(s, st, k)).filter(Boolean).map(e => ({ below: -1, inline: 0, above: 1 })[e.band]); if (!bs.length) return null; const b = bs.reduce((a, x) => a + x, 0) / bs.length; return b < -.33 ? "below" : b > .33 ? "above" : "inline"; }

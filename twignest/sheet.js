@@ -73,7 +73,8 @@
     const pct = Math.round(ev.reduce((a, x) => a + x.norm, 0) / ev.length * 1000) / 10, sug = levelFromPct(pct);
     return { band: C.gradePos[sug] || "inline", sug, pct };
   }
-  function level(sid, st, k) { const t = tLv(sid, st.id, k); if (t !== undefined && t !== null) return t; const e = strandEval(sid, st, k); return e ? e.sug : null; }
+  const baseIsLv = st => { const b = st.cols.filter(c => c.baseline); return b.length === 1 && b[0].type === "list" && !!b[0].lv; };
+  function level(sid, st, k) { const t = k === "b" && baseIsLv(st) ? null : tLv(sid, st.id, k); if (t !== undefined && t !== null) return t; const e = strandEval(sid, st, k); return e ? e.sug : null; }
   function progress(sid, st, t) {
     const b = level(sid, st, "b"), c = level(sid, st, String(t)); if (b == null || c == null) return null;
     const steps = c - b, exp = C.steps * (t + 1) / C.terms.length;
@@ -530,16 +531,16 @@
     if (ui.view === "one") return renderOne(h, tc, t);
     const more = !!ui.more;
     let th = `<thead><tr><th class="namecol"></th>${more ? `<th class="grp" colspan="${bc.length + 1}">Baseline</th>` : ""}<th class="grp" colspan="${n || 1}">${esc(C.terms[t])}</th><th class="grp" colspan="${more ? 3 : 1}">${more ? "Summary" : "Level"}</th></tr><tr><th class="namecol">Student</th>`;
-    if (more) { bc.forEach(c => th += `<th class="colh"><b>${esc(c.name)}</b>${hint(c)}</th>`); th += `<th class="colh"><b>Baseline level</b>scale</th>`; }
+    if (more) { bc.forEach(c => th += `<th class="colh"><b>${esc(c.name)}</b>${hint(c)}</th>`); th += `<th class="colh"><b>Baseline level</b>${baseIsLv(st) ? "from the assessment" : "scale"}</th>`; }
     tc.forEach(c => { if (c.type === "objectives") objs(c, t).forEach(o => { const tg = TAUGHT.has(o.id);
       th += `<th class="obj"><span class="t">${esc(o.text)}</span><label><input type="checkbox" data-taught="${o.id}" ${tg ? "checked" : ""}> Taught</label><button class="mini" data-all="${o.id}">Mark all ${allLbl()}</button></th>`; });
       else th += `<th class="colh"><b>${esc(c.name)}</b>${hint(c)}</th>`; });
-    if (!n) th += `<th class="note">No columns for this term</th>`;
+    if (!n) th += `<th class="note" style="max-width:220px;white-space:normal">Nothing to assess in ${esc(C.terms[t])} yet</th>`;
     th += `<th>Level</th>${more ? `<th class="colh"><b>Teacher level</b>Auto shows the suggestion</th><th>Progress from baseline</th>` : ""}</tr></thead><tbody>`;
     visible().forEach(s => { const sm = summary(s, st);
       th += `<tr><td class="namecol"><button class="name" data-prof="${s.id}">${esc(s.full_name)}</button>${s.student_number ? `<span class="sid">${esc(s.student_number)}</span>` : ""}<div class="tags">${(s.groups || []).map(g => `<span class="tag">${esc(g)}</span>`).join("")}</div></td>`;
       if (more) { bc.forEach(c => th += `<td>${cell(s, c, "b")}</td>`);
-        th += `<td><select class="lv" data-lv="${s.id}|${st.id}|b" aria-label="Baseline level for ${esc(s.full_name)}">${lvOpts(s, st, "b")}</select></td>`; }
+        th += baseIsLv(st) ? `<td id="bl-${s.id}">${lvBadge(level(s.id, st, "b")) || badge("none", "–")}</td>` : `<td><select class="lv" data-lv="${s.id}|${st.id}|b" aria-label="Baseline level for ${esc(s.full_name)}">${lvOpts(s, st, "b")}</select></td>`; }
       tc.forEach(c => { if (c.type === "objectives") objs(c, t).forEach(o => { const v = stat(s.id, o.id);
         th += `<td><button class="dot ${dotCls(v)}" data-cell="${s.id}|${o.id}" title="${esc(v ? osOf(v).label : "Not assessed")}" aria-label="${esc(s.full_name)}, ${esc(o.text)}: ${esc(v ? osOf(v).label.toLowerCase() : "not assessed")}">${dotTxt(v)}</button></td>`; });
         else th += `<td>${cell(s, c, k)}</td>`; });
@@ -547,7 +548,7 @@
       th += `<td id="pos-${s.id}">${sm.pos}</td>${more ? `<td><select class="lv" data-lv="${s.id}|${st.id}|${k}" aria-label="Teacher level for ${esc(s.full_name)}">${lvOpts(s, st, k)}</select></td><td id="prog-${s.id}">${sm.prog}</td>` : ""}</tr>`; });
     const noObj = tc.some(c => c.type === "objectives" && !objs(c, t).length);
     ctx.el.innerHTML = h + `<div class="sheetwrap"><table class="sheet">${th}</tbody></table></div>
-      <p class="note">Tap a circle to record. The objective is ticked as taught for you, and everything saves as you go.${noObj ? " Some objective columns have no objectives for this grade and term yet. The school lead adds them in School setup, step 6." : ""}</p>`;
+      <p class="note">Tap a circle to record. The objective is ticked as taught for you, and everything saves as you go.${!n ? ` This strand has no objectives or tests for ${esc(C.terms[t])} yet, so there is nothing to record here. The school lead adds objectives in Setup, step 6 (Curriculum objectives).` : noObj ? ` Some objective columns have no objectives for ${esc(C.terms[t])} yet. The school lead adds them in Setup, step 6 (Curriculum objectives).` : ""}</p>`;
   }
   function renderOne(h, tc, t) {
     const list = termObjs(tc, t); if (!(ui.oi >= 0 && ui.oi < list.length)) ui.oi = 0;
@@ -567,7 +568,7 @@
   }
   function refreshRow(sid) {
     const [, st] = findStrand(ui.strand), s = studs.find(x => x.id === sid), sm = summary(s, st);
-    const p = document.getElementById("pos-" + sid), g = document.getElementById("prog-" + sid); if (p) p.innerHTML = sm.pos; if (g) g.innerHTML = sm.prog;
+    const p = document.getElementById("pos-" + sid), g = document.getElementById("prog-" + sid), bl = document.getElementById("bl-" + sid); if (bl) bl.innerHTML = lvBadge(level(sid, st, "b")) || badge("none", "–"); if (p) p.innerHTML = sm.pos; if (g) g.innerHTML = sm.prog;
     document.querySelectorAll(`[data-lv^="${sid}|"]`).forEach(el => { if (document.activeElement !== el) el.innerHTML = lvOpts(s, st, el.dataset.lv.split("|")[2]); });
   }
 
