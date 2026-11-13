@@ -37,3 +37,37 @@ async function parentPortal(s){
   const cv = document.getElementById("ppCsv"); if (cv) cv.onclick = () => { const q = v => '"' + String(v).replace(/"/g, '""') + '"', t = "\ufeff" + [["Student", "Class", "Parent code", "Invite link", "Joined"], ...rows.map(r => [r.name, r.cls, r.code, r.link, r.parents.length ? "Yes" : "No"])].map(r => r.map(q).join(",")).join("\n");
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([t], { type: "text/csv" })); a.download = "Parent portal invites.csv"; document.body.appendChild(a); a.click(); a.remove(); };
 }
+
+/* School information for parents: contacts, the school day, documents and FAQs */
+async function schoolInfoEditor(s, box){
+  const r = await sb.from("school_info").select("data").eq("school_id", String(s.id)).maybeSingle();
+  if (r.error && /school_info/.test(r.error.message)) { box.innerHTML = '<p class="note">School information needs its database step first (Parent portal v2 update).</p>'; return; }
+  const d = Object.assign({ contacts: [], day: {}, faqs: [], docs: [] }, (r.data && r.data.data) || {});
+  if (!d.contacts.length) d.contacts = [{ role: "Class teacher" }, { role: "Grade coordinator" }, { role: "School nurse" }, { role: "Finance and fees" }, { role: "Transport" }];
+  const inp = (n, v, ph, w) => `<input data-k="${n}" value="${esc(v || "")}" placeholder="${esc(ph)}" style="${w ? "max-width:" + w : ""};padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit">`;
+  const draw = () => {
+    box.innerHTML = `<p class="note" style="margin-top:0">Everything parents need, in one place. They see it in the parent portal under <b>More → School information</b>.</p>
+      <h3 style="margin:14px 0 6px">📞 Who to contact</h3><div id="ct">${d.contacts.map((c, i) => `<div class="row" data-ct="${i}" style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0">${inp("role", c.role, "Role", "170px")}${inp("name", c.name, "Name", "170px")}${inp("phone", c.phone, "Phone", "150px")}${inp("whatsapp", c.whatsapp, "WhatsApp", "150px")}${inp("email", c.email, "Email", "200px")}<button type="button" class="btn ghost small" data-rmct="${i}">✕</button></div>`).join("")}</div>
+      <button type="button" class="btn ghost small" id="addct">+ Add a contact</button>
+      <h3 style="margin:16px 0 6px">🕗 The school day</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px">${[["start", "School starts (e.g. 7:30)"], ["end", "School ends (e.g. 2:30, Friday 11:30)"], ["uniform", "Uniform"], ["pe", "PE days and kit"], ["canteen", "Canteen"], ["bring", "What to bring each day"]].map(([k, l]) => `<label style="display:grid;gap:4px;font-weight:700;font-size:14px">${l}<textarea data-day="${k}" rows="2" style="padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit">${esc(d.day[k] || "")}</textarea></label>`).join("")}</div>
+      <h3 style="margin:16px 0 6px">📄 Documents <span class="note">(handbook, policies, term dates, menus)</span></h3>${d.docs.map((x, i) => `<p style="margin:4px 0">📄 ${esc(x.title)} <button type="button" class="btn ghost small" data-rmdoc="${i}">Remove</button></p>`).join("") || '<p class="note" style="margin:0">No documents yet.</p>'}
+      <div class="row" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><input id="docT" placeholder="Title, e.g. Parent handbook 2026–2027" style="max-width:300px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit"><input type="file" id="docF" accept=".pdf,.doc,.docx,image/*"><button type="button" class="btn ghost small" id="docU">Upload</button></div>
+      <h3 style="margin:16px 0 6px">❓ Questions parents ask</h3><div id="fq">${d.faqs.map((x, i) => `<div data-fq="${i}" style="margin:6px 0;display:grid;gap:4px">${inp("q", x.q, "Question, e.g. What time can I pick up my child?")}<textarea data-k="a" rows="2" placeholder="Answer" style="padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit">${esc(x.a || "")}</textarea><button type="button" class="btn ghost small" data-rmfq="${i}" style="justify-self:start">Remove</button></div>`).join("")}</div>
+      <button type="button" class="btn ghost small" id="addfq">+ Add a question</button>
+      <p style="margin:16px 0 0"><button class="btn" id="siSave">Save school information</button></p>`;
+    const collect = () => { d.contacts = [...box.querySelectorAll("[data-ct]")].map(r => Object.fromEntries([...r.querySelectorAll("[data-k]")].map(i => [i.dataset.k, i.value.trim()]))).filter(c => c.role || c.name);
+      box.querySelectorAll("[data-day]").forEach(t => d.day[t.dataset.day] = t.value.trim());
+      d.faqs = [...box.querySelectorAll("[data-fq]")].map(r => ({ q: r.querySelector('[data-k="q"]').value.trim(), a: r.querySelector('[data-k="a"]').value.trim() })).filter(x => x.q); };
+    box.querySelector("#addct").onclick = () => { collect(); d.contacts.push({}); draw(); };
+    box.querySelector("#addfq").onclick = () => { collect(); d.faqs.push({}); draw(); };
+    box.querySelectorAll("[data-rmct]").forEach(b => b.onclick = () => { collect(); d.contacts.splice(+b.dataset.rmct, 1); draw(); });
+    box.querySelectorAll("[data-rmfq]").forEach(b => b.onclick = () => { collect(); d.faqs.splice(+b.dataset.rmfq, 1); draw(); });
+    box.querySelectorAll("[data-rmdoc]").forEach(b => b.onclick = async () => { collect(); const x = d.docs.splice(+b.dataset.rmdoc, 1)[0]; if (x && x.path) await sb.storage.from("school-docs").remove([x.path]); await save(); draw(); });
+    box.querySelector("#docU").onclick = async () => { const f = box.querySelector("#docF").files[0], t = box.querySelector("#docT").value.trim(); if (!f) return toast("Choose a file first."); collect();
+      const path = `${s.id}/${Date.now()}-${f.name.replace(/[^\w.\-]+/g, "_")}`; const up = await sb.storage.from("school-docs").upload(path, f); if (up.error) return toast(up.error.message);
+      d.docs.push({ title: t || f.name, path }); await save(); toast("Uploaded"); draw(); };
+    const save = async () => { const { error } = await sb.from("school_info").upsert({ school_id: String(s.id), data: d, updated_at: new Date().toISOString() }); if (error) { toast(error.message); return false; } return true; };
+    box.querySelector("#siSave").onclick = async () => { collect(); if (await save()) toast("Saved. Parents can see it now."); };
+  };
+  draw();
+}
