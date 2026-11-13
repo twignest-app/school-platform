@@ -133,7 +133,7 @@ input[type=number]{border:1px solid var(--line);background:var(--card);border-ra
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="hub.js?v=13"></script>
-<script src="behaviour-steps.js?v=1"></script>
+<script src="behaviour-steps.js?v=2"></script>
 <script>
 /* Keep this the same as in index.html */
 const PLATFORM = "Nestopia";
@@ -146,7 +146,7 @@ const toast = m => { const t = document.getElementById("toast"); t.textContent =
 const ymd = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 const fmt = d => new Date(d + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 const AVATARS = ["🦊", "🐼", "🐨", "🦁", "🐯", "🐸", "🐵", "🦄", "🐙", "🐢", "🐝", "🦉", "🐬", "🦋", "🐰", "🐻", "🐧", "🐱", "🐶", "🦒", "🐘", "🦓", "🐳", "🐞"];
-const EMOJI = { "Kindness": "💛", "Effort": "💪", "Respect": "🤝", "Responsibility": "🌟", "Excellent work": "🏆", "Leadership": "🦁", "Helping others": "🤲", "Honesty": "🕊️" };
+const EMOJI = { "Star day": "🌟", "Kindness": "💛", "Effort": "💪", "Respect": "🤝", "Responsibility": "🌟", "Excellent work": "🏆", "Leadership": "🦁", "Helping others": "🤲", "Honesty": "🕊️" };
 const BADGES = [[10, "🥉", "Bronze"], [25, "🥈", "Silver"], [50, "🥇", "Gold"], [100, "🏆", "Champion"]];
 let avatars = {};
 const avOf = id => avatars[String(id)] || AVATARS[[...String(id)].reduce((a, c) => a + c.charCodeAt(0), 0) % AVATARS.length];
@@ -199,12 +199,12 @@ async function fetchAll(q){ const out = []; for (let f = 0; ; f += 1000) { const
 async function load(){ try { const { data } = await sb.from("bh_avatars").select("student_id,avatar").eq("school_id", String(school.id)); avatars = {}; (data || []).forEach(a => avatars[a.student_id] = a.avatar); } catch (_) {} const since = ymd(new Date(Date.now() - 365 * 864e5)); evs = await fetchAll(() => sb.from("behaviour_events").select("*").eq("school_id", school.id).gte("happened_on", since).order("created_at", { ascending: false })); }
 
 function draw(){
-  const tabs = [["log", "Log"], ["steps", "🌱 Steps"], ["recent", lead ? "Recent" : "My classes"], ...(lead ? [["overview", "Overview"], ["settings", "Settings"]] : [])];
+  const tabs = [["log", "Log"], ["steps", "🌱 Steps"], ["cards", "📅 Daily cards"], ["recent", lead ? "Recent" : "My classes"], ...(lead ? [["overview", "Overview"], ["settings", "Settings"]] : [])];
   const open = evs.filter(e => e.kind === "incident" && e.level === "high" && e.status === "open").length;
   app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Behaviour</h1><p class="note">${esc(school.name)} · Celebrate the positives, and follow up incidents.</p></div></div>
     <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}${k === "recent" && lead && open ? ` (${open})` : ""}</button>`).join("")}</div><div id="pane"></div>`;
   app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; draw(); });
-  ({ log: logPane, steps: () => stepsPane(), recent: recentPane, overview: overviewPane, settings: settingsPane })[ui.tab]();
+  ({ log: logPane, steps: () => stepsPane(), cards: () => cardsPane(), recent: recentPane, overview: overviewPane, settings: settingsPane })[ui.tab]();
 }
 
 /* ---------- Log: pick students, then a merit or an incident ---------- */
