@@ -116,6 +116,7 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="hub.js?v=12"></script>
 <script src="inclusion-referrals.js?v=3"></script>
+<script src="inclusion-provision.js?v=1"></script>
 <script>
 /* Keep this the same as in index.html */
 const PLATFORM = "Nestopia";
@@ -222,11 +223,11 @@ function render(){
       <div class="metric"><span>Reviews due in 14 days</span><b style="color:${due ? "var(--amber)" : "var(--plum)"}">${due}</b></div>
       <div class="metric"><span>SoD without an active plan</span><b style="color:${noPlan ? "var(--red)" : "var(--plum)"}">${noPlan}</b></div>
     </div>
-    <div class="tabs" role="tablist">${[["referrals", "Referrals" + (typeof myTasks === "function" && myTasks().length ? " (" + myTasks().length + ")" : "")], ["register", "Register"], ["reviews", "Reviews due"], ["calendar", "Calendar"], ["groups", "Progress by group"], ...(isLead ? [["team", "Inclusion team"]] : [])].map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}</button>`).join("")}</div>
+    <div class="tabs" role="tablist">${[["referrals", "Referrals" + (typeof myTasks === "function" && myTasks().length ? " (" + myTasks().length + ")" : "")], ["register", "Register"], ["reviews", "Reviews due"], ["calendar", "Calendar"], ["prov", "Provision map"], ["exams", "Exam arrangements"], ["trans", "Transition"], ["groups", "Progress by group"], ...(isLead ? [["team", "Inclusion team"]] : [])].map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}</button>`).join("")}</div>
     <div id="pane"></div>`;
   document.getElementById("add").onclick = () => openEntry(null);
   app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; render(); });
-  ({ referrals: () => refPane(), register: registerPane, reviews: reviewsPane, calendar: () => calPane(), groups: groupsPane, team: teamPane })[ui.tab]();
+  ({ referrals: () => refPane(), register: registerPane, reviews: reviewsPane, calendar: () => calPane(), prov: () => provPane(), exams: () => examPane(), trans: () => transPane(), groups: groupsPane, team: teamPane })[ui.tab]();
 }
 
 function registerPane(){
@@ -384,6 +385,7 @@ function openStudent(sid){
     t.progress = nx; openStudent(sid);
   });
   if (!dlg.open) dlg.showModal();
+  if (typeof provStudentHtml === "function") provStudentHtml(sid).then(x => { const d = dlg.querySelector(".dlg"); if (d && x && dlg.open) d.insertAdjacentHTML("beforeend", x); });
 }
 function planHtml(p){
   const ts = targets.filter(t => String(t.plan_id) === String(p.id)), done = ts.filter(t => t.progress === "a").length;
