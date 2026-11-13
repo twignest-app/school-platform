@@ -73,7 +73,7 @@ h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
 <main id="app"><p class="note">Loading…</p></main>
 <div class="toast" id="toast" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=16"></script>
+<script src="hub.js?v=18"></script>
 <script src="getstarted.js?v=1"></script>
 <script>
 const PLATFORM = "Nestopia";
@@ -95,6 +95,7 @@ const ALL = [["twignest", "TwigNest"], ["grownest", "GrowNest"], ["planning", "P
     mfaCard(document.getElementById("mfaBox")); if (p.safeguarding_lead) auditCard(document.getElementById("audBox"), s); hubInit("settings"); return; }
   const c = (title, text, links) => `<section class="card"><h2>${title}</h2><p class="note" style="margin:0">${text}</p>${links.map(([h, l]) => `<a class="btn ghost small" href="${h}">${l} →</a>`).join(" ")}</section>`;
   app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Settings</h1><p class="note">${esc(s.name)} · Everything you set up for your school, in one place.</p></div></div>
+    <section class="card" style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><h2 style="margin:0">🩺 System health</h2><p class="note" style="margin:4px 0 0">Check that every file and update is installed. Run it after each update.</p></div><a class="btn" href="health.html">Run the health check</a></section>
     <section class="card" id="start" style="margin-bottom:16px"><h2>🚀 Getting started</h2><p class="note" style="margin:0 0 4px">The steps to get your school ready. Each one ticks itself off when it’s done.</p><div id="gs"><p class="note">Checking…</p></div></section>
     <section class="card" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Staff and roles</h2>${on.includes("twignest") ? '<a class="btn ghost small" href="twignest/#staff">Approve staff and change roles →</a>' : ""}</div><div id="staffList" style="margin-top:10px"><p class="note">Loading…</p></div></section>
     <div class="set" style="margin-bottom:16px"><section class="card"><h2 style="margin:0 0 8px">🔐 Two-step log-in</h2><div id="mfaBox"></div></section>

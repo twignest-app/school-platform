@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>System health · Nestopia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--plum:#462D5B;--plum-2:#6A4B85;--plum-soft:#EDE6F5;--sage:#5E8455;--sage-soft:#E6EFE2;--amber:#A86C12;--amber-soft:#FBF0DC;--red:#B4473A;--red-soft:#F8E4E1;--blue:#4E6FB8;--blue-soft:#E4EBF8;--bg:#F7F4FB;--card:#FFFFFF;--ink:#2E2140;--muted:#6F6680;--line:#E4DDEE;--empty:#ECE7F3;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--plum:#CDB9EA;--plum-2:#DCCCF2;--plum-soft:#352A45;--sage:#A7C59A;--sage-soft:#26331F;--amber:#E6B566;--amber-soft:#3A2E17;--red:#E8897C;--red-soft:#3D2220;--blue:#9DB4E8;--blue-soft:#1E2A40;--bg:#17131D;--card:#221C2B;--ink:#F1ECF7;--muted:#B2A8C2;--line:#382F45;--empty:#2C2536;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--plum-2);outline-offset:2px}
+h1,h2,h3,.btn,.brand{font-family:"Poppins","Nunito",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-weight:600;font-size:22px;color:var(--plum);text-decoration:none}
+header .who{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:14px;color:var(--muted);flex-wrap:wrap}
+main{max-width:1200px;margin:0 auto;padding:24px 20px 48px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px}
+.card h2{margin:0 0 8px;font-size:20px;color:var(--plum);font-weight:600}
+.btn{border:0;background:var(--plum);color:#fff;border-radius:999px;padding:10px 20px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--bg);color:var(--plum);border:1px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:13px}
+.note{color:var(--muted);font-size:14px}
+.msg{border-radius:12px;padding:10px 14px;margin-top:12px;font-weight:600;font-size:14px;background:var(--red-soft);color:var(--red)}
+.ptitle{margin:0 0 4px;font-weight:600;font-size:26px}
+.phead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.metric{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.metric span{display:block;font-size:13px;color:var(--muted);font-weight:700}
+.metric b{display:block;font-size:26px;color:var(--plum);font-family:Poppins,Nunito,sans-serif;font-weight:600;line-height:1.3}
+.tablewrap{overflow-x:auto}
+table.grid{border-collapse:separate;border-spacing:8px;min-width:100%}
+table.grid th{font-size:13px;color:var(--muted);text-align:left;font-weight:700;padding:4px}
+.cell{width:100%;min-width:150px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;cursor:pointer;display:block}
+.cell:hover{border-color:var(--plum-2)}
+.cell b{font-size:20px;font-family:Poppins,Nunito,sans-serif;font-weight:600;color:var(--plum)}
+.cell small{display:block;color:var(--muted);font-size:12.5px}
+.cell.none{cursor:default;color:var(--muted);background:var(--bg)}
+.cell.on{outline:3px solid var(--plum-2)}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--empty);margin:6px 0 4px}
+.bar i{display:block;height:100%}
+.bar .a{background:var(--sage)}.bar .t{background:var(--amber)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
+.obj{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.obj:last-child{border-bottom:0}
+.st{font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;justify-self:start}
+.st.n{background:var(--empty);color:var(--muted)}.st.p{background:var(--amber-soft);color:var(--amber)}.st.t{background:var(--blue-soft);color:var(--blue)}.st.a{background:var(--sage-soft);color:var(--sage)}
+.obj small{display:block;color:var(--muted);font-size:12.5px}
+.sec{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
+.sec b{display:block;font-size:16px;color:var(--ink)}
+@media (max-width:640px){.obj{grid-template-columns:1fr}.sec{text-align:left}}
+
+.hl{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:8px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
+.ok{color:#3F8A4B;font-weight:800}.bad{color:#B4473A;font-weight:800}.wait{color:var(--muted)}
+.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.sum div{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px}.sum b{font-size:28px;display:block}
+</style></head><body>
+<header><a class="brand" href="./" id="brand">Nestopia</a><div class="who" id="who"></div></header>
+<main id="app"><p class="note">Loading…</p></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="hub.js?v=18"></script>
+<script>
+const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const app = document.getElementById("app"), who = document.getElementById("who");
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const FILES = ["CNAME", "attendance.html", "behaviour-steps.js", "behaviour.html", "book.html", "calendar.html", "conferences.html", "dpa.html", "evidence.html", "getstarted.js", "grownest/app.html", "grownest/appraisals.html", "grownest/appraise.html", "grownest/criteria.html", "grownest/criteria.js", "grownest/favicon.png", "grownest/founder-fatma.jpg", "grownest/founder-mona.jpg", "grownest/founder-salma.jpg", "grownest/gn.js", "grownest/hero-classroom.jpg", "grownest/i18n-app.js", "grownest/i18n.js", "grownest/icon-192.png", "grownest/icon-512.png", "grownest/index.html", "grownest/login.html", "grownest/logo-header.png", "grownest/logo.png", "grownest/manifest.json", "grownest/obsdoc.js", "grownest/observations.html", "grownest/observe.html", "grownest/pricing.html", "grownest/privacy.html", "grownest/register.html", "grownest/reset.html", "grownest/respond.html", "grownest/rtl-app.css", "grownest/sef.html", "grownest/sef.js", "grownest/settings.html", "grownest/settings.js", "grownest/staff.html", "grownest/staff.js", "grownest/style.css", "grownest/support-plan.html", "grownest/teacher.html", "grownest/teachers.html", "grownest/terms.html", "grownest/walk.html", "grownest/walks.html", "health.html", "hub-ar.js", "hub-lang.js", "hub.js", "icon-192.png", "icon-512.png", "inclusion-provision.js", "inclusion-referrals.js", "inclusion.html", "index.html", "manifest.json", "messages.html", "parent.html", "parents-admin.js", "parents.html", "planning.html", "privacy.html", "reports.html", "settings.html", "students.html", "sw.js", "terms.html", "twcalc.js", "twignest/classes.js", "twignest/curricula/british-national-curriculum.json", "twignest/demo-data.js", "twignest/demo.html", "twignest/hero-mobile.jpg", "twignest/hero.jpg", "twignest/icon.png", "twignest/index.html", "twignest/logo-2.png", "twignest/logo.png", "twignest/results.js", "twignest/school.js", "twignest/setup.js", "twignest/sheet.js", "wellbeing-concerns.js", "wellbeing-surveys.js", "wellbeing.html"];
+const CHECKS = [["Inclusion register and plans", "inclusion-part1-supabase.txt", "table", "inclusion_students"], ["Inclusion meetings and notes", "inclusion-part2-supabase.txt", "table", "inclusion_meetings"], ["Online IEPs", "online-IEPs-supabase.txt", "table", "inclusion_plan_versions"], ["Inclusion referrals", "inclusion-referrals-supabase.txt", "table", "inclusion_referrals"], ["Provision map and transition", "inclusion-provision-supabase.txt", "table", "inclusion_interventions"], ["Wellbeing check-ins", "wellbeing-part1-supabase.txt", "table", "wellbeing_checkins"], ["Wellbeing concerns", "wellbeing-part2-supabase.txt", "table", "wellbeing_concerns"], ["Wellbeing surveys", "surveys-supabase.txt", "table", "wb_surveys"], ["Survey schedule", "wellbeing-schedule-supabase.txt", "table", "wb_schedules"], ["Evidence packs", "evidence-packs-supabase.txt", "table", "evidence_packs"], ["GrowNest photos in evidence packs", "evidence-photos-supabase.txt", "column", "evidence_packs.hidden_photos"], ["Teacher support plans (GrowNest)", "grownest-support-plans-supabase.txt", "table", "gn_support_plans"], ["Calendar", "calendar-supabase.txt", "table", "school_events"], ["Attendance", "attendance-supabase.txt", "table", "attendance_marks"], ["Authorised absence forms", "attendance-forms-supabase.txt", "column", "attendance_marks.doc_path"], ["Absence notes from parents", "absence-notes-supabase.txt", "table", "att_parent_notes"], ["Behaviour", "behaviour-supabase.txt", "table", "behaviour_events"], ["Behaviour characters", "behaviour-characters-supabase.txt", "table", "bh_avatars"], ["Positive Steps", "positive-steps-supabase.txt", "table", "bh_files"], ["Daily behaviour cards", "daily-cards-supabase.txt", "table", "bh_cards"], ["Parent conferences", "conferences-supabase.txt", "table", "pc_conferences"], ["Parent portal", "parent-portal-supabase.txt", "table", "parent_links"], ["Parent messages and news", "parent-messages-supabase.txt", "table", "pm_threads"], ["Parent portal preview", "parent-preview-supabase.txt", "rpc", "staff_parent_preview"], ["Parent portal: school information", "parent-portal-new-supabase.txt", "table", "school_info"], ["Parent portal: this unit, photos", "parent-portal-part2-supabase.txt", "table", "unit_info"], ["Parent portal: objectives in simple words", "parent-learning-supabase.txt", "table", "obj_parent_text"], ["Parent email choices", "parent-emails-usage-supabase.txt", "table", "parent_prefs"], ["Parent meeting requests", "parent-meetings-supabase.txt", "table", "pm_meetings"], ["Plans and subscriptions", "plans-supabase.txt", "table", "nest_plans"], ["Access log", "privacy-safety-supabase.txt", "table", "audit_log"]];
+const BUCKETS = [["evidence", "Evidence packs"], ["attendance-docs", "Authorised absence forms"], ["behaviour-evidence", "Positive Steps"], ["school-docs", "Parent portal: school information"], ["parent-media", "Parent portal: this unit, photos"]];
+const missingErr = e => e && /does not exist|Could not find|PGRST20[0-5]|schema cache|42P01|42703|42883/i.test((e.message || "") + " " + (e.code || ""));
+(async function start(){
+  const { data: { session } } = await sb.auth.getSession(); if (!session) { location.href = "./"; return; }
+  const { data: p } = await sb.from("profiles").select("*").eq("id", session.user.id).single();
+  if (!p) { location.href = "./"; return; }
+  who.innerHTML = `<span>${esc(p.full_name || p.email)}</span><a class="btn ghost small" href="./">← Nestopia</a>`;
+  if (window.hubInit) hubInit("settings");
+  if (!["school_lead", "admin", "coordinator"].includes(p.role)) { app.innerHTML = '<div class="card"><p class="note" style="margin:0">The system health check is for school leaders and the Nestopia admin.</p></div>'; return; }
+  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">🩺 System health</h1><p class="note">Checks that every file, database update, storage folder and the email service are in place. Run it after every update.</p></div><button class="btn" id="again">Check again</button></div>
+    <div class="sum"><div><span class="note">Website files</span><b id="sF">…</b></div><div><span class="note">Database updates</span><b id="sD">…</b></div><div><span class="note">Storage folders</span><b id="sB">…</b></div><div><span class="note">Email service</span><b id="sE">…</b></div></div>
+    <div id="todo"></div>
+    <section class="card"><h2>🗄️ Database updates</h2><div id="db"></div></section>
+    <section class="card"><h2>📁 Storage folders</h2><div id="bk"></div></section>
+    <section class="card"><h2>✉️ Email service</h2><div id="em"></div></section>
+    <section class="card"><h2>📄 Website files <span class="note" id="fN"></span></h2><div id="fl"></div></section>`;
+  document.getElementById("again").onclick = () => location.reload();
+  const todo = [];
+  // database
+  let dOk = 0; const dbBox = document.getElementById("db");
+  for (const [what, file, kind, target] of CHECKS) {
+    let ok = true;
+    try {
+      if (kind === "table") { const { error } = await sb.from(target).select("*", { head: true, count: "exact" }).limit(1); if (missingErr(error)) ok = false; }
+      else if (kind === "column") { const [t, c] = target.split("."); const { error } = await sb.from(t).select(c).limit(1); if (missingErr(error)) ok = false; }
+      else if (kind === "rpc") { const { error } = await sb.rpc(target, { p_student: "00000000-0000-0000-0000-000000000000" }); if (missingErr(error)) ok = false; }
+    } catch (_) { ok = false; }
+    if (ok) dOk++; else todo.push(`Run <b>${esc(file)}</b> in Supabase (SQL Editor) for <b>${esc(what)}</b>.`);
+    dbBox.insertAdjacentHTML("beforeend", `<div class="hl"><span class="${ok ? "ok" : "bad"}">${ok ? "✓" : "✗"}</span><span>${esc(what)}</span><span class="note">${ok ? "" : esc(file)}</span></div>`);
+  }
+  document.getElementById("sD").innerHTML = `<span class="${dOk === CHECKS.length ? "ok" : "bad"}">${dOk} / ${CHECKS.length}</span>`;
+  // storage folders
+  let bOk = 0; const bkBox = document.getElementById("bk");
+  for (const [b, what] of BUCKETS) {
+    const { error } = await sb.storage.from(b).list(String(p.school_id || "x"), { limit: 1 });
+    const ok = !(error && /not found|does not exist/i.test(error.message || ""));
+    if (ok) bOk++; else todo.push(`The <b>${esc(b)}</b> storage folder is missing: run the <b>${esc(what)}</b> database update.`);
+    bkBox.insertAdjacentHTML("beforeend", `<div class="hl"><span class="${ok ? "ok" : "bad"}">${ok ? "✓" : "✗"}</span><span>${esc(b)}</span><span class="note">${esc(what)}</span></div>`);
+  }
+  document.getElementById("sB").innerHTML = `<span class="${bOk === BUCKETS.length ? "ok" : "bad"}">${bOk} / ${BUCKETS.length}</span>`;
+  // email service: a deployed function answers "Unknown action"
+  let eOk = false, eMsg = "";
+  try { const r = await sb.functions.invoke("nestopia-mail", { body: { action: "health-check" } });
+    const ctx = r.error && r.error.context; let body = ""; try { body = ctx && ctx.json ? JSON.stringify(await ctx.json()) : ""; } catch (_) {}
+    eOk = !r.error || /Unknown action|sign in/i.test(body) || (ctx && [400, 401].includes(ctx.status)); eMsg = eOk ? "nestopia-mail is deployed and answering." : "nestopia-mail didn’t answer. Check Supabase → Edge Functions."; } catch (e) { eMsg = String(e.message || e); }
+  if (!eOk) todo.push("Deploy the email service <b>nestopia-mail</b> (Supabase → Edge Functions), using the latest edge function file.");
+  document.getElementById("em").innerHTML = `<div class="hl"><span class="${eOk ? "ok" : "bad"}">${eOk ? "✓" : "✗"}</span><span>${esc(eMsg)}</span><span></span></div>`;
+  document.getElementById("sE").innerHTML = `<span class="${eOk ? "ok" : "bad"}">${eOk ? "Working" : "Missing"}</span>`;
+  // website files
+  let fOk = 0, miss = []; const flBox = document.getElementById("fl");
+  await Promise.all(FILES.map(async f => { try { const r = await fetch(f + (f.includes("?") ? "&" : "?") + "hc=" + Date.now(), { method: "HEAD", cache: "no-store" }); if (r.ok) fOk++; else miss.push(f); } catch (_) { miss.push(f); } }));
+  miss.sort(); if (miss.length) todo.push(`${miss.length} website file${miss.length === 1 ? " is" : "s are"} missing. Install the <b>complete site download</b>, then commit and push.`);
+  document.getElementById("sF").innerHTML = `<span class="${miss.length ? "bad" : "ok"}">${fOk} / ${FILES.length}</span>`;
+  document.getElementById("fN").textContent = miss.length ? `(${miss.length} missing)` : "(all present)";
+  flBox.innerHTML = miss.length ? miss.map(f => `<div class="hl"><span class="bad">✗</span><span>${esc(f)}</span><span></span></div>`).join("") : '<p class="ok" style="margin:0">✓ Every file is in place.</p>';
+  document.getElementById("todo").innerHTML = todo.length ? `<section class="card" style="border-left:5px solid #B4473A"><h2>What to fix (${todo.length})</h2><ol style="margin:0;padding-left:20px">${todo.map(t => `<li style="margin:6px 0">${t}</li>`).join("")}</ol></section>` : '<section class="card" style="border-left:5px solid #3F8A4B"><h2 style="margin:0">✅ Everything is in place.</h2></section>';
+})();
+</script></body></html>
