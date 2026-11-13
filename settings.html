@@ -73,7 +73,7 @@ h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
 <main id="app"><p class="note">Loading…</p></main>
 <div class="toast" id="toast" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=18"></script>
+<script src="hub.js?v=19"></script>
 <script src="getstarted.js?v=1"></script>
 <script>
 const PLATFORM = "Nestopia";
@@ -152,7 +152,7 @@ async function mfaCard(box){
 // ----- Access log: who viewed or changed sensitive records -----
 async function auditCard(box, s){
   if (!box) return;
-  const AREA = { safeguarding: "🔒 Safeguarding", wellbeing: "Wellbeing", inclusion: "Inclusion", iep: "IEP / plan", referral: "Inclusion referral", student: "Student profile", behaviour: "Behaviour file", medical: "🩺 Medical information" };
+  const AREA = { safeguarding: "🔒 Safeguarding", wellbeing: "Wellbeing", inclusion: "Inclusion", iep: "IEP / plan", referral: "Inclusion referral", student: "Student profile", behaviour: "Behaviour file", medical: "🩺 Medical information", cleanup: "🧹 Test data clean-up" };
   const ACT = { viewed: "viewed", added: "added", changed: "changed", deleted: "deleted" };
   const r = await sb.from("audit_log").select("*").eq("school_id", String(s.id)).order("at", { ascending: false }).limit(300);
   if (r.error) { box.innerHTML = /audit_log/.test(r.error.message) ? '<p class="note">The access log needs its database step first. Please run the Privacy and safety update in Supabase.</p>' : `<p class="note">${esc(r.error.message)}</p>`; return; }

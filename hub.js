@@ -112,6 +112,10 @@
   window.nestLog = function (area, record, student) { try { const c = window.sb || (typeof sb !== "undefined" ? sb : null); if (c) c.rpc("audit_view", { p_area: area, p_record: record == null ? null : String(record), p_student: student == null ? null : String(student) }).then(() => {}, () => {}); } catch (_) {} };
   // Nestopia emails: tell the server what happened; it decides who to email (never blocks the page)
   window.nestMail = function (action, id) { try { const c = window.sb || (typeof sb !== "undefined" ? sb : null); if (c && id) c.functions.invoke("nestopia-mail", { body: { action, id } }).catch(() => {}); } catch (_) {} };
+  // attendance emails to parents go out once the school's chosen time has passed: any open hub page asks, at most every 10 minutes
+  window.nestAttDue = function (force) { try { const c = window.sb || (typeof sb !== "undefined" ? sb : null); if (!c) return; const k = "nest_attdue", last = +(localStorage.getItem(k) || 0);
+    if (!force && Date.now() - last < 10 * 60e3) return; localStorage.setItem(k, String(Date.now())); c.functions.invoke("nestopia-mail", { body: { action: "attendance_due" } }).catch(() => {}); } catch (_) {} };
+  setTimeout(() => window.nestAttDue(false), 4000); setInterval(() => window.nestAttDue(false), 10 * 60e3);
   window.hubInit = async function (active) {
     try {
       if (document.querySelector(".hubwrap")) { document.querySelectorAll(".hubside a").forEach(a => a.toggleAttribute("aria-current", a.dataset.id === active)); return; }
