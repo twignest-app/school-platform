@@ -213,6 +213,30 @@ async function home(){
 }
 // ---------- Learning (Part 2 adds “This unit”) ----------
 const media = async path => { try { const { data } = await sb.storage.from("parent-media").createSignedUrl(path, 3600); return data ? data.signedUrl : null; } catch (_) { return null; } };
+// what the class is learning: objectives covered, in simple words
+const simpleText = t => { let s = String(t || "").trim().replace(/^(pupils|children|students) should (be taught to|learn to)\s*/i, "").replace(/\be\.g\./gi, "for example").replace(/\bi\.e\./gi, "that is").replace(/\s+/g, " ");
+  const VERB = /^(use|read|write|count|recognise|recognize|identify|compare|describe|explain|solve|add|subtract|multiply|divide|know|understand|apply|spell|listen|speak|retell|measure|draw|make|ask|answer|name|sort|order|find|round|estimate|plan|create|investigate|observe|record|discuss|develop|learn|show|choose|join|form|write|perform|explore|predict|use)\b/i;
+  return VERB.test(s) ? "Your child is learning to " + s.charAt(0).toLowerCase() + s.slice(1) : "Your child is learning about " + s.charAt(0).toLowerCase() + s.slice(1); };
+let LEARN = null, learnTerm = null, learnSub = "all";
+async function learnCard(box){
+  if (!LEARN || LEARN._kid !== cur) { try { const r = await sb.rpc("parent_learning", { p_student: String(cur) }); LEARN = r.data || null; if (LEARN) LEARN._kid = cur; } catch (_) { LEARN = null; } }
+  if (!LEARN || LEARN.off || !(LEARN.items || []).length) { box.innerHTML = ""; return; }
+  const it = LEARN.items, terms = LEARN.terms || [], first = (view.name || "").split(" ")[0];
+  if (learnTerm == null) { const withT = it.filter(x => x.taught).map(x => x.term); learnTerm = withT.length ? Math.max(...withT) : 0; }
+  const inT = it.filter(x => x.term === learnTerm), subs = [...new Set(inT.map(x => x.subject))], shown = inT.filter(x => learnSub === "all" || x.subject === learnSub);
+  const done = inT.filter(x => x.taught).length, pct = inT.length ? Math.round(done / inT.length * 100) : 0;
+  const txt = x => LANG === "ar" && x.p_ar ? x.p_ar : (x.p_en || simpleText(x.text)), tip = x => LANG === "ar" && x.t_ar ? x.t_ar : x.t_en;
+  box.innerHTML = `<div class="card tile t-mint"><h2>📖 What ${esc(first)}’s class is learning · ماذا يتعلّم صف ${esc(first)}</h2>
+    <div class="tabs" style="margin:6px 0">${terms.map((t, k) => it.some(x => x.term === k) ? `<button class="tab" aria-selected="${k === learnTerm}" data-lt="${k}">${esc(t)}</button>` : "").join("")}</div>
+    <p style="margin:0 0 4px"><b>${done} of ${inT.length}</b> covered so far · تمّ تغطيتها حتى الآن</p><div style="height:12px;border-radius:99px;background:#fff;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,#9ED9B8,#3F8A5B)"></i></div>
+    <div class="row" style="margin:12px 0 4px"><button class="btn ${learnSub === "all" ? "" : "ghost"} small" data-ls="all">All subjects · كل المواد</button>${subs.map(s => `<button class="btn ${learnSub === s ? "" : "ghost"} small" data-ls="${esc(s)}">${esc(s)}</button>`).join("")}</div>
+    ${[...new Set(shown.map(x => x.subject))].map(s => `<h3 style="margin:14px 0 4px;color:var(--plum)">${esc(s)}</h3>${shown.filter(x => x.subject === s).sort((a, b) => b.taught - a.taught).map(x => `<div style="background:#fff;border-radius:14px;padding:10px 12px;margin:6px 0">
+        <span class="chip" style="${x.taught ? "" : "background:var(--sky);color:var(--sky-ink)"}">${x.taught ? "✅ Covered · تمّت تغطيته" : "🔜 Coming up · قريبًا"}</span> <span class="muted" style="font-size:13px">${esc(x.strand || "")}</span>
+        <p style="margin:6px 0 0;font-size:15.5px" ${x.lang === "ar" ? 'dir="rtl" lang="ar"' : ""}>${esc(txt(x))}</p>${tip(x) ? `<p style="margin:6px 0 0;background:var(--butter);border-radius:10px;padding:6px 10px">🏠 <b>Try at home · جرّبوا في البيت</b><span>: ${esc(tip(x))}</span></p>` : ""}</div>`).join("")}`).join("")}</div>`;
+  box.querySelectorAll("[data-lt]").forEach(b => b.onclick = () => { learnTerm = +b.dataset.lt; learnCard(box); });
+  box.querySelectorAll("[data-ls]").forEach(b => b.onclick = () => { learnSub = b.dataset.ls; learnCard(box); });
+  applyLang(box);
+}
 async function learning(){
   const p = document.getElementById("pane"); let units = [];
   if (!PREVIEW) try { const r = await sb.rpc("parent_units", { p_student: String(cur) }); units = r.data || []; } catch (_) {}
@@ -227,7 +251,8 @@ async function learning(){
       ${u.doc_path ? `<button class="btn ghost small" id="uDoc">📄 ${esc(u.doc_name || "Parent guide")}</button>` : ""}</div>` : ""}
     ${glance.length ? `<div class="card tile t-lav"><h2>🎯 Subjects at a glance · المواد باختصار</h2><p class="muted" style="margin-top:0">${esc(terms[lastT] || "")} · from the latest report · من آخر تقرير</p>${glance.map(([n, lv]) => { const max = Math.max(1, scale.length - 1), pct = Math.round(lv / max * 100);
       return `<div style="margin:10px 0"><div class="row" style="justify-content:space-between"><b>${esc(n)}</b><span class="muted">${esc(scale[lv] ?? lv)}${scale.length ? " / " + esc(scale[scale.length - 1]) : ""}</span></div><div style="height:12px;border-radius:99px;background:#fff;overflow:hidden;margin-top:4px"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,#B9A6E0,#7C5BB7);border-radius:99px"></i></div></div>`; }).join("")}</div>` : ""}
-    <div id="rep"></div>`;
+    <div id="learnBox"></div><div id="rep"></div>`;
+  if (!PREVIEW) learnCard(document.getElementById("learnBox"));
   const ud = document.getElementById("uDoc"); if (ud) ud.onclick = async () => { const x = await media(u.doc_path); if (x) window.open(x, "_blank"); };
   const outer = document.getElementById("pane"), inner = document.getElementById("rep"); outer.id = "paneL"; inner.id = "pane"; reports();
 }

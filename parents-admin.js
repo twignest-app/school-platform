@@ -1,7 +1,7 @@
 /* Nestopia · Parent portal for staff: invites and what parents see (used by parents.html). Needs: sb, esc, toast */
 async function parentPortal(s){
   const box = document.getElementById("ppBody");
-  const D = { reports: ["Report cards (approved comments only)", true], attendance: ["Attendance", true], merits: ["Merits", true], incidents: ["Behaviour incidents", false], calendar: ["School calendar", true], conferences: ["Booking parent conferences", true] };
+  const D = { reports: ["Report cards (approved comments only)", true], learning: ["What the class is learning (objectives covered)", true], attendance: ["Attendance", true], merits: ["Merits", true], incidents: ["Behaviour incidents", false], calendar: ["School calendar", true], conferences: ["Booking parent conferences", true] };
   const st = await sb.from("parent_portal_settings").select("config").eq("school_id", s.id).maybeSingle();
   if (st.error && /parent_/.test(st.error.message)) { box.innerHTML = '<p class="note">The parent portal needs its database step first. Please run the Parent portal update in Supabase.</p>'; return; }
   const cfg = Object.assign(Object.fromEntries(Object.entries(D).map(([k, v]) => [k, v[1]])), (st.data && st.data.config) || {});
@@ -101,4 +101,36 @@ async function unitEditor(s, box){
     f.scrollIntoView({ behavior: "smooth", block: "nearest" }); };
   box.querySelector("#uNew").onclick = () => form(null);
   box.querySelectorAll("[data-ue]").forEach(b => b.onclick = () => form(units.find(u => u.id === b.dataset.ue)));
+}
+
+
+/* Objectives in simple words, for parents */
+async function objEditor(s, box){
+  const set = await sb.from("school_setups").select("config").eq("school_id", s.id).order("updated_at", { ascending: false }).limit(1);
+  const C = set.data && set.data[0] ? set.data[0].config : null;
+  if (!C || !C.subjects) { box.innerHTML = '<p class="note">Set up subjects and curriculum objectives in TwigNest first.</p>'; return; }
+  const r = await sb.from("obj_parent_text").select("*").eq("school_id", String(s.id));
+  if (r.error) { box.innerHTML = '<p class="note">This needs its database step first (Parent learning update).</p>'; return; }
+  const saved = Object.fromEntries((r.data || []).map(x => [x.obj_id, x]));
+  window.OBJ_UI = window.OBJ_UI || { g: (C.grades || [])[0] && C.grades[0].id, s: 0 };
+  const simple = t => { let x = String(t || "").trim().replace(/^(pupils|children|students) should (be taught to|learn to)\s*/i, "").replace(/\be\.g\./gi, "for example").replace(/\bi\.e\./gi, "that is");
+    return /^(use|read|write|count|recognise|recognize|identify|compare|describe|explain|solve|add|subtract|multiply|divide|know|understand|apply|spell|listen|speak|retell|measure|draw|make|ask|answer|name|sort|order|find|round|estimate|plan|create|investigate|observe|record|discuss|develop|show|choose|join|form|perform|explore|predict)\b/i.test(x) ? "Your child is learning to " + x.charAt(0).toLowerCase() + x.slice(1) : "Your child is learning about " + x.charAt(0).toLowerCase() + x.slice(1); };
+  const draw = () => { const U = window.OBJ_UI, sub = C.subjects[U.s] || C.subjects[0], rows = [];
+    (sub.strands || []).forEach(st => (st.cols || []).filter(c => c.type === "objectives").forEach(c => (((c.objectives || {})[U.g]) || []).forEach((list, t) => (list || []).forEach(o => rows.push([st.name, t, o])))));
+    const done = rows.filter(([, , o]) => saved[o.id] && saved[o.id].text_en).length;
+    box.innerHTML = `<p class="note" style="margin-top:0">Parents see which objectives their child’s class has covered. Write each one in simple words, once: it’s used for every class and every year. Empty ones show the objective with “Your child is learning to…”.</p>
+      <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><select id="oG">${(C.grades || []).map(g => `<option value="${esc(g.id)}" ${g.id === U.g ? "selected" : ""}>${esc(g.name)}</option>`).join("")}</select><select id="oS">${C.subjects.map((x, k) => `<option value="${k}" ${k === U.s ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select>
+        <span class="note">${done} of ${rows.length} written</span><button class="btn ghost small" id="oSug">✨ Suggest simple wording for empty ones</button><button class="btn small" id="oSave">Save</button></div>
+      <div style="max-height:520px;overflow:auto;margin-top:10px">${rows.map(([st, t, o]) => { const v = saved[o.id] || {}; return `<div data-o="${esc(o.id)}" style="border-top:1px solid var(--line);padding:10px 0;display:grid;gap:6px">
+        <div><span class="note">${esc((C.terms || [])[t] || "Term " + (t + 1))} · ${esc(st)}</span><br><b>${esc(o.text)}</b></div>
+        <textarea data-f="text_en" rows="2" placeholder="In simple words for parents" style="padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit">${esc(v.text_en || "")}</textarea>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px"><input data-f="tip_en" value="${esc(v.tip_en || "")}" placeholder="🏠 Try at home (optional)" style="padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit"><input data-f="text_ar" dir="rtl" value="${esc(v.text_ar || "")}" placeholder="بالعربية (اختياري)" style="padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit"><input data-f="tip_ar" dir="rtl" value="${esc(v.tip_ar || "")}" placeholder="🏠 فكرة للبيت (اختياري)" style="padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit"></div></div>`; }).join("") || '<p class="note">No objectives for this grade and subject.</p>'}</div>`;
+    box.querySelector("#oG").onchange = e => { U.g = e.target.value; draw(); };
+    box.querySelector("#oS").onchange = e => { U.s = +e.target.value; draw(); };
+    box.querySelector("#oSug").onclick = () => { let n = 0; box.querySelectorAll("[data-o]").forEach(d => { const ta = d.querySelector('[data-f="text_en"]'); if (!ta.value.trim()) { ta.value = simple(d.querySelector("b").textContent); n++; } }); toast(n ? n + " filled in. Read them through, edit, then Save." : "Nothing empty."); };
+    box.querySelector("#oSave").onclick = async () => { const up = [...box.querySelectorAll("[data-o]")].map(d => { const g = f => d.querySelector(`[data-f="${f}"]`).value.trim() || null; return { school_id: String(s.id), obj_id: d.dataset.o, text_en: g("text_en"), text_ar: g("text_ar"), tip_en: g("tip_en"), tip_ar: g("tip_ar"), updated_at: new Date().toISOString() }; }).filter(x => x.text_en || x.text_ar || x.tip_en || x.tip_ar || saved[x.obj_id]);
+      for (let k = 0; k < up.length; k += 200) { const { error } = await sb.from("obj_parent_text").upsert(up.slice(k, k + 200), { onConflict: "school_id,obj_id" }); if (error) return toast(error.message); }
+      up.forEach(x => saved[x.obj_id] = x); toast("Saved"); draw(); };
+  };
+  draw();
 }
