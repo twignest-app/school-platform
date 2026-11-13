@@ -261,8 +261,11 @@ async function registerPane(){
   };
 }
 
+const dlg = document.getElementById("dlg") || (() => { const d = document.createElement("dialog"); d.id = "dlg"; d.style.cssText = "border:0;border-radius:18px;padding:0;width:min(560px,94vw);max-height:92vh;background:var(--card,#fff);color:var(--ink,#2b1d3a);box-shadow:0 18px 50px rgba(0,0,0,.25)"; document.body.appendChild(d);
+  const st = document.createElement("style"); st.textContent = "#dlg::backdrop{background:rgba(40,25,60,.45)}#dlg .dlg{padding:20px 22px;display:grid;gap:12px}#dlg .dlg h2{margin:0}#dlg .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}#dlg .f{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:14px}#dlg .lock{margin:0;font-size:13px;color:var(--muted,#777)}@media(max-width:560px){#dlg .two{grid-template-columns:1fr}}"; document.head.appendChild(st); return d; })();
 /* ---------- Front desk: who isn't in, parent messages, late arrivals and early pickups ---------- */
-let reqs = [], reqErr = false, deskSeen = null;
+let reqs = [], reqErr = false;
+const stuName = id => (studs.find(s => String(s.id) === String(id)) || { full_name: "Student" }).full_name;
 async function loadReqs(){
   try { const r = await sb.from("att_parent_requests").select("*").eq("school_id", String(school.id)).eq("day", ymd(new Date())).order("created_at"); reqErr = !!r.error; reqs = r.error ? [] : r.data || []; }
   catch (_) { reqErr = true; reqs = []; }
@@ -298,8 +301,8 @@ async function deskPane(){
       ${notIn.length ? Object.entries(byClass).map(([c, list]) => `<h3 style="font-size:15px;margin:12px 0 4px">${esc(cls(c).name || "")}</h3>${list.map(s => { const r = reqOf(s.id, "late"), m = markOf(s.id, today);
         return `<div class="regrow" style="grid-template-columns:1fr auto"><div>${who(s.id)} <span class="note">${m ? "absent" : "not marked"}${r ? ` · 📨 parent says running late${r.at_time ? ", about " + esc(t5(r.at_time)) : ""}` : ""}</span></div><div><button class="btn small" data-arr="${esc(s.id)}" ${r ? `data-req="${esc(r.id)}"` : ""}>🕘 Arrived</button></div></div>`; }).join("")}`).join("") : '<p class="note" style="margin:0">Everyone on the registers taken so far is in.</p>'}
       ${notTaken.length ? `<p class="note" style="margin:12px 0 0">Register not taken yet: ${notTaken.map(c => esc(c.name)).join(", ")}</p>` : ""}</div>
-    <div class="card"><h2>🕘 Late today <span class="note">(${lateT.length})</span></h2>${lateT.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Arrived</th><th>Reason</th><th></th></tr>${lateT.sort((a, b) => String(a.arrived_at || "").localeCompare(String(b.arrived_at || ""))).map(m => `<tr><td>${avOf(m.student_id)} ${esc(nm(m.student_id))}</td><td>${m.arrived_at ? esc(t5(m.arrived_at)) + ` <span class="note">(${m.minutes_late || 0} min)</span>` : "–"}</td><td>${esc([m.reason_code, m.reason].filter(Boolean).join(" · ") || "–")}</td><td><button class="btn ghost small" data-slip="${esc(m.student_id)}">🖨️ Slip</button></td></tr>`).join("")}</table></div>` : '<p class="note" style="margin:0">No one yet.</p>'}</div>
-    <div class="card"><h2>🚪 Left early today <span class="note">(${leftT.length})</span></h2>${leftT.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Left at</th><th>Reason</th><th>Collected by</th></tr>${leftT.map(m => `<tr><td>${avOf(m.student_id)} ${esc(nm(m.student_id))}</td><td>${esc(t5(m.left_early_at))}</td><td>${esc(m.left_reason || "–")}</td><td>${esc(m.collected_by || "–")}</td></tr>`).join("")}</table></div>` : '<p class="note" style="margin:0">No one yet.</p>'}</div>`;
+    <div class="card"><h2>🕘 Late today <span class="note">(${lateT.length})</span></h2>${lateT.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Arrived</th><th>Reason</th><th></th></tr>${lateT.sort((a, b) => String(a.arrived_at || "").localeCompare(String(b.arrived_at || ""))).map(m => `<tr><td>${avOf(m.student_id)} ${esc(stuName(m.student_id))}</td><td>${m.arrived_at ? esc(t5(m.arrived_at)) + ` <span class="note">(${m.minutes_late || 0} min)</span>` : "–"}</td><td>${esc([m.reason_code, m.reason].filter(Boolean).join(" · ") || "–")}</td><td><button class="btn ghost small" data-slip="${esc(m.student_id)}">🖨️ Slip</button></td></tr>`).join("")}</table></div>` : '<p class="note" style="margin:0">No one yet.</p>'}</div>
+    <div class="card"><h2>🚪 Left early today <span class="note">(${leftT.length})</span></h2>${leftT.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Left at</th><th>Reason</th><th>Collected by</th></tr>${leftT.map(m => `<tr><td>${avOf(m.student_id)} ${esc(stuName(m.student_id))}</td><td>${esc(t5(m.left_early_at))}</td><td>${esc(m.left_reason || "–")}</td><td>${esc(m.collected_by || "–")}</td></tr>`).join("")}</table></div>` : '<p class="note" style="margin:0">No one yet.</p>'}</div>`;
   const bind = root => { root.querySelectorAll("[data-arr]").forEach(b => b.onclick = () => deskAct(b.dataset.arr, "arrive", b.dataset.req));
     root.querySelectorAll("[data-left]").forEach(b => b.onclick = () => deskAct(b.dataset.left, "leave", b.dataset.req));
     root.querySelectorAll("[data-slip]").forEach(b => b.onclick = () => lateSlip(b.dataset.slip)); };
@@ -342,17 +345,17 @@ async function deskNews(){
   if (!late.length && !left.length && !rl.length) { if (box) box.remove(); return; }
   if (!box) { box = document.createElement("div"); box.id = "deskNews"; box.className = "card"; box.style.border = "2px solid var(--plum)"; pane.prepend(box); }
   box.innerHTML = `<h2 style="margin-top:0">🏫 From the front desk today</h2><ul style="margin:0;padding-left:18px;line-height:1.7">
-    ${late.map(m => `<li><b>${esc(nm(m.student_id))}</b> arrived at ${esc(t5(m.arrived_at))} (${m.minutes_late || 0} min late)${m.reason_code ? " · " + esc(m.reason_code) : ""}. Already marked late, nothing to do.</li>`).join("")}
-    ${rl.filter(r => r.kind === "late").map(r => `<li>📨 <b>${esc(nm(r.student_id))}</b>: parent says running late${r.at_time ? ", about " + esc(t5(r.at_time)) : ""}${r.reason ? " · " + esc(r.reason) : ""}.</li>`).join("")}
-    ${rl.filter(r => r.kind === "pickup").map(r => `<li>🚪 <b>${esc(nm(r.student_id))}</b> is being collected at <b>${esc(t5(r.at_time))}</b> by ${esc(r.collector || "a parent")}. Please send them to the office a few minutes before.</li>`).join("")}
-    ${left.map(m => `<li><b>${esc(nm(m.student_id))}</b> left at ${esc(t5(m.left_early_at))}${m.collected_by ? " with " + esc(m.collected_by) : ""}.</li>`).join("")}</ul>`;
+    ${late.map(m => `<li><b>${esc(stuName(m.student_id))}</b> arrived at ${esc(t5(m.arrived_at))} (${m.minutes_late || 0} min late)${m.reason_code ? " · " + esc(m.reason_code) : ""}. Already marked late, nothing to do.</li>`).join("")}
+    ${rl.filter(r => r.kind === "late").map(r => `<li>📨 <b>${esc(stuName(r.student_id))}</b>: parent says running late${r.at_time ? ", about " + esc(t5(r.at_time)) : ""}${r.reason ? " · " + esc(r.reason) : ""}.</li>`).join("")}
+    ${rl.filter(r => r.kind === "pickup").map(r => `<li>🚪 <b>${esc(stuName(r.student_id))}</b> is being collected at <b>${esc(t5(r.at_time))}</b> by ${esc(r.collector || "a parent")}. Please send them to the office a few minutes before.</li>`).join("")}
+    ${left.map(m => `<li><b>${esc(stuName(m.student_id))}</b> left at ${esc(t5(m.left_early_at))}${m.collected_by ? " with " + esc(m.collected_by) : ""}.</li>`).join("")}</ul>`;
 }
 let liveN = 0;
 setInterval(async () => {
   if (!school || document.hidden) return; liveN++;
   if (ui.tab === "register") { if (liveN % 4 === 0) { const before = new Set(marks.filter(m => m.day === ymd(new Date()) && m.status === "late" && m.arrived_at).map(m => String(m.student_id)));
       try { await loadMarks(); await loadReqs(); } catch (_) {}
-      marks.filter(m => m.day === ymd(new Date()) && m.status === "late" && m.arrived_at && String(m.class_id) === String(ui.cls) && !before.has(String(m.student_id))).forEach(m => toast(`${nm(m.student_id)} arrived at ${t5(m.arrived_at)} and is on the way to class.`)); }
+      marks.filter(m => m.day === ymd(new Date()) && m.status === "late" && m.arrived_at && String(m.class_id) === String(ui.cls) && !before.has(String(m.student_id))).forEach(m => toast(`${stuName(m.student_id)} arrived at ${t5(m.arrived_at)} and is on the way to class.`)); }
     deskNews(); }
   if (ui.tab === "desk" && liveN % 4 === 0 && !(dlg && dlg.open)) { const q = document.getElementById("dq"); if (q && q.value.trim()) return; try { await loadMarks(); } catch (_) {} deskPane(); }
 }, 15000);
