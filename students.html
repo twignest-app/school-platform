@@ -252,7 +252,7 @@ async function profile(id){
     const n = data.length, a = data.filter(m => m.status === "present" || m.status === "late").length, p = n ? Math.round(a / n * 100) : null;
     const away = data.filter(m => m.status !== "present").slice(0, 6), late = data.filter(m => m.status === "late").length;
     box.innerHTML = n ? `<p style="margin:0"><b style="font-size:26px;color:${p >= 95 ? "var(--sage)" : p >= 90 ? "var(--amber)" : "var(--red)"}">${p}%</b> <span class="note">this school year · ${n - a} day${n - a === 1 ? "" : "s"} absent · ${late} late</span></p>
-      ${away.length ? `<ul class="note" style="margin:8px 0 0;padding-left:18px">${away.map(m => `<li>${new Date(m.day + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}: ${{ late: "Late" + (m.minutes_late ? " (" + m.minutes_late + " min)" : ""), absent: "Absent", excused: "Excused absence" }[m.status]}${m.reason ? " · " + esc(m.reason) : ""}</li>`).join("")}</ul>` : ""}` : '<p class="note" style="margin:0">No registers taken yet this year.</p>';
+      ${away.length ? `<ul class="note" style="margin:8px 0 0;padding-left:18px">${away.map(m => `<li>${new Date(m.day + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}: ${{ late: "Late" + (m.minutes_late ? " (" + m.minutes_late + " min)" : ""), absent: "Unauthorised absence", excused: "Authorised absence" }[m.status]}${m.reason ? " · " + esc(m.reason) : ""}</li>`).join("")}</ul>` : ""}` : '<p class="note" style="margin:0">No registers taken yet this year.</p>';
   }, null);
   // Wellbeing: last 30 days, and concerns this person can see
   if (on.includes("wellbeing")) safe(async () => {

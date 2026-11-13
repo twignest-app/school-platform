@@ -129,7 +129,16 @@ const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "
 const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2600); };
 const ymd = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 const fmt = d => new Date(d + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
-const ST = { present: ["✓", "Present"], late: ["L", "Late"], absent: ["A", "Absent"], excused: ["E", "Excused absence"] };
+// stored values stay the same: "excused" = authorised absence, "absent" = unauthorised absence
+const ST = { present: ["✓", "Present", "Present"], late: ["L", "Late", "Late"], excused: ["AA", "Authorised", "Authorised absence"], absent: ["UA", "Unauthorised", "Unauthorised absence"] };
+async function docUrl(path){ const { data } = await sb.storage.from("attendance-docs").createSignedUrl(path, 3600); return data ? data.signedUrl : null; }
+async function uploadDoc(student, day, file){
+  if (file.size > 10 * 1024 * 1024) { toast("Please choose a file smaller than 10 MB."); return null; }
+  const path = `${school.id}/${student.id}/${day}-${Date.now()}-${file.name.replace(/[^\w.\-]+/g, "_")}`;
+  const { error } = await sb.storage.from("attendance-docs").upload(path, file);
+  if (error) { toast(/bucket|not found/i.test(error.message) ? "Please run the attendance forms database step first." : error.message); return null; }
+  return { path, name: file.name };
+}
 const attended = s => s === "present" || s === "late";
 const pctCls = p => p == null ? "" : p >= 95 ? "good" : p >= 90 ? "warn" : "bad";
 let me, school, lead = false, grades = [], classes = [], myClassIds = [], studs = [], marks = [], ui = { tab: "register", cls: null, day: ymd(new Date()), range: 30 };
@@ -161,7 +170,7 @@ async function fetchAll(q){ const out = []; for (let f = 0; ; f += 1000) { const
 })();
 async function loadMarks(){
   const since = ymd(new Date(Date.now() - 365 * 864e5));
-  marks = await fetchAll(() => sb.from("attendance_marks").select("student_id,class_id,day,status,reason,minutes_late").eq("school_id", school.id).gte("day", since));
+  marks = await fetchAll(() => sb.from("attendance_marks").select("student_id,class_id,day,status,reason,minutes_late,doc_path,doc_name").eq("school_id", school.id).gte("day", since));
 }
 const markOf = (sid, day) => marks.find(m => String(m.student_id) === String(sid) && m.day === day);
 
@@ -179,26 +188,30 @@ async function registerPane(){
   const choices = classes.filter(c => lead || myClassIds.includes(String(c.id)));
   if (!choices.length) { pane.innerHTML = '<div class="card"><p class="note" style="margin:0">You don’t have a class linked in TwigNest yet, so there’s no register to take.</p></div>'; return; }
   const kids = studs.filter(s => String(s.class_id) === String(ui.cls));
-  const state = {}; kids.forEach(k => { const m = markOf(k.id, ui.day); state[k.id] = m ? { status: m.status, reason: m.reason || "", minutes_late: m.minutes_late || "" } : { status: null, reason: "", minutes_late: "" }; });
+  const state = {}; kids.forEach(k => { const m = markOf(k.id, ui.day); state[k.id] = m ? { status: m.status, reason: m.reason || "", minutes_late: m.minutes_late || "", doc_path: m.doc_path || null, doc_name: m.doc_name || null } : { status: null, reason: "", minutes_late: "", doc_path: null, doc_name: null }; });
   const already = kids.some(k => markOf(k.id, ui.day));
   let checked = [];
   if ((school.modules || []).includes("wellbeing")) { try { const { data } = await sb.from("wellbeing_checkins").select("student_id").eq("day", ui.day).in("student_id", kids.map(k => k.id)); checked = (data || []).map(x => String(x.student_id)); } catch (_) {} }
   const row = k => { const s = state[k.id];
     return `<div class="regrow" data-sid="${esc(k.id)}"><div><b>${esc(k.full_name)}</b>${checked.includes(String(k.id)) ? ' <span class="note">· checked in 🙂</span>' : ""}</div>
-      <div class="sts">${Object.entries(ST).map(([v, [ic, l]]) => `<button type="button" class="st ${v}" data-st="${v}" aria-pressed="${s.status === v}" title="${l}" aria-label="${esc(k.full_name)}: ${l}">${ic}<span class="hide-sm"> ${l.split(" ")[0]}</span></button>`).join("")}</div>
-      <div class="reason" ${["late", "absent", "excused"].includes(s.status) ? "" : "hidden"}>${s.status === "late" ? `<input type="number" min="1" max="300" data-ml placeholder="Minutes late" value="${esc(s.minutes_late)}" style="max-width:140px">` : ""}<input type="text" data-rs placeholder="Reason, if known (for example: unwell, medical appointment, family travel)" value="${esc(s.reason)}"></div></div>`; };
+      <div class="sts">${Object.entries(ST).map(([v, [ic, l, full]]) => `<button type="button" class="st ${v}" data-st="${v}" aria-pressed="${s.status === v}" title="${full}" aria-label="${esc(k.full_name)}: ${full}">${ic}<span class="hide-sm"> ${l}</span></button>`).join("")}</div>
+      <div class="reason" ${["late", "absent", "excused"].includes(s.status) ? "" : "hidden"}>${s.status === "late" ? `<input type="number" min="1" max="300" data-ml placeholder="Minutes late" value="${esc(s.minutes_late)}" style="max-width:140px">` : ""}<input type="text" data-rs placeholder="${s.status === "excused" ? "Reason (for example: unwell, medical appointment)" : "Reason, if known"}" value="${esc(s.reason)}">
+        ${s.status === "excused" ? `<span class="row" style="gap:6px">${s.doc_path ? `<a class="btn ghost small" href="#" data-doc="${esc(s.doc_path)}">📎 ${esc(s.doc_name || "Form")}</a>` : ""}<label class="btn ghost small" style="cursor:pointer">📎 ${s.doc_path ? "Replace the form" : "Upload a form"}<input type="file" data-up accept="image/*,.pdf,.doc,.docx" hidden></label></span>` : ""}</div></div>`; };
   pane.innerHTML = `<div class="card"><div class="row" style="margin-bottom:10px"><select id="rc" aria-label="Class">${choices.map(c => `<option value="${esc(c.id)}" ${String(c.id) === String(ui.cls) ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select>
       <input type="date" id="rd" value="${esc(ui.day)}" max="${ymd(new Date())}" style="max-width:180px">
       <button class="btn ghost small" id="allP">✓ All present</button>${checked.length ? `<button class="btn ghost small" id="fromWB">🙂 Present: everyone who checked in (${checked.length})</button>` : ""}</div>
     ${already ? `<p class="note" style="margin:0 0 6px">✅ Taken for ${fmt(ui.day)}. You can still change it.</p>` : ""}
     ${kids.length ? `<div id="rows">${kids.map(row).join("")}</div>` : '<p class="note">This class has no students.</p>'}
     <div class="savebar"><span class="note" id="cnt"></span><button class="btn" id="saveR">Save the register</button></div></div>`;
-  const count = () => { const v = Object.values(state), n = v.filter(x => x.status).length; document.getElementById("cnt").textContent = `${n} of ${kids.length} marked · ${v.filter(x => attended(x.status)).length} in school · ${v.filter(x => x.status === "absent" || x.status === "excused").length} absent · ${v.filter(x => x.status === "late").length} late`; };
+  const count = () => { const v = Object.values(state), n = v.filter(x => x.status).length; document.getElementById("cnt").textContent = `${n} of ${kids.length} marked · ${v.filter(x => attended(x.status)).length} in school · ${v.filter(x => x.status === "excused").length} authorised absence · ${v.filter(x => x.status === "absent").length} unauthorised · ${v.filter(x => x.status === "late").length} late`; };
   const redraw = sid => { const el = pane.querySelector(`[data-sid="${sid}"]`), k = kids.find(x => String(x.id) === String(sid)); el.outerHTML = row(k); bindRows(); count(); };
   const bindRows = () => pane.querySelectorAll(".regrow").forEach(el => {
     el.querySelectorAll("[data-st]").forEach(b => b.onclick = () => { state[el.dataset.sid].status = b.dataset.st; redraw(el.dataset.sid); });
     const rs = el.querySelector("[data-rs]"); if (rs) rs.oninput = () => state[el.dataset.sid].reason = rs.value;
     const ml = el.querySelector("[data-ml]"); if (ml) ml.oninput = () => state[el.dataset.sid].minutes_late = ml.value;
+    const up = el.querySelector("[data-up]"); if (up) up.onchange = async () => { const f = up.files[0]; if (!f) return; const k = kids.find(x => String(x.id) === el.dataset.sid);
+      toast("Uploading…"); const r = await uploadDoc(k, ui.day, f); if (!r) return; state[k.id].doc_path = r.path; state[k.id].doc_name = r.name; redraw(k.id); toast("Form added. Remember to save the register."); };
+    const dc = el.querySelector("[data-doc]"); if (dc) dc.onclick = async e => { e.preventDefault(); const u = await docUrl(dc.dataset.doc); if (u) window.open(u, "_blank"); };
   });
   bindRows(); count();
   document.getElementById("rc").onchange = e => { ui.cls = e.target.value; registerPane(); };
@@ -208,7 +221,7 @@ async function registerPane(){
   document.getElementById("saveR").onclick = async () => {
     const missing = kids.filter(k => !state[k.id].status);
     if (missing.length && !confirm(missing.length + " student" + (missing.length === 1 ? " isn’t" : "s aren’t") + " marked yet: " + missing.slice(0, 5).map(k => k.full_name.split(" ")[0]).join(", ") + (missing.length > 5 ? "…" : "") + ". Save the others anyway?")) return;
-    const rows = kids.filter(k => state[k.id].status).map(k => ({ school_id: school.id, student_id: k.id, class_id: k.class_id, day: ui.day, status: state[k.id].status, reason: state[k.id].status === "present" ? null : state[k.id].reason.trim() || null, minutes_late: state[k.id].status === "late" && state[k.id].minutes_late ? +state[k.id].minutes_late : null, marked_by: me.id, updated_at: new Date().toISOString() }));
+    const rows = kids.filter(k => state[k.id].status).map(k => ({ school_id: school.id, student_id: k.id, class_id: k.class_id, day: ui.day, status: state[k.id].status, reason: state[k.id].status === "present" ? null : state[k.id].reason.trim() || null, doc_path: state[k.id].status === "excused" ? state[k.id].doc_path : null, doc_name: state[k.id].status === "excused" ? state[k.id].doc_name : null, minutes_late: state[k.id].status === "late" && state[k.id].minutes_late ? +state[k.id].minutes_late : null, marked_by: me.id, updated_at: new Date().toISOString() }));
     const btn = document.getElementById("saveR"); btn.disabled = true;
     const { error } = await sb.from("attendance_marks").upsert(rows, { onConflict: "student_id,day" });
     btn.disabled = false; if (error) return toast(/attendance_marks/.test(error.message) ? "Please run the Attendance database step first." : error.message);
@@ -227,10 +240,15 @@ function todayPane(){
   pane.innerHTML = `<div class="row" style="margin-bottom:12px"><input type="date" id="td" value="${esc(day)}" max="${ymd(new Date())}" style="max-width:180px"></div>
     <div class="metrics"><div class="metric"><span>Attendance</span><b class="pct ${pctCls(pct)}">${pct == null ? "–" : pct + "%"}</b></div><div class="metric"><span>In school</span><b>${att}</b></div><div class="metric"><span>Absent</span><b>${absent.length}</b></div><div class="metric"><span>Late</span><b>${late.length}</b></div><div class="metric"><span>Registers not taken</span><b style="color:${notTaken.length ? "var(--amber)" : "var(--plum)"}">${notTaken.length}</b></div></div>
     ${notTaken.length ? `<div class="card" style="border-left:5px solid var(--amber)"><h2>Registers not taken yet</h2><p style="margin:0">${notTaken.map(c => `<span class="tag gt">${esc(c.name)}</span>`).join("")}</p></div>` : ""}
-    <div class="card"><h2>Absent today <span class="note">(${absent.length})</span></h2>${absent.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Class</th><th>Type</th><th>Reason</th></tr>${absent.map(m => `<tr><td><a class="nm" href="students.html?id=${esc(m.student_id)}">${esc(nm(m.student_id))}</a></td><td>${esc(cls(m.class_id).name || "")}</td><td>${m.status === "excused" ? "Excused" : '<b style="color:var(--red)">Absent</b>'}</td><td>${esc(m.reason || "–")}</td></tr>`).join("")}</table></div>` : '<p class="note" style="margin:0">No absences recorded.</p>'}</div>
+    <div class="card"><h2>Absent today <span class="note">(${absent.length})</span></h2>${absent.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Class</th><th>Type</th><th>Reason</th></tr>${absent.map(m => `<tr><td><a class="nm" href="students.html?id=${esc(m.student_id)}">${esc(nm(m.student_id))}</a></td><td>${esc(cls(m.class_id).name || "")}</td><td>${m.status === "excused" ? "Authorised" : '<b style="color:var(--red)">Unauthorised</b>'}</td><td>${esc(m.reason || "–")}${m.status === "excused" ? `<br>${m.doc_path ? `<a href="#" data-doc="${esc(m.doc_path)}">📎 ${esc(m.doc_name || "Form")}</a>` : `<label style="cursor:pointer;color:var(--plum);font-weight:700">📎 Add a form<input type="file" hidden accept="image/*,.pdf,.doc,.docx" data-addf="${esc(m.student_id)}"></label>`}` : ""}</td></tr>`).join("")}</table></div>` : '<p class="note" style="margin:0">No absences recorded.</p>'}</div>
     ${late.length ? `<div class="card"><h2>Late today <span class="note">(${late.length})</span></h2><p style="margin:0">${late.map(m => `<span class="tag gt">${esc(nm(m.student_id))}${m.minutes_late ? " · " + m.minutes_late + " min" : ""}</span>`).join("")}</p></div>` : ""}
     ${byGrade.length ? `<div class="card"><h2>By grade</h2><div class="tablewrap"><table class="reg"><tr><th>Grade</th><th>Attendance</th><th>Marked</th></tr>${byGrade.map(([n, p, k]) => `<tr><td>${esc(n)}</td><td class="pct ${pctCls(p)}">${p == null ? "–" : p + "%"}</td><td>${k}</td></tr>`).join("")}</table></div></div>` : ""}`;
   document.getElementById("td").onchange = e => { ui.day = e.target.value || ymd(new Date()); todayPane(); };
+  pane.querySelectorAll("[data-doc]").forEach(a => a.onclick = async e => { e.preventDefault(); const u = await docUrl(a.dataset.doc); if (u) window.open(u, "_blank"); });
+  pane.querySelectorAll("[data-addf]").forEach(inp => inp.onchange = async () => { const f = inp.files[0]; if (!f) return; const s = studs.find(x => String(x.id) === inp.dataset.addf) || { id: inp.dataset.addf };
+    toast("Uploading…"); const r = await uploadDoc(s, day, f); if (!r) return;
+    const { error } = await sb.from("attendance_marks").update({ doc_path: r.path, doc_name: r.name, updated_at: new Date().toISOString() }).eq("student_id", s.id).eq("day", day); if (error) return toast(error.message);
+    await loadMarks(); todayPane(); toast("Form added"); });
 }
 
 /* ---------- Leaders: trends and students below 95% ---------- */
@@ -245,7 +263,7 @@ function trendsPane(){
   pane.innerHTML = `<div class="row" style="margin-bottom:12px"><select id="rg">${[[30, "Last 30 days"], [90, "Last 90 days"], [365, "This year (last 12 months)"]].map(([v, l]) => `<option value="${v}" ${ui.range === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>
     <div class="metrics"><div class="metric"><span>Attendance</span><b class="pct ${pctCls(all)}">${all == null ? "–" : all + "%"}</b></div><div class="metric"><span>School days with a register</span><b>${days.length}</b></div><div class="metric"><span>Below 95%</span><b style="color:var(--amber)">${low.filter(r => r[2] >= 90).length}</b></div><div class="metric"><span>Below 90%</span><b style="color:var(--red)">${low.filter(r => r[2] < 90).length}</b></div></div>
     <div class="card"><h2>Day by day</h2>${daily.length ? `<div style="display:flex;align-items:flex-end;gap:3px;height:120px">${daily.map(([d, p]) => `<div title="${fmt(d)}: ${p}%" style="flex:1;min-width:4px;height:${Math.max(4, (p - 70) / 30 * 100)}%;background:${p >= 95 ? "#3F8A4B" : p >= 90 ? "#C98A2B" : "#B4473A"};border-radius:4px 4px 0 0"></div>`).join("")}</div><p class="note">Each bar is a school day (the scale starts at 70%). Green 95% or more, amber 90–94%, red below 90%.</p>` : '<p class="note" style="margin:0">No registers in this period yet.</p>'}</div>
-    <div class="card"><h2>Students below 95% <span class="note">(${low.length})</span></h2>${low.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Class</th><th>Attendance</th><th>Days absent</th><th class="hide-sm">Unexcused</th><th class="hide-sm">Late</th></tr>${low.map(([s, a, p]) => `<tr><td><a class="nm" href="students.html?id=${esc(s.id)}">${esc(s.full_name)}</a></td><td>${esc(cls(s.class_id).name || "")}</td><td class="pct ${pctCls(p)}">${p}%</td><td>${a.abs}</td><td class="hide-sm">${a.unex}</td><td class="hide-sm">${a.late}</td></tr>`).join("")}</table></div>` : '<p class="note" style="margin:0">Every student is at 95% or above. 🎉</p>'}</div>`;
+    <div class="card"><h2>Students below 95% <span class="note">(${low.length})</span></h2>${low.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Class</th><th>Attendance</th><th>Days absent</th><th class="hide-sm">Unauthorised</th><th class="hide-sm">Late</th></tr>${low.map(([s, a, p]) => `<tr><td><a class="nm" href="students.html?id=${esc(s.id)}">${esc(s.full_name)}</a></td><td>${esc(cls(s.class_id).name || "")}</td><td class="pct ${pctCls(p)}">${p}%</td><td>${a.abs}</td><td class="hide-sm">${a.unex}</td><td class="hide-sm">${a.late}</td></tr>`).join("")}</table></div>` : '<p class="note" style="margin:0">Every student is at 95% or above. 🎉</p>'}</div>`;
   document.getElementById("rg").onchange = e => { ui.range = +e.target.value; trendsPane(); };
 }
 

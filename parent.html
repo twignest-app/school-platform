@@ -152,7 +152,7 @@ function attendance(){
   const p = document.getElementById("pane"), a = view.attendance || { days: 0 };
   const pc = a.days ? Math.round(a.in / a.days * 100) : null;
   p.innerHTML = `<div class="card"><h2>Attendance this school year · الحضور هذا العام</h2>${a.days ? `<p class="big" style="margin:0;color:${pc >= 95 ? "var(--sage)" : pc >= 90 ? "var(--amber)" : "var(--red)"}">${pc}%</p><p class="muted" style="margin:4px 0 0">${a.days - a.in} day${a.days - a.in === 1 ? "" : "s"} absent · late ${a.late} time${a.late === 1 ? "" : "s"} · out of ${a.days} school days</p>
-      ${(a.recent || []).length ? `<table style="margin-top:12px">${a.recent.map(r => `<tr><td>${dshort(r.day)}</td><td>${{ late: "Late · متأخر", absent: "Absent · غائب", excused: "Excused absence · غياب بعذر" }[r.status] || r.status}</td></tr>`).join("")}</table>` : ""}
+      ${(a.recent || []).length ? `<table style="margin-top:12px">${a.recent.map(r => `<tr><td>${dshort(r.day)}</td><td>${{ late: "Late · متأخر", absent: "Unauthorised absence · غياب بدون عذر", excused: "Authorised absence · غياب بعذر" }[r.status] || r.status}</td></tr>`).join("")}</table>` : ""}
       <p class="muted" style="margin:12px 0 0">Every school day counts. 95% or more is the goal. · كل يوم دراسي مهم.</p>` : '<p class="muted" style="margin:0">No registers yet this year.</p>'}</div>`;
 }
 function behaviour(){
