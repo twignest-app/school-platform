@@ -30,7 +30,7 @@
     ["planning", "Planning", "planning.html", "planning"],
     ["grownest", "GrowNest", "grownest/app.html", "grownest"],
     ["twignest", "TwigNest", "twignest/", "twignest"],
-    ["sub", "Class sheets", "twignest/#sheets", "twignest", false, "twignest"],
+    ["sub", "My classes", "twignest/#sheets", "twignest", false, "twignest"],
     ["sub", "School view", "twignest/#school", "twignest", false, "twignest"],
     ["reports", "Report cards", "reports.html", "twignest", false, "twignest"],
     ["messages", "Messages", "messages.html", null],

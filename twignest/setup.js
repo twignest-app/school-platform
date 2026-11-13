@@ -49,7 +49,7 @@
   const col = (name, type, extra = {}) => Object.assign({ id: uid("c"), name, type, baseline: false }, defaults(type), extra);
 
   function template(kind) {
-    const base = { terms: ["Term 1", "Term 2", "Term 3"], steps: 2, groups: ["SEN", "G&T", "EAL", "Emirati"], reports: { limit: 600, bank: BANK.map(r => r.slice()) } };
+    const base = { objMode: "levels", terms: ["Term 1", "Term 2", "Term 3"], steps: 2, groups: ["SEN", "G&T", "EAL", "Emirati"], reports: { limit: 600, bank: BANK.map(r => r.slice()) } };
     if (kind === "blank") return Object.assign(base, { grades: [], subjects: [] }, JSON.parse(JSON.stringify(AJMAN)), { groups: ["SEN", "G&T", "EAL"] });
     const grades = ["Pre-K", "KG1", "KG2", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5"].map(n => ({ id: uid("g"), name: n }));
     const strand = (name, cols) => ({ id: uid("st"), name, cols });
@@ -82,7 +82,7 @@
     if (!C.grades.length) block.push(["Add at least one grade.", 1]);
     if (C.scale.length < 2) block.push(["The grading system needs at least two levels.", 2]);
     C.gradeMin.forEach((x, i) => { if (!(x >= 0 && x <= 100)) block.push([`Grading system: level ${C.scale[i]} needs a starting percentage between 0 and 100.`, 2]); else if (i && !(x > C.gradeMin[i - 1])) block.push([`Grading system: level ${C.scale[i]} must start higher than level ${C.scale[i - 1]}.`, 2]); });
-    if (C.objScale && C.objScale.length) { if (!C.objScale.some(x => x.kind === "secure")) block.push(["Objective criteria: at least one mark must count as Secure.", 2]);
+    if (C.objMode !== "levels" && C.objScale && C.objScale.length) { if (!C.objScale.some(x => x.kind === "secure")) block.push(["Objective criteria: at least one mark must count as Secure.", 2]);
       if (C.objScale.some(x => !x.label || !x.short)) block.push(["Objective criteria: every mark needs a name and a short label.", 2]); }
     if (!C.subjects.length) block.push(["Add at least one subject.", 3]);
     C.subjects.forEach(sb => {
@@ -327,14 +327,17 @@
       <div class="grid3">${["below", "inline", "above"].map(k => `<div><label for="lp-${k}">Progress: ${k === "inline" ? "expected" : k === "above" ? "better than expected" : "below expected"}</label><input type="text" id="lp-${k}" data-lab="prog|${k}" value="${esc(((C.labels || {}).prog || {})[k] || DEF_LAB.prog[k])}"></div>`).join("")}</div>
       <p><button class="btn ghost small" data-act="lab-reset">Use the UAE inspection framework wording</button></p></div>
       <div class="card"><h2>Objective criteria</h2><p class="note">The marks teachers give each curriculum objective. Name them the way your school does, and choose how each one counts when TwigNest works out levels and gaps. Anything that isn’t fully secure becomes a gap with a next step.</p>
-      <div class="row" style="margin:10px 0"><span class="note"><b>Start from</b></span><button class="btn ghost small" data-act="os-three">Secure, Not yet secure, Exceeding</button><button class="btn ghost small" data-act="os-four">Emerging, Developing, Secure, Mastery</button></div>
+      <div class="row" style="margin:10px 0"><span class="note"><b>Start from</b></span><button class="btn ghost small" data-act="os-levels" aria-pressed="${C.objMode === "levels"}">Our grading system levels (${esc(C.scale.join(", "))})</button><button class="btn ghost small" data-act="os-three">Secure, Not yet secure, Exceeding</button><button class="btn ghost small" data-act="os-four">Emerging, Developing, Secure, Mastery</button></div>
+      ${C.objMode === "levels" ? `<div class="msg ok">Teachers mark each objective with the same levels as your grading system above. Each level counts as the middle of its percentage band, so the strand level always matches the grading system.</div>
+      <div class="tablewrap"><table><tr><th>Mark</th><th>Percentage band</th><th>Counts as</th><th>Against curriculum standards</th></tr>${C.scale.map((x, i) => { const lo = C.gradeMin[i], hi = C.gradeMin[i + 1], pct = hi == null ? lo : (lo + hi) / 2; return `<tr><td><b>${esc(x)}</b></td><td>${i === 0 ? "below " + hi + "%" : hi == null ? lo + "%" : lo + "% to " + (Math.round((hi - 0.1) * 10) / 10) + "%"}</td><td>${pct}%</td><td>${{ below: "Below", inline: "In line", above: "Above" }[C.gradePos[i]] || "In line"}</td></tr>`; }).join("")}</table></div>
+      <p class="note">“Mark all” uses the first level that is in line with curriculum standards. Levels below that become gaps with a next step.</p></div>` : `
       <div class="tablewrap"><table><tr><th>Mark</th><th>Short label</th><th>Counts as</th><th></th></tr>
       ${os().map((x, i) => `<tr><td><input type="text" aria-label="Mark name" data-os="label" data-i="${i}" value="${esc(x.label)}" style="width:170px"></td>
         <td><input type="text" aria-label="Short label" data-os="short" data-i="${i}" maxlength="3" value="${esc(x.short)}" style="width:70px;text-align:center"></td>
         <td><select aria-label="Counts as" data-os="kind" data-i="${i}">${Object.entries(KINDS).map(([k, l]) => `<option value="${k}" ${x.kind === k ? "selected" : ""}>${l}</option>`).join("")}</select></td>
         <td><button class="btn ghost small" data-act="os-del" data-i="${i}" ${os().length <= 2 ? "disabled" : ""}>Remove</button></td></tr>`).join("")}</table></div>
       <p><button class="btn ghost small" data-act="os-add">Add mark</button></p>
-      <p class="note">The short label (up to 3 characters) appears in the circles on the class sheet. “Mark all” uses the first mark that counts as Secure.</p></div>`;
+      <p class="note">The short label (up to 3 characters) appears in the circles on the class sheet. “Mark all” uses the first mark that counts as Secure.</p></div>`}`;
     if (ui.step === 3) {
       h += `<div class="card"><h2>Subjects and strands</h2><p class="note">Split a subject into strands to track them separately, such as English into reading, writing, spelling, and speaking and listening. A subject with no split needs one strand with the same name.</p>`;
       C.subjects.forEach(sb => {
@@ -392,7 +395,8 @@
     if (a === "add-grade") C.grades.push({ id: uid("g"), name: "New grade" });
     if (a === "del-grade" && confirm("Remove this grade and its objectives?")) { C.grades = C.grades.filter(g => g.id !== id); all().forEach(([sb, st]) => st.cols.forEach(c => { if (c.objectives) delete c.objectives[id]; })); }
     if (a === "grade-ajman" || a === "grade-four") { Object.assign(C, JSON.parse(JSON.stringify(a === "grade-ajman" ? AJMAN : FOUR))); const b = C.reports.bank; if (a === "grade-ajman") C.reports.bank = BANK.map(r => r.slice()); else { while (b.length < C.scale.length) b.push(["", "", ""]); b.length = C.scale.length; } }
-    if (a === "os-three" || a === "os-four") { if (USED.anyStatus && !confirm("Teachers have already marked objectives. Marks you remove will no longer be shown. Continue?")) return; C.objScale = JSON.parse(JSON.stringify(a === "os-three" ? DEF_OS : FOUR_OS)); }
+    if (a === "os-three" || a === "os-four") { if (USED.anyStatus && !confirm("Teachers have already marked objectives. Marks you remove will no longer be shown. Continue?")) return; C.objScale = JSON.parse(JSON.stringify(a === "os-three" ? DEF_OS : FOUR_OS)); C.objMode = null; }
+    if (a === "os-levels") { if (USED.anyStatus && C.objMode !== "levels" && !confirm("Teachers have already marked objectives. Those marks will still show and will count as the nearest level. Continue?")) return; C.objMode = "levels"; }
     if (a === "obj-template" || a === "obj-export") { loadXLSX().then(() => { let rows = objRowsForExport(); if (a === "obj-template" || rows.length === 1) { const oc = objCols()[0], g = C.grades[0];
         rows = [rows[0], [g ? g.name : "Grade 2", oc ? oc.sb.name : "English", oc ? oc.st.name : "Reading", C.terms[0] || "Term 1", "Read Year 3 exception words accurately", "Practise exception words with flashcards in class and at home."]]; }
         const ws = XLSX.utils.aoa_to_sheet(rows); ws["!cols"] = [{ wch: 12 }, { wch: 14 }, { wch: 22 }, { wch: 10 }, { wch: 60 }, { wch: 60 }]; const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Objectives");

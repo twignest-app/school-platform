@@ -5,7 +5,7 @@
   const col = (id, name, type, extra) => Object.assign({ id, name, type, baseline: false }, extra);
   const BAND = ["Lime", "Brown", "Grey", "Dark blue", "Dark red"], WT = ["Working towards", "Expected", "Greater depth"];
   const config = {
-    year: "2026–2027", terms: ["Term 1", "Term 2", "Term 3"], steps: 2, groups: ["SEN", "G&T", "EAL", "Emirati"],
+    objMode: "levels", year: "2026–2027", terms: ["Term 1", "Term 2", "Term 3"], steps: 2, groups: ["SEN", "G&T", "EAL", "Emirati"],
     grades: [{ id: "g2", name: "Grade 2" }],
     scale: ["1", "2", "3", "4", "5", "6", "7"], gradeMin: [45, 50, 60, 75, 85, 90, 100], gradePos: ["below", "below", "below", "inline", "inline", "above", "above"],
     reports: { limit: 600, bank: [
@@ -62,7 +62,7 @@
     school_setups: [{ id: "r1", school_id: "s1", year: "2026–2027", status: "live", config }],
     classes: [{ id: "k1", school_id: "s1", year: "2026–2027", grade_id: "g2", name: "2A" }, { id: "k2", school_id: "s1", year: "2026–2027", grade_id: "g2", name: "2B" }],
     class_teachers: [{ id: "ct1", class_id: "k1", teacher_id: "u2", subject_id: null }, { id: "ct2", class_id: "k2", teacher_id: "u3", subject_id: null }, { id: "ct3", class_id: "k1", teacher_id: "u6", subject_id: "arb" }, { id: "ct4", class_id: "k2", teacher_id: "u6", subject_id: "arb" }],
-    students: [], results: [], objective_status: [], levels: [], taught: [], report_comments: [], next_steps: [] };
+    students: [], results: [], objective_status: [], student_levels: [], taught: [], report_comments: [], next_steps: [] };
 
   const names = [["Layla Hassan", ["EAL"]], ["Omar Khalid", []], ["Yusuf Rahman", ["SEN"]], ["Mariam Al Shamsi", ["Emirati", "G&T"]], ["Ahmed Al Mansoori", ["Emirati"]], ["Sara Ibrahim", []], ["Hamdan Al Ketbi", ["Emirati"]], ["Aisha Siddiqui", ["EAL"]],
     ["Zayed Al Nuaimi", ["Emirati", "SEN"]], ["Noor Fathi", ["G&T"]], ["Adam Youssef", []], ["Fatima Al Ali", ["Emirati"]], ["Rayan Malik", ["EAL", "SEN"]], ["Hessa Al Suwaidi", ["Emirati"]], ["Ali Hamdan", []], ["Lina Haddad", ["EAL"]],
@@ -86,10 +86,10 @@
     const t0 = c.objectives.g2[0], t1 = c.objectives.g2[1].slice(0, 2);
     ["k1", "k2"].forEach(k => t0.concat(t1).forEach(o => db.taught.push({ class_id: k, obj_id: o.id })));
     db.students.forEach(s => t0.concat(t1).forEach((o, i) => { if (i === 4 && rnd() < .3) return; const a = ability[s.id], pSec = clamp(.3 + a * .75);
-      db.objective_status.push({ student_id: s.id, obj_id: o.id, status: rnd() < pSec ? (rnd() < (a - .78) * 2.2 ? "e" : "s") : "n" }); }));
+      db.objective_status.push({ student_id: s.id, obj_id: o.id, status: "L" + Math.max(1, Math.min(7, Math.round(2.2 + a * 4.6 + (rnd() - .5) * 2.2))), _p: pSec }); }));
   })));
 
-  const KEYS = { results: ["student_id", "col_id", "term"], objective_status: ["student_id", "obj_id"], levels: ["student_id", "strand_id", "term"], taught: ["class_id", "obj_id"],
+  const KEYS = { results: ["student_id", "col_id", "term"], objective_status: ["student_id", "obj_id"], student_levels: ["student_id", "strand_id", "term"], taught: ["class_id", "obj_id"],
     report_comments: ["student_id", "strand_id", "term"], next_steps: ["student_id", "strand_id", "term"], school_setups: ["id"], class_teachers: ["id"], classes: ["id"], students: ["id"], profiles: ["id"] };
   let n = 100;
   function q(t) {

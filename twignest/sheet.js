@@ -8,12 +8,16 @@
   const POSS = { below: "Below", inline: "In line", above: "Above", none: "Not yet assessed" }, PROGS = { below: "Below expected", inline: "Expected", above: "Better than expected" };
   function applyLabels(cfg) { const L = (cfg && cfg.labels) || {}; ["below", "inline", "above"].forEach(k => { if (L.att && L.att[k]) POS[k] = L.att[k]; if (L.prog && L.prog[k]) PROG[k] = L.prog[k]; }); }
   const badge = (c, t) => `<span class="badge b-${c}">${t}</span>`;
-  let ctx, C, cls, studs = [], R = {}, ST = {}, TAUGHT = new Set(), LV = {}, CM = {}, NS = {}, ED = null, ui = { sub: null, strand: null, term: 0, group: "All", mode: "overview", pStrand: null, pid: null }, bound = false, pending = 0;
+  let ctx, C, cls, studs = [], R = {}, ST = {}, TAUGHT = new Set(), LV = {}, CM = {}, NS = {}, ED = null, ui = { sub: null, strand: null, term: 0, group: "All", mode: "strand", view: "grid", more: false, oi: 0, pStrand: null, pid: null }, bound = false, pending = 0;
 
   const DEF_OS = [{ code: "s", label: "Secure", short: "✓", kind: "secure" }, { code: "n", label: "Not yet secure", short: "!", kind: "notyet" }, { code: "e", label: "Exceeding", short: "+", kind: "exceed" }];
-  const OS = () => (C && C.objScale && C.objScale.length ? C.objScale : DEF_OS);
+  const gradeLevels = () => { const sc = (C && C.scale) || [], gm = (C && C.gradeMin) || [], gp = (C && C.gradePos) || [];
+    return sc.map((n, i) => ({ code: "L" + (i + 1), label: /^\d+$/.test(String(n)) ? "Level " + n : String(n), short: String(n).slice(0, 3), kind: gp[i] === "below" ? "notyet" : gp[i] === "above" ? "exceed" : "secure", pct: gm[i + 1] == null ? gm[i] : (gm[i] + gm[i + 1]) / 2 })); };
+  const useLv = () => !!(C && C.objMode === "levels" && C.scale && C.scale.length);
+  const OS = () => (useLv() ? gradeLevels() : C && C.objScale && C.objScale.length ? C.objScale : DEF_OS);
   const osOf = v => OS().find(x => x.code === v) || DEF_OS.find(x => x.code === v) || { code: v, label: v, short: "?", kind: "secure" };
   const credit = v => ({ notyet: 0, partial: .5, secure: 1, exceed: 1 })[osOf(v).kind] ?? 1;
+  const markPct = v => { const o = osOf(v); if (o.pct != null) return o.pct; const gl = gradeLevels(), g = o.kind === "notyet" ? gl.filter(x => x.kind === "notyet").pop() : gl.find(x => x.kind === o.kind); return g ? g.pct : credit(v) * 100; };
   const isEx = v => osOf(v).kind === "exceed", isGap = v => !!v && credit(v) < 1;
   const dotCls = v => v ? ({ notyet: "n", partial: "p", secure: "s", exceed: "e" })[osOf(v).kind] : "";
   const dotTxt = v => v ? esc(osOf(v).short) : "";
@@ -33,6 +37,8 @@
     if (c.type === "comment") return null;
     if (c.type === "objectives") {
       if (k === "b") return null;
+      if (useLv()) { let a = 0, sum = 0; objs(c, +k).filter(o => TAUGHT.has(o.id)).forEach(o => { const v = stat(sid, o.id); if (v) { a++; sum += markPct(v); } });
+        if (!a) return null; const p = sum / a; return { band: ({ below: -1, inline: 0, above: 1 })[C.gradePos[levelFromPct(p)]] ?? 0, norm: clamp(p / 100) }; }
       let a = 0, sec = 0, ex = 0;
       objs(c, +k).filter(o => TAUGHT.has(o.id)).forEach(o => { const v = stat(sid, o.id); if (v) { a++; sec += credit(v); if (isEx(v)) ex++; } });
       if (!a) return null; const p = sec / a * 100, e = ex / a * 100;
@@ -126,12 +132,12 @@
   }
   function renderOverview(head) {
     const t = ui.term, k = String(t), all = allStrands();
-    let h = `<thead><tr><th class="namecol">Student</th>${C.subjects.map(sb => `<th class="colh"><b>${esc(sb.name)}</b>level, against standards</th>`).join("")}<th class="colh"><b>Overall</b>all subjects</th><th class="colh"><b>Progress</b>since baseline</th><th class="colh"><b>On track</b>for end-of-year target</th><th class="colh"><b>Gaps</b>to fill</th></tr></thead><tbody>`;
+    let h = `<thead><tr><th class="namecol">Student</th>${C.subjects.map(sb => `<th class="colh"><b>${esc(sb.name)}</b>level</th>`).join("")}<th class="colh"><b>Overall</b>all subjects</th><th class="colh"><b>Progress</b>since baseline</th><th class="colh"><b>On track</b>for end-of-year target</th><th class="colh"><b>Gaps</b>to fill</th></tr></thead><tbody>`;
     visible().forEach(s => {
       const ov = avgEval(s.id, all, k), pr = avgProgress(s.id, all, t), tr = trackCount(s.id, all, t), gp = plan(s.id, t).gaps.filter(g => g.pri < 2).length;
       h += `<tr><td class="namecol"><button class="name" data-prof="${s.id}">${esc(s.full_name)}</button>${s.student_number ? `<span class="sid">${esc(s.student_number)}</span>` : ""}<div class="tags">${(s.groups || []).map(g => `<span class="tag">${esc(g)}</span>`).join("")}</div></td>`;
-      C.subjects.forEach(sb => { const e = avgEval(s.id, sb.strands, k); h += `<td>${e ? `<b>${esc(lab(e.lv))}</b> ${badge(e.band, POSS[e.band])}` : badge("none", "–")}</td>`; });
-      h += `<td>${ov ? `<b>${esc(lab(ov.lv))}</b> ${badge(ov.band, POSS[ov.band])}` : "–"}</td><td>${pr ? badge(pr.band, signed(pr.steps) + " · " + PROGS[pr.band]) : "–"}</td>
+      C.subjects.forEach(sb => { const e = avgEval(s.id, sb.strands, k); h += `<td>${e ? badge(e.band, esc(lab(e.lv))) : badge("none", "–")}</td>`; });
+      h += `<td>${ov ? badge(ov.band, esc(lab(ov.lv))) : "–"}</td><td>${pr ? badge(pr.band, signed(pr.steps) + " · " + PROGS[pr.band]) : "–"}</td>
         <td>${tr.n ? badge(tr.ok === tr.n ? "inline" : tr.ok >= tr.n / 2 ? "none" : "below", `${tr.ok} of ${tr.n}`) : "–"}</td><td>${gp ? badge(gp > 4 ? "below" : "none", gp) : badge("inline", "0")}</td></tr>`;
     });
     const vs = visible(); let okN = 0, known = 0, progN = 0, pk = 0, need = 0;
@@ -428,50 +434,119 @@
   }
   function lvOpts(s, st, k) { const t = tLv(s.id, st.id, k), e = strandEval(s.id, st, k);
     return `<option value="">Auto (${e ? esc(lab(e.sug)) + " · " + e.pct + "%" : "–"})</option>` + C.scale.map((x, i) => `<option value="${i}" ${t === i ? "selected" : ""}>${esc(x)}</option>`).join(""); }
-  function summary(s, st) { const k = String(ui.term), e = strandEval(s.id, st, k), p = progress(s.id, st, ui.term);
-    return { pos: badge(e ? e.band : "none", POSS[e ? e.band : "none"]), prog: p ? badge(p.band, (p.steps > 0 ? "+" : "") + p.steps + " · " + PROGS[p.band]) : badge("none", "–") }; }
+  function summary(s, st) { const k = String(ui.term), lv = level(s.id, st, k), p = progress(s.id, st, ui.term), bd = lv == null ? "none" : (C.gradePos[lv] || "inline");
+    return { pos: badge(bd, lv == null ? "–" : esc(lab(lv))), prog: p ? badge(p.band, (p.steps > 0 ? "+" : "") + p.steps + " · " + PROGS[p.band]) : badge("none", "–") }; }
+
+  const lvRange = band => { const r = C.scale.filter((x, i) => C.gradePos[i] === band); return r.length > 1 ? `${r[0]}–${r[r.length - 1]}` : (r[0] || ""); };
+  const allLbl = () => useLv() ? esc(osOf(defCode()).label) : esc(osOf(defCode()).label.toLowerCase());
+  const usePick = () => OS().length > 3;
+  const termObjs = (tc, t) => { const o = []; tc.forEach(c => { if (c.type === "objectives") objs(c, t).forEach(x => o.push(x)); }); return o; };
+  const PREF = () => "tn-sheet-" + (cls && cls.id);
+  function savePrefs() { try { localStorage.setItem(PREF(), JSON.stringify({ sub: ui.sub, strand: ui.strand, term: ui.term, mode: ui.mode, view: ui.view, more: ui.more })); } catch (e) { } }
+  function loadPrefs() { try { const p = JSON.parse(localStorage.getItem(PREF()) || "null"); if (p) Object.assign(ui, p); } catch (e) { } }
+  function addCss() {
+    if (document.getElementById("tnSheetCss")) return; const st = document.createElement("style"); st.id = "tnSheetCss";
+    st.textContent = `#tnPick{position:fixed;z-index:1000;display:flex;gap:6px;align-items:center;flex-wrap:wrap;max-width:calc(100vw - 16px);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.dot.pick{width:40px;height:40px;font-size:15px;color:var(--ink)}.dot.pick.s,.dot.pick.e{color:#fff}.dot.pick.n{color:var(--amber)}
+.marks{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.chiprow{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.onelist{width:100%;border-collapse:collapse}.onelist td{padding:10px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}.seg button{border:0;background:var(--card);padding:7px 14px;font-weight:700;cursor:pointer;color:var(--ink)}.seg button[aria-pressed="true"]{background:var(--plum);color:#fff}
+.onehead h2{font-size:19px;line-height:1.4;margin:12px 0 10px}`;
+    document.head.appendChild(st);
+  }
+  function closePick() { const d = document.getElementById("tnPick"); if (d) d.remove(); }
+  function openPick(btn) {
+    closePick(); const [sid, oid] = btn.dataset.cell.split("|"), v = stat(sid, oid), d = document.createElement("div");
+    d.id = "tnPick"; d.setAttribute("role", "dialog"); d.setAttribute("aria-label", "Choose a level");
+    d.innerHTML = OS().map(x => `<button class="dot pick ${v === x.code ? dotCls(x.code) : ""}" data-pk="${sid}|${oid}|${x.code}" aria-pressed="${v === x.code}" title="${esc(x.label)}" aria-label="${esc(x.label)}">${esc(x.short)}</button>`).join("") + `<button class="mini" data-pk="${sid}|${oid}|">Clear</button>`;
+    document.body.appendChild(d); const r = btn.getBoundingClientRect(), w = d.offsetWidth, hh = d.offsetHeight;
+    d.style.left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 8)) + "px";
+    d.style.top = (r.bottom + hh + 8 > innerHeight ? Math.max(8, r.top - hh - 6) : r.bottom + 6) + "px";
+    (d.querySelector('[aria-pressed="true"]') || d.querySelector("button")).focus({ preventScroll: true });
+  }
+  function markTaught(oid) { if (TAUGHT.has(oid)) return; TAUGHT.add(oid); document.querySelectorAll(`[data-taught="${oid}"]`).forEach(x => x.checked = true); run(ctx.sb.from("taught").upsert({ class_id: cls.id, obj_id: oid })); }
+  function setMark(sid, oid, nx) {
+    (ST[sid] = ST[sid] || {}); if (nx) ST[sid][oid] = nx; else delete ST[sid][oid];
+    if (nx) markTaught(oid);
+    const lbl = nx ? osOf(nx).label : "Not assessed";
+    document.querySelectorAll(`[data-cell="${sid}|${oid}"]`).forEach(b => { b.className = "dot " + dotCls(nx); b.innerHTML = dotTxt(nx); b.title = lbl; b.setAttribute("aria-label", b.getAttribute("aria-label").replace(/: [^:]*$/, ": " + lbl.toLowerCase())); });
+    document.querySelectorAll(`[data-set^="${sid}|${oid}|"]`).forEach(b => { const c = b.dataset.set.split("|")[2]; if (!c) { b.disabled = !nx; return; } const on = c === nx; b.className = "dot pick " + (on ? dotCls(c) : ""); b.setAttribute("aria-pressed", on); });
+    refreshRow(sid);
+    run(nx ? ctx.sb.from("objective_status").upsert({ student_id: sid, obj_id: oid, status: nx }) : ctx.sb.from("objective_status").delete().eq("student_id", sid).eq("obj_id", oid));
+  }
+  function markAll(oid) {
+    markTaught(oid); const rows = visible().filter(s => !stat(s.id, oid)).map(s => ({ student_id: s.id, obj_id: oid, status: defCode() }));
+    rows.forEach(r => (ST[r.student_id] = ST[r.student_id] || {})[oid] = r.status); render();
+    if (rows.length) run(ctx.sb.from("objective_status").upsert(rows));
+  }
 
   function render() {
+    closePick();
     const subs = C.subjects; if (!subs.find(s => s.id === ui.sub)) ui.sub = subs[0]?.id;
     const sb = subs.find(s => s.id === ui.sub); if (!sb) { ctx.el.innerHTML = `<div class="card"><p>No subjects are set up yet.</p></div>`; return; }
     if (!sb.strands.find(s => s.id === ui.strand)) ui.strand = sb.strands[0]?.id;
+    if (!(ui.term >= 0 && ui.term < C.terms.length)) ui.term = 0;
+    if (!["strand", "overview", "reports"].includes(ui.mode)) ui.mode = "strand";
+    if (role() === "checker") ui.mode = "reports";
     const [, st] = findStrand(ui.strand), t = ui.term, k = String(t);
     const bc = st.cols.filter(c => c.baseline), tc = st.cols.filter(c => !c.baseline);
     let n = 0; tc.forEach(c => { n += c.type === "objectives" ? objs(c, t).length : 1; });
-    if (role() === "checker") ui.mode = "reports";
-    const tabs = role() === "checker" ? [["reports", "Report comments"]] : [["overview", "Overview"], ["strand", "Enter data"], ["reports", "Report comments"]];
+    savePrefs();
+    const tabs = role() === "checker" ? [["reports", "Report comments"]] : [["strand", "Assess"], ["overview", "Overview"], ["reports", "Report comments"]];
     const sel = (id, label, opts, cur) => `<label class="fl" for="${id}">${label}</label><select id="${id}" class="fsel">${opts.map(([v, l]) => `<option value="${esc(v)}" ${String(v) === String(cur) ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
-    let h = `<div class="crumb"><button class="crumbbtn" data-sh="back">${esc(ctx.crumb || "Class sheets")}</button> <span aria-hidden="true">›</span> ${esc(cls.name)}</div>
+    let h = `<div class="crumb"><button class="crumbbtn" data-sh="back">${esc(ctx.crumb || "My classes")}</button> <span aria-hidden="true">›</span> ${esc(cls.name)}</div>
       <div class="phead"><div><h1 class="ptitle">${ctx.siblings && ctx.siblings.length > 1 ? `<select id="shCls" aria-label="Switch class" class="titlesel">${ctx.siblings.map(x => `<option value="${x.id}" ${x.id === cls.id ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select>` : esc(cls.name)}</h1>
         <p class="psub">${esc(ctx.gradeName || "")}${ctx.gradeName ? ", " : ""}${studs.length} student${studs.length === 1 ? "" : "s"}${ctx.subjects ? ` · <span class="tag">${esc(C.subjects.map(x => x.name).join(", "))}</span>` : ""}</p></div>
         <div class="row">${role() === "checker" ? "" : `<button class="btn ghost small" data-sh="upload">Upload results</button>`}<span class="note" id="shSave">All changes saved</span></div></div>
       <div class="tabs2" role="tablist">${tabs.map(([m, l]) => `<button role="tab" data-mode="${m}" aria-selected="${ui.mode === m}">${l}</button>`).join("")}</div>
-      <div class="fbar">${sel("shTerm", "Term", C.terms.map((x, i) => [i, x]), t)}${sel("shGrp", "Students", [["All", "All students"], ...(C.groups || []).map(g => [g, g])], ui.group)}
-        ${ui.mode === "strand" ? sel("shSub", "Subject", subs.map(x => [x.id, x.name]), ui.sub) + sel("shStr", "Strand", sb.strands.map(x => [x.id, x.name]), ui.strand) : ""}</div>
-      <div class="legend"><span><i class="dot" style="width:18px;height:18px"></i>Not assessed</span>${OS().map(x => `<span><i class="dot ${dotCls(x.code)}" style="width:18px;height:18px;font-size:10px">${esc(x.short)}</i>${esc(x.label)}</span>`).join("")}<span>Tap a circle to change it</span><span>Scores are shaded ${badge("below", "below")} ${badge("inline", "in line")} ${badge("above", "above")}</span></div>`;
+      <div class="fbar">${sel("shTerm", "Term", C.terms.map((x, i) => [i, x]), t)}${sel("shGrp", "Students", [["All", "All students"], ...(C.groups || []).map(g => [g, g])], ui.group)}</div>`;
+    if (ui.mode === "strand") {
+      h += `<div class="chiprow" role="group" aria-label="Subject">${subs.map(x => `<button class="chip" data-psub="${x.id}" aria-pressed="${x.id === ui.sub}">${esc(x.name)}</button>`).join("")}</div>`;
+      if (sb.strands.length > 1) h += `<div class="chiprow" role="group" aria-label="Strand">${sb.strands.map(x => `<button class="chip" data-pstr="${x.id}" aria-pressed="${x.id === ui.strand}" style="font-size:13px;padding:5px 11px">${esc(x.name)}</button>`).join("")}</div>`;
+      h += `<div class="row" style="margin:6px 0 10px;gap:10px;flex-wrap:wrap"><div class="seg" role="group" aria-label="How to assess"><button data-view="grid" aria-pressed="${ui.view !== "one"}">Whole class grid</button><button data-view="one" aria-pressed="${ui.view === "one"}">One objective at a time</button></div>
+        ${ui.view !== "one" ? `<button class="mini" data-more="1" aria-pressed="${!!ui.more}">${ui.more ? "Hide" : "Show"} baseline and teacher levels</button>` : ""}</div>`;
+    }
+    h += `<div class="legend"><span><i class="dot" style="width:18px;height:18px"></i>Not assessed</span>${OS().map(x => `<span><i class="dot ${dotCls(x.code)}" style="width:18px;height:18px;font-size:10px">${esc(x.short)}</i>${esc(x.label)}</span>`).join("")}<span>${usePick() ? "Tap a circle to choose a level" : "Tap a circle to change it"}</span><span>Levels ${["below", "inline", "above"].filter(lvRange).map(b => badge(b, esc(lvRange(b)))).join(" ")}</span></div>`;
     if (!studs.length) { ctx.el.innerHTML = h + `<div class="card"><p class="note">This class has no students yet. The school lead adds them in Classes and students.</p></div>`; return; }
     if (ui.mode === "overview") return renderOverview(h.replace(/<div class="legend">[\s\S]*$/, ""));
     if (ui.mode === "reports") return renderReports(h.replace(/<div class="legend">[\s\S]*$/, ""));
-    let th = `<thead><tr><th class="namecol"></th><th class="grp" colspan="${bc.length + 1}">Baseline</th><th class="grp" colspan="${n || 1}">${esc(C.terms[t])}</th><th class="grp" colspan="3">Summary</th></tr><tr><th class="namecol">Student</th>`;
-    bc.forEach(c => th += `<th class="colh"><b>${esc(c.name)}</b>${hint(c)}</th>`);
-    th += `<th class="colh"><b>Baseline level</b>scale</th>`;
+    if (ui.view === "one") return renderOne(h, tc, t);
+    const more = !!ui.more;
+    let th = `<thead><tr><th class="namecol"></th>${more ? `<th class="grp" colspan="${bc.length + 1}">Baseline</th>` : ""}<th class="grp" colspan="${n || 1}">${esc(C.terms[t])}</th><th class="grp" colspan="${more ? 3 : 1}">${more ? "Summary" : "Level"}</th></tr><tr><th class="namecol">Student</th>`;
+    if (more) { bc.forEach(c => th += `<th class="colh"><b>${esc(c.name)}</b>${hint(c)}</th>`); th += `<th class="colh"><b>Baseline level</b>scale</th>`; }
     tc.forEach(c => { if (c.type === "objectives") objs(c, t).forEach(o => { const tg = TAUGHT.has(o.id);
-      th += `<th class="obj"><span class="t">${esc(o.text)}</span><label><input type="checkbox" data-taught="${o.id}" ${tg ? "checked" : ""}> Taught</label><button class="mini" data-all="${o.id}" ${tg ? "" : "disabled"}>Mark all ${esc(osOf(defCode()).label.toLowerCase())}</button></th>`; });
+      th += `<th class="obj"><span class="t">${esc(o.text)}</span><label><input type="checkbox" data-taught="${o.id}" ${tg ? "checked" : ""}> Taught</label><button class="mini" data-all="${o.id}">Mark all ${allLbl()}</button></th>`; });
       else th += `<th class="colh"><b>${esc(c.name)}</b>${hint(c)}</th>`; });
     if (!n) th += `<th class="note">No columns for this term</th>`;
-    th += `<th>Position</th><th class="colh"><b>Teacher level</b>Auto shows the suggestion</th><th>Progress from baseline</th></tr></thead><tbody>`;
+    th += `<th>Level</th>${more ? `<th class="colh"><b>Teacher level</b>Auto shows the suggestion</th><th>Progress from baseline</th>` : ""}</tr></thead><tbody>`;
     visible().forEach(s => { const sm = summary(s, st);
       th += `<tr><td class="namecol"><button class="name" data-prof="${s.id}">${esc(s.full_name)}</button>${s.student_number ? `<span class="sid">${esc(s.student_number)}</span>` : ""}<div class="tags">${(s.groups || []).map(g => `<span class="tag">${esc(g)}</span>`).join("")}</div></td>`;
-      bc.forEach(c => th += `<td>${cell(s, c, "b")}</td>`);
-      th += `<td><select class="lv" data-lv="${s.id}|${st.id}|b" aria-label="Baseline level for ${esc(s.full_name)}">${lvOpts(s, st, "b")}</select></td>`;
-      tc.forEach(c => { if (c.type === "objectives") objs(c, t).forEach(o => { const tg = TAUGHT.has(o.id), v = stat(s.id, o.id);
-        th += `<td><button class="dot ${dotCls(v)}" data-cell="${s.id}|${o.id}" ${tg ? "" : "disabled"} title="${esc(v ? osOf(v).label : "Not assessed")}" aria-label="${esc(s.full_name)}, ${esc(o.text)}: ${tg ? esc(v ? osOf(v).label : "not assessed") : "not taught yet"}">${dotTxt(v)}</button></td>`; });
+      if (more) { bc.forEach(c => th += `<td>${cell(s, c, "b")}</td>`);
+        th += `<td><select class="lv" data-lv="${s.id}|${st.id}|b" aria-label="Baseline level for ${esc(s.full_name)}">${lvOpts(s, st, "b")}</select></td>`; }
+      tc.forEach(c => { if (c.type === "objectives") objs(c, t).forEach(o => { const v = stat(s.id, o.id);
+        th += `<td><button class="dot ${dotCls(v)}" data-cell="${s.id}|${o.id}" title="${esc(v ? osOf(v).label : "Not assessed")}" aria-label="${esc(s.full_name)}, ${esc(o.text)}: ${esc(v ? osOf(v).label.toLowerCase() : "not assessed")}">${dotTxt(v)}</button></td>`; });
         else th += `<td>${cell(s, c, k)}</td>`; });
       if (!n) th += `<td></td>`;
-      th += `<td id="pos-${s.id}">${sm.pos}</td><td><select class="lv" data-lv="${s.id}|${st.id}|${k}" aria-label="Teacher level for ${esc(s.full_name)}">${lvOpts(s, st, k)}</select></td><td id="prog-${s.id}">${sm.prog}</td></tr>`; });
+      th += `<td id="pos-${s.id}">${sm.pos}</td>${more ? `<td><select class="lv" data-lv="${s.id}|${st.id}|${k}" aria-label="Teacher level for ${esc(s.full_name)}">${lvOpts(s, st, k)}</select></td><td id="prog-${s.id}">${sm.prog}</td>` : ""}</tr>`; });
     const noObj = tc.some(c => c.type === "objectives" && !objs(c, t).length);
     ctx.el.innerHTML = h + `<div class="sheetwrap"><table class="sheet">${th}</tbody></table></div>
-      <p class="note">Type scores straight into the sheet. Everything saves as you go.${noObj ? " Some objective columns have no objectives for this grade and term yet. The school lead adds them in School setup, step 5." : ""}</p>`;
+      <p class="note">Tap a circle to record. The objective is ticked as taught for you, and everything saves as you go.${noObj ? " Some objective columns have no objectives for this grade and term yet. The school lead adds them in School setup, step 6." : ""}</p>`;
+  }
+  function renderOne(h, tc, t) {
+    const list = termObjs(tc, t); if (!(ui.oi >= 0 && ui.oi < list.length)) ui.oi = 0;
+    if (!list.length) { ctx.el.innerHTML = h + `<div class="card"><p class="note">There are no objectives for this strand and term yet. The school lead adds them in School setup, step 6. Scores and tests are entered in the whole class grid.</p></div>`; return; }
+    const o = list[ui.oi], tg = TAUGHT.has(o.id);
+    let b = `<div class="card onehead"><div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <button class="btn ghost small" data-onav="-1" ${ui.oi ? "" : "disabled"}>‹ Previous</button>
+        <select id="oneJump" class="fsel" aria-label="Go to objective">${list.map((x, i) => `<option value="${i}" ${i === ui.oi ? "selected" : ""}>Objective ${i + 1} of ${list.length}</option>`).join("")}</select>
+        <button class="btn ghost small" data-onav="1" ${ui.oi < list.length - 1 ? "" : "disabled"}>Next ›</button></div>
+      <h2>${esc(o.text)}</h2>
+      <div class="row" style="gap:14px;flex-wrap:wrap;align-items:center"><button class="btn small" data-all="${o.id}">Mark everyone ${allLbl()}</button><label><input type="checkbox" data-taught="${o.id}" ${tg ? "checked" : ""}> Taught</label><span class="note">Then change the students who are different.</span></div></div>
+      <div class="card"><table class="onelist">`;
+    visible().forEach(s => { const v = stat(s.id, o.id);
+      b += `<tr><td class="namecol"><button class="name" data-prof="${s.id}">${esc(s.full_name)}</button><div class="tags">${(s.groups || []).map(g => `<span class="tag">${esc(g)}</span>`).join("")}</div></td>
+        <td><div class="marks" role="group" aria-label="${esc(s.full_name)}">${OS().map(x => `<button class="dot pick ${v === x.code ? dotCls(x.code) : ""}" data-set="${s.id}|${o.id}|${x.code}" aria-pressed="${v === x.code}" title="${esc(x.label)}" aria-label="${esc(x.label)}">${esc(x.short)}</button>`).join("")}<button class="mini" data-set="${s.id}|${o.id}|" ${v ? "" : "disabled"}>Clear</button></div></td></tr>`; });
+    ctx.el.innerHTML = h + b + `</table></div><p class="note">Scores and tests are entered in the whole class grid.</p>`;
   }
   function refreshRow(sid) {
     const [, st] = findStrand(ui.strand), s = studs.find(x => x.id === sid), sm = summary(s, st);
@@ -480,7 +555,15 @@
   }
 
   async function onClick(e) {
-    const t = e.target.closest("button"); if (!t || !ctx || !(ctx.el.contains(t) || t.closest("#tnProfile") || t.closest("#tnEditor"))) return;
+    if (!e.target.closest("#tnPick") && !e.target.closest("[data-cell]")) closePick();
+    const t = e.target.closest("button"); if (!t || !ctx || !(ctx.el.contains(t) || t.closest("#tnProfile") || t.closest("#tnEditor") || t.closest("#tnPick"))) return;
+    if (t.dataset.pk !== undefined) { const [sid, oid, code] = t.dataset.pk.split("|"); closePick(); setMark(sid, oid, code); const c = ctx.el.querySelector(`[data-cell="${sid}|${oid}"]`); if (c) c.focus({ preventScroll: true }); return; }
+    if (t.dataset.set !== undefined) { const [sid, oid, code] = t.dataset.set.split("|"); return setMark(sid, oid, code); }
+    if (t.dataset.psub) { ui.sub = t.dataset.psub; ui.strand = null; ui.oi = 0; return render(); }
+    if (t.dataset.pstr) { ui.strand = t.dataset.pstr; ui.oi = 0; return render(); }
+    if (t.dataset.view) { ui.view = t.dataset.view; return render(); }
+    if (t.dataset.more) { ui.more = !ui.more; return render(); }
+    if (t.dataset.onav) { ui.oi = (ui.oi || 0) + +t.dataset.onav; render(); window.scrollTo(0, 0); return; }
     if (t.dataset.pclose) return t.closest("dialog").close();
     if (t.dataset.print) return printReports([studs.find(x => x.id === t.dataset.print)]);
     if (t.dataset.rp) { t.disabled = true; try { await reportAction(t.dataset.rp, t); } finally { t.disabled = false; } return; }
@@ -503,18 +586,10 @@
     if (t.dataset.term) { ui.term = +t.dataset.term; return render(); }
     if (t.dataset.grp) { ui.group = t.dataset.grp; return render(); }
     if (t.dataset.cell) {
-      const [sid, oid] = t.dataset.cell.split("|"), nx = cycle(stat(sid, oid));
-      (ST[sid] = ST[sid] || {}); if (nx) ST[sid][oid] = nx; else delete ST[sid][oid];
-      t.className = "dot " + dotCls(nx); t.innerHTML = dotTxt(nx); t.title = nx ? osOf(nx).label : "Not assessed"; t.setAttribute("aria-label", t.getAttribute("aria-label").replace(/: [^:]*$/, ": " + (nx ? osOf(nx).label : "not assessed")));
-      refreshRow(sid);
-      run(nx ? ctx.sb.from("objective_status").upsert({ student_id: sid, obj_id: oid, status: nx }) : ctx.sb.from("objective_status").delete().eq("student_id", sid).eq("obj_id", oid));
-      return;
+      if (usePick()) { if (document.getElementById("tnPick") && document.getElementById("tnPick").dataset.for === t.dataset.cell) return closePick(); openPick(t); document.getElementById("tnPick").dataset.for = t.dataset.cell; return; }
+      const [sid, oid] = t.dataset.cell.split("|"); return setMark(sid, oid, cycle(stat(sid, oid)));
     }
-    if (t.dataset.all) {
-      const oid = t.dataset.all, rows = visible().filter(s => !stat(s.id, oid)).map(s => ({ student_id: s.id, obj_id: oid, status: defCode() }));
-      rows.forEach(r => (ST[r.student_id] = ST[r.student_id] || {})[oid] = r.status); render();
-      if (rows.length) run(ctx.sb.from("objective_status").upsert(rows));
-    }
+    if (t.dataset.all) return markAll(t.dataset.all);
   }
   async function onChange(e) {
     const t = e.target; if (!ctx || !(ctx.el.contains(t) || (t.closest && t.closest("#tnProfile")))) return;
@@ -533,6 +608,7 @@
     if (t.id === "shTerm") { ui.term = +t.value; return render(); }
     if (t.id === "shGrp") { ui.group = t.value; return render(); }
     if (t.id === "shSub") { ui.sub = t.value; ui.strand = null; return render(); }
+    if (t.id === "oneJump") { ui.oi = +t.value; return render(); }
     if (t.id === "shStr") { ui.strand = t.value; return render(); }
     if (t.dataset.taught) {
       const oid = t.dataset.taught; if (t.checked) TAUGHT.add(oid); else TAUGHT.delete(oid); render();
@@ -557,8 +633,9 @@
     const b = document.querySelector(`[data-rc="send"][data-k="${t.dataset.rtx}"]`); if (b) b.disabled = !n || n > lim; });
   window.TNSheet = {
     async open(context) {
-      ctx = context; cls = ctx.cls; pending = 0; if (ctx.mode) ui.mode = ctx.mode; if (ctx.role === "checker") ui.mode = "reports";
-      if (!bound) { document.addEventListener("click", onClick); document.addEventListener("change", onChange); bound = true; }
+      ctx = context; cls = ctx.cls; pending = 0; addCss(); closePick(); Object.assign(ui, { mode: "strand", view: "grid", more: false, oi: 0 }); loadPrefs();
+      if (ctx.mode) ui.mode = ctx.mode; if (ctx.role === "checker") ui.mode = "reports";
+      if (!bound) { document.addEventListener("click", onClick); document.addEventListener("change", onChange); document.addEventListener("keydown", e => { if (e.key === "Escape") closePick(); }); window.addEventListener("scroll", closePick, { passive: true }); bound = true; }
       ctx.el.innerHTML = `<div class="card"><p class="note">Loading ${esc(cls.name)}…</p></div>`;
       try { await load(); render(); } catch (err) { ctx.el.innerHTML = `<div class="card"><div class="msg err">${esc(err.message || err)}</div><p><button class="btn ghost" data-sh="back">← Back</button></p></div>`; }
     },

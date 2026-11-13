@@ -419,7 +419,7 @@ async function render(){
   if (school.status === "suspended") return waitView("Access paused", `${school.name}’s access to TwigNest is paused. Please contact TwigNest.`);
   if (!p.active) return waitView("Waiting for your school lead", `You’ve joined ${school.name}. Your school lead needs to approve your account before you can start.`);
   const items = p.role === "school_lead"
-    ? [["home", "Home"], ["sheets", "Class sheets"], ["school", "School view"], ["reports", "Report progress"], ["label", "School settings"], ["setup", "Setup"], ["classes", "Classes and students"], ["staff", "Staff"]]
+    ? [["home", "Home"], ["sheets", "My classes"], ["school", "School view"], ["reports", "Report progress"], ["label", "School settings"], ["setup", "Setup"], ["classes", "Classes and students"], ["staff", "Staff"]]
     : p.role === "checker" ? [["home", "Home"], ["sheets", "Reports to check"]] : [["home", "Home"], ["sheets", "My classes"]];
   if (!items.some(i => i[0] === page)) page = "home";
   drawSide(p, items);
@@ -473,7 +473,7 @@ async function homeView(p, school){
 
 async function classList(school, teacherId, el, role, opts = { head: true }){
   const { data: setups } = await sb.from("school_setups").select("year,config").eq("school_id", school.id).order("updated_at", { ascending: false }).limit(1);
-  if (!setups || !setups.length) { el.innerHTML = `<div class="card"><h2>Class sheets</h2><p class="note">Finish the school setup first.</p></div>`; return; }
+  if (!setups || !setups.length) { el.innerHTML = `<div class="card"><h2>My classes</h2><p class="note">Finish the school setup first.</p></div>`; return; }
   const year = setups[0].year, grades = setups[0].config.grades || [];
   const subjects = setups[0].config.subjects || [];
   let links = null, q = sb.from("classes").select("*").eq("school_id", school.id).eq("year", year).order("name");
@@ -481,23 +481,23 @@ async function classList(school, teacherId, el, role, opts = { head: true }){
     if (!links.length) { el.innerHTML = `<div class="card"><h2>My classes</h2><p class="note">You haven’t been added to a class yet. Your school lead adds you to your classes.</p></div>`; return; }
     q = q.in("id", [...new Set(links.map(x => x.class_id))]); }
   const { data: cls, error } = await q; if (error) { el.innerHTML = `<div class="card"><div class="msg err">${esc(error.message)}</div></div>`; return; }
-  if (!cls.length) { el.innerHTML = `<div class="card"><h2>Class sheets</h2><p class="note">No classes yet. Add them in Classes and students.</p></div>`; return; }
+  if (!cls.length) { el.innerHTML = `<div class="card"><h2>My classes</h2><p class="note">No classes yet. Add them in Classes and students.</p></div>`; return; }
   const { data: st } = await sb.from("students").select("id,class_id").in("class_id", cls.map(c => c.id)).eq("archived", false);
   const gname = id => (grades.find(g => g.id === id) || {}).name || "Other", count = id => (st || []).filter(s => s.class_id === id).length;
   const btn = (c, key) => `<button class="colcard classbtn" data-open="${key}" style="margin:0;text-align:left;cursor:pointer;font:inherit;color:inherit"><b style="font-family:Poppins,sans-serif;font-size:18px;color:var(--plum)">${esc(c.name)}</b><div class="note">${esc(gname(c.grade_id))}, ${count(c.id)} student${count(c.id) === 1 ? "" : "s"}</div></button>`;
   const groups = [];
-  if (!teacherId) groups.push({ title: role === "checker" ? "Report comments to check" : "Class sheets", note: role === "checker" ? "Choose a class to check its report comments." : "Choose a class to open its sheet.", list: cls, subjects: null });
+  if (!teacherId) groups.push({ title: role === "checker" ? "Report comments to check" : "My classes", note: role === "checker" ? "Choose a class to check its report comments." : "Choose a class to open its sheet.", list: cls, subjects: null });
   else {
     const home = cls.filter(c => links.some(l => l.class_id === c.id && !l.subject_id));
     if (home.length) groups.push({ title: "My classes", note: "Choose a class to open its sheet.", list: home, subjects: null });
     [...new Set(links.filter(l => l.subject_id).map(l => l.subject_id))].forEach(sid => { const sb2 = subjects.find(x => x.id === sid); if (!sb2) return;
       groups.push({ title: `My ${sb2.name} classes`, note: `You see only ${sb2.name} in these classes. Use the class name at the top of the sheet to switch quickly between classes.`, list: cls.filter(c => links.some(l => l.class_id === c.id && l.subject_id === sid)), subjects: [sid] }); });
   }
-  const top = opts.head ? pageHead(teacherId ? "My classes" : role === "checker" ? "Reports to check" : "Class sheets", esc(year)) : "";
+  const top = opts.head ? pageHead(teacherId ? "My classes" : role === "checker" ? "Reports to check" : "My classes", esc(year)) : "";
   el.innerHTML = top + groups.map((g, gi) => `<div class="card"><h2>${esc(g.title)}</h2><p class="note">${g.note}</p><div class="grid2" style="margin-top:12px">${g.list.map(c => btn(c, gi + "|" + c.id)).join("")}</div></div>`).join("");
   el.querySelectorAll("[data-open]").forEach(b => b.onclick = () => { const [gi, id] = b.dataset.open.split("|"), g = groups[+gi], c = g.list.find(x => x.id === id);
     const host = opts.head ? el : app;
-    TNSheet.open({ sb, cls: c, el: host, role, subjects: g.subjects, siblings: g.list, schoolName: school.name, gradeName: gname(c.grade_id), crumb: opts.head ? (teacherId ? "My classes" : role === "checker" ? "Reports to check" : "Class sheets") : "Home",
+    TNSheet.open({ sb, cls: c, el: host, role, subjects: g.subjects, siblings: g.list, schoolName: school.name, gradeName: gname(c.grade_id), crumb: opts.head ? (teacherId ? "My classes" : role === "checker" ? "Reports to check" : "My classes") : "Home",
       back: () => { TNSheet.close(); if (opts.head) classList(school, teacherId, el, role, opts); else render(); } }); });
 }
 

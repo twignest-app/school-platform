@@ -38,9 +38,13 @@
   }
 
   const DEF_OS = [{ code: "s", label: "Secure", short: "✓", kind: "secure" }, { code: "n", label: "Not yet secure", short: "!", kind: "notyet" }, { code: "e", label: "Exceeding", short: "+", kind: "exceed" }];
-  const OS = () => (C && C.objScale && C.objScale.length ? C.objScale : DEF_OS);
+  const gradeLevels = () => { const sc = (C && C.scale) || [], gm = (C && C.gradeMin) || [], gp = (C && C.gradePos) || [];
+    return sc.map((n, i) => ({ code: "L" + (i + 1), label: /^\d+$/.test(String(n)) ? "Level " + n : String(n), short: String(n).slice(0, 3), kind: gp[i] === "below" ? "notyet" : gp[i] === "above" ? "exceed" : "secure", pct: gm[i + 1] == null ? gm[i] : (gm[i] + gm[i + 1]) / 2 })); };
+  const useLv = () => !!(C && C.objMode === "levels" && C.scale && C.scale.length);
+  const OS = () => (useLv() ? gradeLevels() : C && C.objScale && C.objScale.length ? C.objScale : DEF_OS);
   const osOf = v => OS().find(x => x.code === v) || DEF_OS.find(x => x.code === v) || { code: v, label: v, short: "?", kind: "secure" };
   const credit = v => ({ notyet: 0, partial: .5, secure: 1, exceed: 1 })[osOf(v).kind] ?? 1;
+  const markPct = v => { const o = osOf(v); if (o.pct != null) return o.pct; const gl = gradeLevels(), g = o.kind === "notyet" ? gl.filter(x => x.kind === "notyet").pop() : gl.find(x => x.kind === o.kind); return g ? g.pct : credit(v) * 100; };
   const isEx = v => osOf(v).kind === "exceed", isGap = v => !!v && credit(v) < 1;
   const _dc = v => v ? ({ notyet: "n", partial: "p", secure: "s", exceed: "e" })[osOf(v).kind] : "";
   const _dt = v => v ? esc(osOf(v).short) : "";
@@ -56,6 +60,8 @@
     if (c.type === "comment") return null;
     if (c.type === "objectives") {
       if (k === "b") return null; const cl = clsOf(s), tg = TG[cl.id] || new Set(); let a = 0, sec = 0, ex = 0;
+      if (useLv()) { let sum = 0; objsFor(c, cl.grade_id, +k).filter(o => tg.has(o.id)).forEach(o => { const v = stat(s.id, o.id); if (v) { a++; sum += markPct(v); } });
+        if (!a) return null; const p = sum / a; return { band: ({ below: -1, inline: 0, above: 1 })[C.gradePos[levelFromPct(p)]] ?? 0, norm: clamp(p / 100) }; }
       objsFor(c, cl.grade_id, +k).filter(o => tg.has(o.id)).forEach(o => { const v = stat(s.id, o.id); if (v) { a++; sec += credit(v); if (isEx(v)) ex++; } });
       if (!a) return null; const p = sec / a * 100, e = ex / a * 100; return { band: p < c.belowPct ? -1 : (p >= 90 && e >= c.abovePct) ? 1 : 0, norm: clamp(p / 100) };
     }
@@ -132,7 +138,7 @@
       st.cols.forEach(c => {
         if (c.type === "objectives") {
           const map = {}; list.forEach(s => { const cl = clsOf(s), tg = TG[cl.id] || new Set(); objsFor(c, cl.grade_id, t).filter(o => tg.has(o.id)).forEach(o => { const m = map[o.id] = map[o.id] || { text: o.text, na: 0, ny: 0, n: 0 }; m.n++; const v = stat(s.id, o.id); if (!v) m.na++; if (isGap(v)) m.ny++; }); });
-          Object.values(map).forEach(m => { if (m.na) flags.push(`${badge("none", m.na)} not assessed: ${esc(m.text)}`); if (m.ny >= Math.max(2, m.n / 3)) flags.push(`${badge("below", m.ny)} not yet secure: ${esc(m.text)}. Consider re-teaching to the group.`); });
+          Object.values(map).forEach(m => { if (m.na) flags.push(`${badge("none", m.na)} not assessed: ${esc(m.text)}`); if (m.ny >= Math.max(2, m.n / 3)) flags.push(`${badge("below", m.ny)} ${useLv() ? "below the expected level" : "not yet secure"}: ${esc(m.text)}. Consider re-teaching to the group.`); });
         } else if (c.type !== "comment") { const kk = c.baseline ? "b" : k, x = list.filter(s => val(s.id, c.id, kk) == null).length; if (x) flags.push(`${badge("none", x)} missing: ${esc(c.name)}`); }
       });
       h += card(esc(sb.name === st.name ? sb.name : `${sb.name}: ${st.name}`), list, [st], t, `<h3>Needs attention</h3>${flags.length ? flags.slice(0, 12).map(f => `<div class="flagrow">${f}</div>`).join("") + (flags.length > 12 ? `<p class="note">…and ${flags.length - 12} more.</p>` : "") : `<p class="note">All data recorded.</p>`}`);
