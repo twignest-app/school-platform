@@ -133,6 +133,7 @@ input[type=number]{border:1px solid var(--line);background:var(--card);border-ra
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="hub.js?v=13"></script>
+<script src="behaviour-steps.js?v=1"></script>
 <script>
 /* Keep this the same as in index.html */
 const PLATFORM = "Nestopia";
@@ -193,17 +194,17 @@ async function fetchAll(q){ const out = []; for (let f = 0; ; f += 1000) { const
   const bs = await sb.from("behaviour_settings").select("config").eq("school_id", school.id).maybeSingle();
   if (bs.error && /behaviour_/.test(bs.error.message)) return fail("Behaviour needs its database step first. Please run the Behaviour update in Supabase.");
   if (bs.data && bs.data.config) cfg = Object.assign({}, DEFAULTS, bs.data.config);
-  await load(); draw();
+  await load(); try { await stepsLoad(); } catch (_) {} draw();
 })();
 async function load(){ try { const { data } = await sb.from("bh_avatars").select("student_id,avatar").eq("school_id", String(school.id)); avatars = {}; (data || []).forEach(a => avatars[a.student_id] = a.avatar); } catch (_) {} const since = ymd(new Date(Date.now() - 365 * 864e5)); evs = await fetchAll(() => sb.from("behaviour_events").select("*").eq("school_id", school.id).gte("happened_on", since).order("created_at", { ascending: false })); }
 
 function draw(){
-  const tabs = [["log", "Log"], ["recent", lead ? "Recent" : "My classes"], ...(lead ? [["overview", "Overview"], ["settings", "Settings"]] : [])];
+  const tabs = [["log", "Log"], ["steps", "🌱 Steps"], ["recent", lead ? "Recent" : "My classes"], ...(lead ? [["overview", "Overview"], ["settings", "Settings"]] : [])];
   const open = evs.filter(e => e.kind === "incident" && e.level === "high" && e.status === "open").length;
   app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Behaviour</h1><p class="note">${esc(school.name)} · Celebrate the positives, and follow up incidents.</p></div></div>
     <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}${k === "recent" && lead && open ? ` (${open})` : ""}</button>`).join("")}</div><div id="pane"></div>`;
   app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; draw(); });
-  ({ log: logPane, recent: recentPane, overview: overviewPane, settings: settingsPane })[ui.tab]();
+  ({ log: logPane, steps: () => stepsPane(), recent: recentPane, overview: overviewPane, settings: settingsPane })[ui.tab]();
 }
 
 /* ---------- Log: pick students, then a merit or an incident ---------- */
@@ -215,8 +216,9 @@ function logPane(){
   pane.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:10px"><div class="row"><select id="lc" aria-label="Class">${choices.map(c => `<option value="${esc(c.id)}" ${String(c.id) === String(ui.cls) ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select>
       <button class="btn ghost small" id="all">Select everyone</button><button class="btn ghost small" id="none">Clear</button></div><span class="note" id="sel">${ui.pick.size} selected</span></div>
     <div class="kids">${kids.map(k => { const w = wk(k.id), m = w.filter(e => e.kind === "merit").reduce((a, e) => a + (e.points || 1), 0), n = w.filter(e => e.kind === "incident").length;
-      const yr = meritPts(k.id, yearStart()), bd = badgeOf(yr);
-      return `<button class="kid" data-k="${esc(k.id)}" aria-pressed="${ui.pick.has(String(k.id))}">${bd ? `<span class="bdg" title="${esc(bd[2])} badge">${bd[1]}</span>` : ""}<span class="av">${avOf(k.id)}</span><b>${esc(k.full_name.split(" ")[0])}</b><small>${esc(k.full_name.split(" ").slice(1).join(" "))}</small><span class="stars">⭐ ${yr}</span><small>+${m} this week${n ? ` · ⚠️ ${n}` : ""}</small></button>`; }).join("") || '<p class="note">No students.</p>'}</div>
+      const yr = meritPts(k.id, yearStart()), bd = badgeOf(yr), st = typeof files !== "undefined" && files[String(k.id)] ? files[String(k.id)].step : 0;
+      const m4 = meritPts(k.id, ymd(new Date(Date.now() - 27 * 864e5))), i4 = evs.filter(e => String(e.student_id) === String(k.id) && e.kind === "incident" && e.happened_on >= ymd(new Date(Date.now() - 27 * 864e5))).length;
+      return `<button class="kid" data-k="${esc(k.id)}" aria-pressed="${ui.pick.has(String(k.id))}">${bd ? `<span class="bdg" title="${esc(bd[2])} badge">${bd[1]}</span>` : ""}<span class="av">${avOf(k.id)}</span><b>${esc(k.full_name.split(" ")[0])}</b><small>${esc(k.full_name.split(" ").slice(1).join(" "))}</small><span class="stars">⭐ ${yr}</span><small>+${m} this week${n ? ` · ⚠️ ${n}` : ""}</small>${st ? `<small title="${esc(STEPS[st][1])}">${STEPS[st][0]} ${esc(STEPS[st][1].split(" · ")[0])}</small>` : ""}${i4 && m4 < i4 * 4 ? '<small style="color:#B07A1E" title="Aim for 4 positives for every correction">💛 catch them being good</small>' : ""}</button>`; }).join("") || '<p class="note">No students.</p>'}</div>
     <p style="margin:12px 0 0" class="row"><button class="btn ghost small" id="chars">🎭 Choose characters</button><button class="btn ghost small" id="board1">🌟 Show the class display</button></p></div>
     <div class="card"><h2>⭐ Give a merit</h2><div class="row" style="margin-bottom:8px"><label class="f" style="flex-direction:row;display:flex;gap:8px;align-items:center">Points <input type="number" id="pts" min="1" max="10" value="1" style="width:80px"></label></div>
       <div class="vals">${cfg.merits.map(v => `<button class="val" data-merit="${esc(v)}"><span class="em">${emOf(v)}</span>${esc(v)}</button>`).join("")}</div></div>
@@ -238,7 +240,7 @@ function logPane(){
 }
 function incidentForm(s, e){
   const lvl0 = e ? e.level : "low";
-  dlg.innerHTML = `<form class="dlg"><h2>${e ? "Incident" : "Log an incident"} · ${esc(s.full_name)}</h2>
+  dlg.innerHTML = `<form class="dlg"><h2>${e ? "Incident" : "Log an incident"} · ${esc(s.full_name)}</h2>${!e && typeof positiveFirstHtml === "function" ? positiveFirstHtml(s) : ""}
     <div class="two"><label class="f">Level <select name="lv">${Object.entries(LV).map(([k, v]) => `<option value="${k}" ${lvl0 === k ? "selected" : ""}>${v}</option>`).join("")}</select></label><label class="f">Type <select name="ty"></select></label></div>
     <div class="two"><label class="f">Date <input type="date" name="d" value="${esc(e ? e.happened_on : ymd(new Date()))}" max="${ymd(new Date())}"></label><label class="f">Where <input type="text" name="lo" value="${esc(e ? e.location || "" : "")}" placeholder="Classroom, playground, corridor…"></label></div>
     <label class="f">What happened <textarea name="dt" rows="3" required placeholder="Facts: what happened and who was involved">${esc(e ? e.details || "" : "")}</textarea></label>
@@ -254,7 +256,7 @@ function incidentForm(s, e){
   const dl = document.getElementById("del"); if (dl) dl.onclick = async () => { if (!confirm("Delete this incident?")) return; await sb.from("behaviour_events").delete().eq("id", e.id); dlg.close(); await load(); draw(); };
   f.onsubmit = async ev => {
     ev.preventDefault();
-    const row = { school_id: school.id, student_id: s.id, class_id: s.class_id, kind: "incident", level: f.lv.value, category: f.ty.value, happened_on: f.d.value, location: f.lo.value.trim() || null, details: f.dt.value.trim(), action: [...f.querySelectorAll("input[name=ac]:checked")].map(x => x.value).join("; ") || null, parents_informed: f.pi.checked, status: f.rs ? (f.rs.checked ? "resolved" : "open") : (e ? e.status : (f.lv.value === "high" ? "open" : "resolved")) };
+    const row = { school_id: school.id, student_id: s.id, class_id: s.class_id, kind: "incident", ...(f.tp ? { tried_positive: f.tp.checked } : {}), level: f.lv.value, category: f.ty.value, happened_on: f.d.value, location: f.lo.value.trim() || null, details: f.dt.value.trim(), action: [...f.querySelectorAll("input[name=ac]:checked")].map(x => x.value).join("; ") || null, parents_informed: f.pi.checked, status: f.rs ? (f.rs.checked ? "resolved" : "open") : (e ? e.status : (f.lv.value === "high" ? "open" : "resolved")) };
     const { error } = e ? await sb.from("behaviour_events").update(row).eq("id", e.id) : await sb.from("behaviour_events").insert(Object.assign(row, { logged_by: me.id }));
     if (error) return toast(error.message);
     dlg.close(); ui.pick.clear(); await load(); draw(); toast(row.level === "high" && !e ? "Logged. School leaders can see it to follow up." : "Saved");
@@ -330,11 +332,16 @@ function settingsPane(){
       <div><label class="f">Class goal (stars) <input type="number" name="gp" min="10" max="5000" value="${(cfg.class_goal || {}).points || 200}"></label><label class="f" style="margin-top:8px">Class reward <input type="text" name="gr" value="${esc((cfg.class_goal || {}).reward || "a class party 🎉")}"></label></div></div>
     <div class="two"><label class="f">Low-level incidents <textarea name="lo" rows="6">${esc(L(cfg.incidents.low))}</textarea></label><label class="f">Medium-level incidents <textarea name="me" rows="6">${esc(L(cfg.incidents.medium))}</textarea></label></div>
     <div class="two"><label class="f">High-level incidents <textarea name="hi" rows="6">${esc(L(cfg.incidents.high))}</textarea></label><label class="f">Actions taken <textarea name="ac" rows="6">${esc(L(cfg.actions))}</textarea></label></div>
+    <h3 style="color:var(--plum);margin:18px 0 6px">🌱 Positive Steps</h3>
+    <div><b>Grades that use the steps</b> <span class="note">(other grades: positive strategies only, and serious incidents go to a leader)</span><div class="checks">${setupGrades.map(g => `<label><input type="checkbox" name="sg" value="${esc(g.id)}" ${stepGrades().includes(g.id) ? "checked" : ""}> ${esc(g.name)}</label>`).join("") || '<span class="note">Set up grades in TwigNest first.</span>'}</div></div>
+    <div class="two"><label class="f">Step 2 after this many incidents <input type="number" name="s2" min="1" max="20" value="${S().s2}"></label><label class="f">Step 3 after this many incidents <input type="number" name="s3" min="2" max="30" value="${S().s3}"></label></div>
+    <div class="two"><label class="f">…within this many days <input type="number" name="sw" min="7" max="90" value="${S().window}"></label><label class="f">Calm days to step down <input type="number" name="sd" min="7" max="90" value="${S().down}"></label></div>
     <button class="btn">Save</button></form>`;
   document.getElementById("sf").onsubmit = async e => { e.preventDefault(); const f = e.target, sp = v => v.split("\n").map(x => x.trim()).filter(Boolean);
     const ems = {}, merits = sp(f.m.value).map(l => { const m = l.match(/^(.*?)\s+(\S+)$/); if (m && !/[A-Za-z0-9]/.test(m[2])) { ems[m[1].trim()] = m[2]; return m[1].trim(); } return l; });
     const badges = sp(f.bd.value).map(l => { const m = l.match(/^(\d+)\s+(\S+)\s+(.+)$/); return m ? [+m[1], m[2], m[3].trim()] : null; }).filter(Boolean).sort((a, b) => a[0] - b[0]);
-    const config = { merits, emojis: ems, badges, class_goal: { points: +f.gp.value || 200, reward: f.gr.value.trim() || "a class party 🎉" }, incidents: { low: sp(f.lo.value), medium: sp(f.me.value), high: sp(f.hi.value) }, actions: sp(f.ac.value) };
+    const steps = { grades: [...f.querySelectorAll("input[name=sg]:checked")].map(x => x.value), s2: +f.s2.value || 3, s3: +f.s3.value || 5, window: +f.sw.value || 28, down: +f.sd.value || 28 };
+    const config = { steps, merits, emojis: ems, badges, class_goal: { points: +f.gp.value || 200, reward: f.gr.value.trim() || "a class party 🎉" }, incidents: { low: sp(f.lo.value), medium: sp(f.me.value), high: sp(f.hi.value) }, actions: sp(f.ac.value) };
     const { error } = await sb.from("behaviour_settings").upsert({ school_id: school.id, config, updated_at: new Date().toISOString() }); if (error) return toast(error.message); cfg = Object.assign({}, DEFAULTS, config); toast("Saved"); };
 }
 </script>
