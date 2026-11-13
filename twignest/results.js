@@ -14,6 +14,7 @@
 
   function parseValue(c, raw) {
     const s = String(raw ?? "").trim(); if (!s) return { empty: true };
+    if (c.type === "list" && c.lv) { const o = c.options.find(x => norm(x) === norm(s) || norm("Level " + x) === norm(s)) || (c.legacy && Object.keys(c.legacy).find(x => norm(x) === norm(s)) ? c.legacy[Object.keys(c.legacy).find(x => norm(x) === norm(s))] : null); if (o) return { v: o }; }
     if (c.type === "list") { const o = c.options.find(x => norm(x) === norm(s)); return o ? { v: o } : { err: `“${s}” isn’t one of: ${c.options.join(", ")}` }; }
     let n;
     if (c.type === "readingAge") { const m = s.match(/^(\d+)\s*(?:y|yrs?|years?|:|-|\s)\s*(\d+)\s*(?:m|mths?|months?)?$/i); n = m ? +m[1] + (+m[2]) / 12 : parseFloat(s.replace(",", ".")); n = Math.round(n * 100) / 100; }

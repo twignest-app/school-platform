@@ -32,6 +32,14 @@
   const val = (sid, cid, k) => ((R[sid] || {})[cid] || {})[k];
   const stat = (sid, oid) => (ST[sid] || {})[oid] || "";
   const tLv = (sid, stid, k) => ((LV[sid] || {})[stid] || {})[k];
+  const WT3 = ["working towards", "expected", "greater depth"];
+  const isLvOk = c => !!(c && c.scale && c.scale.length && (c.objMode === "levels" || (c.objMode === undefined && c.scale.every(x => /^\d+$/.test(String(x))))));
+  function lvCols(cfg) { if (!isLvOk(cfg)) return false; let ch = false; const first = k => Math.max(0, cfg.gradePos.indexOf(k));
+    (cfg.subjects || []).forEach(sb => (sb.strands || []).forEach(st => (st.cols || []).forEach(c => {
+      if (c.type !== "list") return; const wt = c.options && c.options.length === 3 && c.options.every((o, i) => String(o).trim().toLowerCase() === WT3[i]);
+      if (!(c.lv || wt)) return;
+      if (wt && !c.lv) { c.legacy = Object.assign({ [c.options[0]]: cfg.scale[Math.max(0, first("inline") - 1)], [c.options[1]]: cfg.scale[first("inline")], [c.options[2]]: cfg.scale[first("above")] }, c.legacy || {}); ch = true; }
+      c.lv = true; c.options = cfg.scale.slice(); c.below = first("inline"); c.above = first("above"); }))); return ch; }
   function levelFromPct(p) { let lv = 0; C.gradeMin.forEach((x, i) => { if (p >= x) lv = i; }); return lv; }
   const lab = i => i == null ? "–" : C.scale[Math.max(0, Math.min(C.scale.length - 1, i))];
 
@@ -49,6 +57,8 @@
     const v = val(sid, c.id, k); if (v === undefined || v === "") return null;
     const pos = C.gradePos, gm = C.gradeMin, iS = (gm[pos.indexOf("inline")] ?? 50) / 100, aS = (gm[pos.indexOf("above")] ?? 90) / 100;
     const piece = (x, lo, hi, ls, hs) => x < lo ? iS * clamp((x - (lo - ls)) / ls) * .999 : x < hi ? iS + (aS - iS) * (x - lo) / (hi - lo) : aS + (1 - aS) * clamp((x - hi) / hs);
+    if (c.type === "list" && c.lv) { let i = C.scale.indexOf(v); if (i < 0 && c.legacy && c.legacy[v] != null) i = C.scale.indexOf(c.legacy[v]); if (i < 0) return null;
+      const gm = C.gradeMin, p = gm[i + 1] == null ? gm[i] : (gm[i] + gm[i + 1]) / 2; return { band: ({ below: -1, inline: 0, above: 1 })[C.gradePos[i]] ?? 0, norm: clamp(p / 100) }; }
     if (c.type === "list") { const i = c.options.indexOf(v); if (i < 0) return null; const n = c.options.length;
       const norm = i < c.below ? iS * (i + .5) / c.below : i < c.above ? iS + (aS - iS) * (i - c.below + .5) / (c.above - c.below) : aS + (1 - aS) * (i - c.above + .5) / (n - c.above);
       return { band: i < c.below ? -1 : i >= c.above ? 1 : 0, norm }; }
@@ -93,6 +103,7 @@
     if (c.type === "score" || c.type === "rubric") return `Go through the ${c.name.toLowerCase()} with the student to find the questions lost, then re-teach those areas in small steps.`;
     if (c.type === "standardised") return "Use the test report to find the weakest areas and target them in small-group work.";
     if (c.type === "readingAge") return "Daily guided reading at the right level, plus a home reading log checked weekly.";
+    if (c.type === "list" && c.lv) return "Plan targeted support to move up a level, and check again at the next checkpoint.";
     if (c.type === "list") { const v = val(sid, c.id, k), i = c.options.indexOf(v); return `Targeted group work to move from ${v} towards ${c.options[Math.max(c.below, i + 1)] || c.options[i]}.`; }
     return "Plan targeted support and review at the next checkpoint.";
   }
@@ -401,7 +412,7 @@
       sb.from("students").select("*").eq("class_id", cls.id).eq("archived", false).order("full_name")]);
     if (s.error || st.error) throw (s.error || st.error);
     if (!s.data.length) throw new Error("This school’s setup for " + cls.year + " couldn’t be found.");
-    C = s.data[0].config; applyLabels(C); if (ctx.subjects) C = Object.assign({}, C, { subjects: C.subjects.filter(x => ctx.subjects.includes(x.id)) }); studs = st.data;
+    C = s.data[0].config; lvCols(C); applyLabels(C); if (ctx.subjects) C = Object.assign({}, C, { subjects: C.subjects.filter(x => ctx.subjects.includes(x.id)) }); studs = st.data;
     const ids = studs.map(x => x.id);
     R = {}; ST = {}; LV = {}; TAUGHT = new Set();
     const tg = await sb.from("taught").select("obj_id").eq("class_id", cls.id);
@@ -430,7 +441,8 @@
   function cell(s, c, k) {
     const v = val(s.id, c.id, k) ?? "", ev = colEval(s.id, c, k), cl = ev ? ["tb", "ti", "ta"][ev.band + 1] : "";
     const a = `data-v="${s.id}|${c.id}|${k}" aria-label="${esc(s.full_name)}, ${esc(c.name)}" class="in ${cl}"`;
-    if (c.type === "list") return `<select ${a}><option value=""></option>${c.options.map(o => `<option ${o === v ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
+    if (c.type === "list") { const cur = c.lv && c.legacy && c.legacy[v] != null && !c.options.includes(v) ? c.legacy[v] : v;
+      return `<select ${a}><option value=""></option>${c.options.map(o => `<option ${o === cur ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`; }
     if (c.type === "comment") return `<input type="text" ${a} value="${esc(v)}" style="width:170px;text-align:left">`;
     return `<input type="number" step="any" ${a} value="${esc(v)}">`;
   }

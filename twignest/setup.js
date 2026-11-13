@@ -26,6 +26,14 @@
   const DEF_OS = [{ code: "s", label: "Secure", short: "✓", kind: "secure" }, { code: "n", label: "Not yet secure", short: "!", kind: "notyet" }, { code: "e", label: "Exceeding", short: "+", kind: "exceed" }];
   const FOUR_OS = [{ code: "n", label: "Emerging", short: "E", kind: "notyet" }, { code: "m2", label: "Developing", short: "D", kind: "partial" }, { code: "s", label: "Secure", short: "S", kind: "secure" }, { code: "e", label: "Mastery", short: "M", kind: "exceed" }];
   const lvMode = () => !!(C && C.scale && C.scale.length && (C.objMode === "levels" || (C.objMode === undefined && C.scale.every(x => /^\d+$/.test(String(x))))));
+  const WT3 = ["working towards", "expected", "greater depth"];
+  const isLvOk = c => !!(c && c.scale && c.scale.length && (c.objMode === "levels" || (c.objMode === undefined && c.scale.every(x => /^\d+$/.test(String(x))))));
+  function lvCols(cfg) { if (!isLvOk(cfg)) return false; let ch = false; const first = k => Math.max(0, cfg.gradePos.indexOf(k));
+    (cfg.subjects || []).forEach(sb => (sb.strands || []).forEach(st => (st.cols || []).forEach(c => {
+      if (c.type !== "list") return; const wt = c.options && c.options.length === 3 && c.options.every((o, i) => String(o).trim().toLowerCase() === WT3[i]);
+      if (!(c.lv || wt)) return;
+      if (wt && !c.lv) { c.legacy = Object.assign({ [c.options[0]]: cfg.scale[Math.max(0, first("inline") - 1)], [c.options[1]]: cfg.scale[first("inline")], [c.options[2]]: cfg.scale[first("above")] }, c.legacy || {}); ch = true; }
+      c.lv = true; c.options = cfg.scale.slice(); c.below = first("inline"); c.above = first("above"); }))); return ch; }
   const KINDS = { notyet: "Not yet secure (counts 0)", partial: "Partly secure (counts half)", secure: "Secure (counts fully)", exceed: "Exceeding (counts fully, shows greater depth)" };
   const os = () => (C.objScale && C.objScale.length ? C.objScale : (C.objScale = JSON.parse(JSON.stringify(DEF_OS))));
   const STEPS = ["School year and terms", "Grades", "Grading system", "Subjects and strands", "Data columns", "Curriculum objectives", "Student groups", "Report comments", "Check and finish"];
@@ -140,7 +148,8 @@
     if (x.type === "readingAge") h += f("below", "Below if under (years)", x.below) + f("above", "Above if over (years)", x.above);
     if (x.type === "objectives") h += f("belowPct", "Below if secure is under (%)", x.belowPct) + f("abovePct", "Above if exceeding is at least (%)", x.abovePct);
     h += `</div>`;
-    if (x.type === "list") h += `<label for="${x.id}-opt">Options, lowest first, one per line</label><textarea id="${x.id}-opt" data-colf="options" data-col="${x.id}" ${dis}>${esc(x.options.join("\n"))}</textarea>
+    if (x.type === "list" && x.lv) h += `<div class="msg ok" style="margin-top:8px">Teachers choose a level from your grading system: ${esc(C.scale.join(", "))}. Each level counts as its own percentage band.</div><p><button class="btn ghost small" data-act="col-unlv" data-id="${x.id}" ${dis}>Use my own options instead</button></p>`;
+    else if (x.type === "list") h += `${isLvOk(C) ? `<p><button class="btn ghost small" data-act="col-lv" data-id="${x.id}">Use grading system levels (${esc(C.scale.join(", "))})</button></p>` : ""}<label for="${x.id}-opt">Options, lowest first, one per line</label><textarea id="${x.id}-opt" data-colf="options" data-col="${x.id}" ${dis}>${esc(x.options.join("\n"))}</textarea>
       <div class="grid3"><div><label for="${x.id}-lb">First option in line</label><select id="${x.id}-lb" data-colf="below" data-col="${x.id}">${x.options.map((o, i) => `<option value="${i}" ${i === x.below ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></div>
       <div><label for="${x.id}-la">First option above</label><select id="${x.id}-la" data-colf="above" data-col="${x.id}">${x.options.map((o, i) => `<option value="${i}" ${i === x.above ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></div></div>`;
     if (x.type === "objectives") {
@@ -389,7 +398,7 @@
 
   function onClick(e) {
     const t = e.target.closest("button"); if (!t || !ctx.el.contains(t)) return;
-    if (t.dataset.tpl) { C = template(t.dataset.tpl); C.year = defaultYear(); save(true).then(render); return; }
+    if (t.dataset.tpl) { C = template(t.dataset.tpl); C.year = defaultYear(); lvCols(C); save(true).then(render); return; }
     if (t.dataset.fix) ui.strand = t.dataset.fix;
     if (t.dataset.step !== undefined) { ui.step = +t.dataset.step; save(true); render(); window.scrollTo(0, 0); return; }
     const a = t.dataset.act, id = t.dataset.id; if (!a) return;
@@ -397,6 +406,7 @@
     if (a === "del-grade" && confirm("Remove this grade and its objectives?")) { C.grades = C.grades.filter(g => g.id !== id); all().forEach(([sb, st]) => st.cols.forEach(c => { if (c.objectives) delete c.objectives[id]; })); }
     if (a === "grade-ajman" || a === "grade-four") { Object.assign(C, JSON.parse(JSON.stringify(a === "grade-ajman" ? AJMAN : FOUR))); const b = C.reports.bank; if (a === "grade-ajman") C.reports.bank = BANK.map(r => r.slice()); else { while (b.length < C.scale.length) b.push(["", "", ""]); b.length = C.scale.length; } }
     if (a === "os-three" || a === "os-four") { if (USED.anyStatus && !confirm("Teachers have already marked objectives. Marks you remove will no longer be shown. Continue?")) return; C.objScale = JSON.parse(JSON.stringify(a === "os-three" ? DEF_OS : FOUR_OS)); C.objMode = null; }
+    if (a === "col-lv" || a === "col-unlv") { const c = all().flatMap(([, st]) => st.cols).find(z => z.id === id); if (c) { if (a === "col-lv") { if (colLocked(c) && !confirm("Teachers have already recorded data in this column. Entries that aren’t levels will be shown as blank until a teacher chooses a level. Continue?")) return; c.lv = true; lvCols(C); } else { c.lv = false; c.options = ["Working towards", "Expected", "Greater depth"]; c.below = 1; c.above = 2; delete c.legacy; } } }
     if (a === "os-levels") { if (USED.anyStatus && !lvMode() && !confirm("Teachers have already marked objectives. Those marks will still show and will count as the nearest level. Continue?")) return; C.objMode = "levels"; }
     if (a === "obj-template" || a === "obj-export") { loadXLSX().then(() => { let rows = objRowsForExport(); if (a === "obj-template" || rows.length === 1) { const oc = objCols()[0], g = C.grades[0];
         rows = [rows[0], [g ? g.name : "Grade 2", oc ? oc.sb.name : "English", oc ? oc.st.name : "Reading", C.terms[0] || "Term 1", "Read Year 3 exception words accurately", "Practise exception words with flashcards in class and at home."]]; }
@@ -492,7 +502,7 @@
       const g = await ctx.sb.from("classes").select("grade_id").eq("school_id", ctx.school.id); if (!g.error) g.data.forEach(r => GRADES_USED.add(r.grade_id));
       if (!bound) { document.addEventListener("click", onClick); document.addEventListener("change", onChange); bound = true; }
       if (!row) return chooseTemplate();
-      C = row.config; if (!C.year) C.year = row.year; if (ensureBaselines()) save(true); render();
+      C = row.config; if (!C.year) C.year = row.year; const nb = ensureBaselines(); if (lvCols(C) || nb) save(true); render();
     }
   };
 })();

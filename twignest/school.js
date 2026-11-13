@@ -20,7 +20,7 @@
     const sb = ctx.sb, sid = ctx.school.id;
     const s = await sb.from("school_setups").select("*").eq("school_id", sid).order("updated_at", { ascending: false }).limit(1);
     if (s.error) throw s.error; if (!s.data.length) throw new Error("Finish the school setup first.");
-    C = s.data[0].config; applyLabels(C); year = s.data[0].year;
+    C = s.data[0].config; lvCols(C); applyLabels(C); year = s.data[0].year;
     const c = await sb.from("classes").select("*").eq("school_id", sid).eq("year", year); if (c.error) throw c.error; classes = c.data;
     const ids = new Set(classes.map(x => x.id));
     studs = (await fetchAll("students", "*")).filter(x => !x.archived && ids.has(x.class_id));
@@ -55,6 +55,14 @@
   const objsFor = (c, gid, t) => ((c.objectives || {})[gid] || [])[t] || [];
   const val = (sid, cid, k) => ((R[sid] || {})[cid] || {})[k];
   const stat = (sid, oid) => (ST[sid] || {})[oid] || "";
+  const WT3 = ["working towards", "expected", "greater depth"];
+  const isLvOk = c => !!(c && c.scale && c.scale.length && (c.objMode === "levels" || (c.objMode === undefined && c.scale.every(x => /^\d+$/.test(String(x))))));
+  function lvCols(cfg) { if (!isLvOk(cfg)) return false; let ch = false; const first = k => Math.max(0, cfg.gradePos.indexOf(k));
+    (cfg.subjects || []).forEach(sb => (sb.strands || []).forEach(st => (st.cols || []).forEach(c => {
+      if (c.type !== "list") return; const wt = c.options && c.options.length === 3 && c.options.every((o, i) => String(o).trim().toLowerCase() === WT3[i]);
+      if (!(c.lv || wt)) return;
+      if (wt && !c.lv) { c.legacy = Object.assign({ [c.options[0]]: cfg.scale[Math.max(0, first("inline") - 1)], [c.options[1]]: cfg.scale[first("inline")], [c.options[2]]: cfg.scale[first("above")] }, c.legacy || {}); ch = true; }
+      c.lv = true; c.options = cfg.scale.slice(); c.below = first("inline"); c.above = first("above"); }))); return ch; }
   function levelFromPct(p) { let lv = 0; C.gradeMin.forEach((x, i) => { if (p >= x) lv = i; }); return lv; }
   function colEval(s, c, k) {
     if (c.type === "comment") return null;
@@ -68,6 +76,8 @@
     const v = val(s.id, c.id, k); if (v === undefined || v === "") return null;
     const pos = C.gradePos, gm = C.gradeMin, iS = (gm[pos.indexOf("inline")] ?? 50) / 100, aS = (gm[pos.indexOf("above")] ?? 90) / 100;
     const piece = (x, lo, hi, ls, hs) => x < lo ? iS * clamp((x - (lo - ls)) / ls) * .999 : x < hi ? iS + (aS - iS) * (x - lo) / (hi - lo) : aS + (1 - aS) * clamp((x - hi) / hs);
+    if (c.type === "list" && c.lv) { let i = C.scale.indexOf(v); if (i < 0 && c.legacy && c.legacy[v] != null) i = C.scale.indexOf(c.legacy[v]); if (i < 0) return null;
+      const gm = C.gradeMin, p = gm[i + 1] == null ? gm[i] : (gm[i] + gm[i + 1]) / 2; return { band: ({ below: -1, inline: 0, above: 1 })[C.gradePos[i]] ?? 0, norm: clamp(p / 100) }; }
     if (c.type === "list") { const i = c.options.indexOf(v); if (i < 0) return null; const n = c.options.length;
       return { band: i < c.below ? -1 : i >= c.above ? 1 : 0, norm: i < c.below ? iS * (i + .5) / c.below : i < c.above ? iS + (aS - iS) * (i - c.below + .5) / (c.above - c.below) : aS + (1 - aS) * (i - c.above + .5) / (n - c.above) }; }
     const n = +v; if (isNaN(n)) return null;
