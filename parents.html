@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Parent portal · Nestopia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+
+:root{--plum:#462D5B;--plum-2:#6A4B85;--plum-soft:#EDE6F5;--sage:#5E8455;--sage-soft:#E6EFE2;--amber:#A86C12;--amber-soft:#FBF0DC;--red:#B4473A;--red-soft:#F8E4E1;--blue:#4E6FB8;--blue-soft:#E4EBF8;--bg:#F7F4FB;--card:#FFFFFF;--ink:#2E2140;--muted:#6F6680;--line:#E4DDEE;--empty:#ECE7F3;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--plum:#CDB9EA;--plum-2:#DCCCF2;--plum-soft:#352A45;--sage:#A7C59A;--sage-soft:#26331F;--amber:#E6B566;--amber-soft:#3A2E17;--red:#E8897C;--red-soft:#3D2220;--blue:#9DB4E8;--blue-soft:#1E2A40;--bg:#17131D;--card:#221C2B;--ink:#F1ECF7;--muted:#B2A8C2;--line:#382F45;--empty:#2C2536;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--plum-2);outline-offset:2px}
+h1,h2,h3,.btn,.brand{font-family:"Poppins","Nunito",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-weight:600;font-size:22px;color:var(--plum);text-decoration:none}
+header .who{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:14px;color:var(--muted);flex-wrap:wrap}
+main{max-width:1200px;margin:0 auto;padding:24px 20px 48px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px}
+.card h2{margin:0 0 8px;font-size:20px;color:var(--plum);font-weight:600}
+.btn{border:0;background:var(--plum);color:#fff;border-radius:999px;padding:10px 20px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--bg);color:var(--plum);border:1px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:13px}
+.note{color:var(--muted);font-size:14px}
+.msg{border-radius:12px;padding:10px 14px;margin-top:12px;font-weight:600;font-size:14px;background:var(--red-soft);color:var(--red)}
+.ptitle{margin:0 0 4px;font-weight:600;font-size:26px}
+.phead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.metric{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.metric span{display:block;font-size:13px;color:var(--muted);font-weight:700}
+.metric b{display:block;font-size:26px;color:var(--plum);font-family:Poppins,Nunito,sans-serif;font-weight:600;line-height:1.3}
+.tablewrap{overflow-x:auto}
+table.grid{border-collapse:separate;border-spacing:8px;min-width:100%}
+table.grid th{font-size:13px;color:var(--muted);text-align:left;font-weight:700;padding:4px}
+.cell{width:100%;min-width:150px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;cursor:pointer;display:block}
+.cell:hover{border-color:var(--plum-2)}
+.cell b{font-size:20px;font-family:Poppins,Nunito,sans-serif;font-weight:600;color:var(--plum)}
+.cell small{display:block;color:var(--muted);font-size:12.5px}
+.cell.none{cursor:default;color:var(--muted);background:var(--bg)}
+.cell.on{outline:3px solid var(--plum-2)}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--empty);margin:6px 0 4px}
+.bar i{display:block;height:100%}
+.bar .a{background:var(--sage)}.bar .t{background:var(--amber)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
+.obj{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.obj:last-child{border-bottom:0}
+.st{font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;justify-self:start}
+.st.n{background:var(--empty);color:var(--muted)}.st.p{background:var(--amber-soft);color:var(--amber)}.st.t{background:var(--blue-soft);color:var(--blue)}.st.a{background:var(--sage-soft);color:var(--sage)}
+.obj small{display:block;color:var(--muted);font-size:12.5px}
+.sec{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
+.sec b{display:block;font-size:16px;color:var(--ink)}
+@media (max-width:640px){.obj{grid-template-columns:1fr}.sec{text-align:left}}
+
+:root{--plum:#462D5B;--plum-2:#6A4B85;--plum-soft:#EDE6F5;--sage:#5E8455;--sage-soft:#E6EFE2;--amber:#A86C12;--amber-soft:#FBF0DC;--red:#B4473A;--red-soft:#F8E4E1;--blue:#4E6FB8;--blue-soft:#E4EBF8;--bg:#F7F4FB;--card:#FFFFFF;--ink:#2E2140;--muted:#6F6680;--line:#E4DDEE;--empty:#ECE7F3;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--plum:#CDB9EA;--plum-2:#DCCCF2;--plum-soft:#352A45;--sage:#A7C59A;--sage-soft:#26331F;--amber:#E6B566;--amber-soft:#3A2E17;--red:#E8897C;--red-soft:#3D2220;--blue:#9DB4E8;--blue-soft:#1E2A40;--bg:#17131D;--card:#221C2B;--ink:#F1ECF7;--muted:#B2A8C2;--line:#382F45;--empty:#2C2536;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--plum-2);outline-offset:2px}
+h1,h2,h3,.btn,.brand{font-family:"Poppins","Nunito",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-weight:600;font-size:22px;color:var(--plum);text-decoration:none}
+header .who{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:14px;color:var(--muted);flex-wrap:wrap}
+main{max-width:1200px;margin:0 auto;padding:24px 20px 48px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px}
+.card h2{margin:0 0 8px;font-size:20px;color:var(--plum);font-weight:600}
+.btn{border:0;background:var(--plum);color:#fff;border-radius:999px;padding:10px 20px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--bg);color:var(--plum);border:1px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:13px}
+.note{color:var(--muted);font-size:14px}
+.msg{border-radius:12px;padding:10px 14px;margin-top:12px;font-weight:600;font-size:14px;background:var(--red-soft);color:var(--red)}
+.ptitle{margin:0 0 4px;font-weight:600;font-size:26px}
+.phead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.metric{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.metric span{display:block;font-size:13px;color:var(--muted);font-weight:700}
+.metric b{display:block;font-size:26px;color:var(--plum);font-family:Poppins,Nunito,sans-serif;font-weight:600;line-height:1.3}
+.tablewrap{overflow-x:auto}
+table.grid{border-collapse:separate;border-spacing:8px;min-width:100%}
+table.grid th{font-size:13px;color:var(--muted);text-align:left;font-weight:700;padding:4px}
+.cell{width:100%;min-width:150px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;cursor:pointer;display:block}
+.cell:hover{border-color:var(--plum-2)}
+.cell b{font-size:20px;font-family:Poppins,Nunito,sans-serif;font-weight:600;color:var(--plum)}
+.cell small{display:block;color:var(--muted);font-size:12.5px}
+.cell.none{cursor:default;color:var(--muted);background:var(--bg)}
+.cell.on{outline:3px solid var(--plum-2)}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--empty);margin:6px 0 4px}
+.bar i{display:block;height:100%}
+.bar .a{background:var(--sage)}.bar .t{background:var(--amber)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
+h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
+.obj{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.obj:last-child{border-bottom:0}
+.st{font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;justify-self:start}
+.st.n{background:var(--empty);color:var(--muted)}.st.p{background:var(--amber-soft);color:var(--amber)}.st.t{background:var(--blue-soft);color:var(--blue)}.st.a{background:var(--sage-soft);color:var(--sage)}
+.obj small{display:block;color:var(--muted);font-size:12.5px}
+.sec{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
+.sec b{display:block;font-size:16px;color:var(--ink)}
+@media (max-width:640px){.obj{grid-template-columns:1fr}.sec{text-align:left}}
+
+.set{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.set .card{margin:0}
+.set a.btn{margin-top:8px}
+.code{font:inherit;font-size:22px;font-weight:800;letter-spacing:.18em;border:2px dashed var(--line);border-radius:12px;padding:8px 16px;background:var(--card);cursor:pointer}
+.mods{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.mods span{font-size:13px;font-weight:700;border-radius:99px;padding:4px 10px;background:var(--plum-soft);color:var(--plum)}
+.mods span.off{background:var(--empty);color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:10px 18px;border-radius:999px;font-weight:700;opacity:0;transition:.2s;pointer-events:none;z-index:50}.toast.on{opacity:1}
+</style></head><body>
+<header><a class="brand" href="./" id="brand">Nestopia</a><div class="who" id="who"></div></header>
+<main id="app"><p class="note">Loading…</p></main>
+<div class="toast" id="toast" role="status"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="hub.js?v=13"></script>
+<script src="parents-admin.js?v=1"></script>
+<script>
+const PLATFORM = "Nestopia";
+const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const app = document.getElementById("app"), who = document.getElementById("who");
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 2400); };
+(async () => {
+  const { data: { session } } = await sb.auth.getSession(); if (!session) { location.href = "./"; return; }
+  const { data: p } = await sb.from("profiles").select("*").eq("id", session.user.id).single();
+  if (!p || !p.school_id) { location.href = "./"; return; }
+  who.innerHTML = `<span>${esc(p.full_name || p.email)}</span><a class="btn ghost small" href="./">← ${PLATFORM}</a>`;
+  const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single();
+  hubInit("parents");
+  const lead = ["school_lead", "coordinator", "admin"].includes(p.role), on = (s && s.modules) || [];
+  const link = (h, t, d) => `<a class="card" href="${h}" style="display:block;text-decoration:none;color:inherit;margin:0"><b>${t}</b><p class="note" style="margin:4px 0 0">${d}</p></a>`;
+  app.innerHTML = `<div class="phead"><div><h1 class="ptitle">👪 Parent portal</h1><p class="note">${esc(s.name)} · Parents sign in at <b>nestopia.school/parent.html</b> to see news, messages, reports, attendance and merits.</p></div>
+      <a class="btn ghost" href="parent.html" target="_blank" rel="noopener">Open the parent portal ↗</a></div>
+    <div class="set" style="margin-bottom:16px">
+      ${link("messages.html", "💬 Messages and 📢 news", "Reply to parents, and post news for families.")}
+      ${link("attendance.html#today", "📨 Absence notes", "Notes and forms parents have sent about absences.")}
+      ${on.includes("conferences") ? link("conferences.html", "📅 Parent conferences", "Booking times with teachers, and codes for families.") : ""}
+    </div>
+    ${lead ? `<section class="card" style="margin-bottom:16px"><h2 style="margin:0 0 6px">👀 See what parents see</h2><p class="note" style="margin-top:0">Choose a student to see their portal exactly as their parents do.</p>
+      <div class="row" style="display:flex;gap:8px;flex-wrap:wrap"><input type="search" id="pvQ" placeholder="Type a student’s name" list="pvList" style="max-width:300px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit"><datalist id="pvList"></datalist><button class="btn small" id="pvGo">Preview</button></div></section>
+    <section class="card" id="pp"><h2 style="margin:0 0 8px">Invite families</h2><div id="ppBody"><p class="note">Loading…</p></div></section>`
+    : '<div class="card"><p class="note" style="margin:0">School leaders invite families and choose what parents see. You can reply to parents in <a href="messages.html">Messages</a>.</p></div>'}`;
+  if (!lead) return;
+  parentPortal(s);
+  const { data: studs } = await sb.from("students").select("id,full_name,classes(name)").eq("school_id", s.id).eq("archived", false).order("full_name");
+  document.getElementById("pvList").innerHTML = (studs || []).map(x => `<option value="${esc(x.full_name + (x.classes ? " · " + x.classes.name : ""))}">`).join("");
+  document.getElementById("pvGo").onclick = () => { const v = document.getElementById("pvQ").value, k = (studs || []).find(x => (x.full_name + (x.classes ? " · " + x.classes.name : "")) === v) || (studs || []).find(x => x.full_name.toLowerCase().includes(v.toLowerCase().trim()));
+    if (!k) return toast("Choose a student from the list."); window.open("parent.html?preview=" + encodeURIComponent(k.id), "_blank"); };
+})();
+</script></body></html>

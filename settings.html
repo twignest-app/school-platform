@@ -73,7 +73,7 @@ h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
 <main id="app"><p class="note">Loading…</p></main>
 <div class="toast" id="toast" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=12"></script>
+<script src="hub.js?v=13"></script>
 <script src="getstarted.js?v=1"></script>
 <script>
 const PLATFORM = "Nestopia";
@@ -100,7 +100,7 @@ const ALL = [["twignest", "TwigNest"], ["grownest", "GrowNest"], ["planning", "P
     <div class="set" style="margin-bottom:16px"><section class="card"><h2 style="margin:0 0 8px">🔐 Two-step log-in</h2><div id="mfaBox"></div></section>
       <section class="card"><h2 style="margin:0 0 8px">🛡️ Access log</h2><div id="audBox"></div></section></div>
     <section class="card" id="plan" style="margin-bottom:16px"><h2 style="margin:0 0 8px">⭐ Your plan</h2><div id="planBody"><p class="note">Loading…</p></div></section>
-    ${on.includes("parents") ? "" : "<!--"}<section class="card" id="pp" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">👪 Parent portal</h2><span class="note">Parents sign in at <b>nestopia.school/parent.html</b></span></div><div id="ppBody" style="margin-top:10px"><p class="note">Loading…</p></div></section>${on.includes("parents") ? "" : "-->"}
+    ${on.includes("parents") ? `<section class="card" id="pp" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">👪 Parent portal</h2><a class="btn small" href="parents.html">Invite families and choose what parents see →</a></div></section>` : ""}
     <div class="set">
       <section class="card"><h2>Your school</h2><p style="margin:0"><b>${esc(s.name)}</b>${s.country ? " · " + esc(s.country) : ""}</p>
         <p class="note" style="margin:12px 0 6px">Teachers join with this code:</p><button class="code" id="code" title="Copy the code">${esc(s.join_code || "")}</button>
@@ -121,7 +121,6 @@ const ALL = [["twignest", "TwigNest"], ["grownest", "GrowNest"], ["planning", "P
     document.getElementById("staffList").innerHTML = list.length ? `<div class="tablewrap"><table class="reg" style="width:100%;border-collapse:collapse"><tr><th style="text-align:left">Name</th><th style="text-align:left">Role</th><th style="text-align:left">Teams</th><th style="text-align:left">Status</th></tr>${list.map(x => `<tr><td style="padding:8px 4px;border-top:1px solid var(--line)"><b>${esc(x.full_name || "")}</b><br><span class="note">${esc(x.email || "")}</span></td><td style="border-top:1px solid var(--line)">${esc(R[x.role] || x.role || "")}</td>
       <td style="border-top:1px solid var(--line)"><div class="mods">${x.inclusion_head ? "<span>Inclusion head</span>" : x.inclusion_lead ? "<span>Inclusion team</span>" : ""}${x.safeguarding_lead ? "<span>🔒 Safeguarding lead</span>" : ""}${x.wellbeing_team ? "<span>Wellbeing team</span>" : ""}</div></td>
       <td style="border-top:1px solid var(--line)">${x.active ? '<span class="note">Active</span>' : '<b style="color:#B07A1E">Waiting for approval</b>'}</td></tr>`).join("")}</table></div>` : '<p class="note">No staff yet.</p>'; })();
-  if (on.includes("parents") && document.getElementById("ppBody")) parentPortal(s);
   planCard(s, p);
   mfaCard(document.getElementById("mfaBox")); auditCard(document.getElementById("audBox"), s);
   document.getElementById("code").onclick = async () => { try { await navigator.clipboard.writeText(s.join_code); toast("Code copied"); } catch (_) {} };
@@ -182,43 +181,5 @@ async function planCard(s, me){
   box.querySelectorAll("[data-req]").forEach(b => b.onclick = async () => { const note = prompt("Anything we should know? (optional, for example: number of students)", ""); if (note === null) return;
     const { error: e2 } = await sb.from("plan_requests").insert({ school_id: String(s.id), plan_id: b.dataset.req, requested_by: me.id, note: note.trim() || null });
     if (e2) return toast(e2.message); toast("Request sent. The Nestopia team will confirm it."); planCard(s, me); });
-}
-async function parentPortal(s){
-  const box = document.getElementById("ppBody");
-  const D = { reports: ["Report cards (approved comments only)", true], attendance: ["Attendance", true], merits: ["Merits", true], incidents: ["Behaviour incidents", false], calendar: ["School calendar", true], conferences: ["Booking parent conferences", true] };
-  const st = await sb.from("parent_portal_settings").select("config").eq("school_id", s.id).maybeSingle();
-  if (st.error && /parent_/.test(st.error.message)) { box.innerHTML = '<p class="note">The parent portal needs its database step first. Please run the Parent portal update in Supabase.</p>'; return; }
-  const cfg = Object.assign(Object.fromEntries(Object.entries(D).map(([k, v]) => [k, v[1]])), (st.data && st.data.config) || {});
-  // codes are made automatically for any student who doesn't have one yet
-  try { await sb.rpc("parent_make_codes"); } catch (_) {}
-  const codes = (await sb.from("parent_codes").select("student_id,code").eq("school_id", s.id)).data || [];
-  const links = (await sb.from("parent_links").select("student_id,parent_name,relationship,created_at").eq("school_id", s.id)).data || [];
-  const studs = []; for (let k = 0; k < codes.length; k += 200) { const { data } = await sb.from("students").select("id,full_name,class_id,classes(name)").in("id", codes.slice(k, k + 200).map(x => x.student_id)); studs.push(...(data || [])); }
-  const base = location.origin + "/parent.html";
-  const rows = codes.map(c => { const x = studs.find(y => String(y.id) === String(c.student_id)) || {}; return { name: x.full_name || "", first: (x.full_name || "").split(" ")[0], cls: (x.classes && x.classes.name) || "", code: c.code, link: base + "?code=" + c.code, parents: links.filter(l => String(l.student_id) === String(c.student_id)) }; })
-    .sort((a, b) => a.cls.localeCompare(b.cls, undefined, { numeric: true }) || a.name.localeCompare(b.name));
-  const classes2 = [...new Set(rows.map(r => r.cls))];
-  window.PP_CLASS = window.PP_CLASS && classes2.includes(window.PP_CLASS) ? window.PP_CLASS : classes2[0];
-  const invite = r => `Dear parent, ${s.name} invites you to the Nestopia parent portal for ${r.first}: school news, messages with teachers, reports, attendance and merits. Tap this link and create your account (${r.first} is added automatically): ${r.link}\n\nعزيزي وليّ الأمر، تدعوك المدرسة إلى بوابة أولياء الأمور في Nestopia لمتابعة ${r.first}. اضغط على الرابط وأنشئ حسابك: ${r.link}`;
-  const shown = rows.filter(r => r.cls === window.PP_CLASS), joined = rows.filter(r => r.parents.length).length;
-  box.innerHTML = `<p class="note" style="margin-top:0">Send each family their <b>invite link</b>. They tap it, create an account, and their child is added automatically. No code to type.</p>
-    <p style="margin:0 0 10px"><b>${joined} of ${rows.length}</b> <span class="note">families have joined</span></p>
-    ${rows.length ? `<div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><select id="ppCls" aria-label="Class">${classes2.map(c => `<option ${c === window.PP_CLASS ? "selected" : ""}>${esc(c || "No class")}</option>`).join("")}</select>
-      <button class="btn ghost small" id="ppCopyCls">📋 Copy all invites for this class</button><button class="btn ghost small" id="ppSlips">⬇ Word: printable slips</button><button class="btn ghost small" id="ppCsv">⬇ CSV</button></div>
-      <div class="tablewrap"><table class="reg" style="width:100%">${shown.map((r, i) => `<tr><td style="padding:8px 4px;border-top:1px solid var(--line)"><b>${esc(r.name)}</b><br><span class="note">Code ${esc(r.code)}</span></td>
-        <td style="border-top:1px solid var(--line)">${r.parents.length ? `<span style="color:#3F8A4B;font-weight:800">✓ Joined</span><br><span class="note">${r.parents.map(p => esc(p.parent_name || "Parent") + (p.relationship ? " (" + esc(p.relationship) + ")" : "")).join(", ")}</span>` : '<span class="note">Not joined yet</span>'}</td>
-        <td style="border-top:1px solid var(--line);text-align:right;white-space:nowrap"><button class="btn ghost small" data-inv="${i}">📋 Copy invite</button> <a class="btn ghost small" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(invite(r))}">WhatsApp</a></td></tr>`).join("")}</table></div>` : '<p class="note">Add students in TwigNest first.</p>'}
-    <details style="margin-top:14px"><summary class="note">What parents can see</summary><p class="note">Parents never see inclusion, wellbeing or safeguarding records.</p>
-      <div class="mods" style="gap:10px">${Object.entries(D).map(([k, v]) => `<label style="display:flex;gap:6px;align-items:center;font-weight:700"><input type="checkbox" data-pp="${k}" ${cfg[k] ? "checked" : ""}> ${v[0]}</label>`).join("")}</div></details>`;
-  box.querySelectorAll("[data-pp]").forEach(cb => cb.onchange = async () => { cfg[cb.dataset.pp] = cb.checked; const { error } = await sb.from("parent_portal_settings").upsert({ school_id: s.id, config: cfg, updated_at: new Date().toISOString() }); if (error) { cb.checked = !cb.checked; return toast(error.message); } toast("Saved"); });
-  const copy = async t => { try { await navigator.clipboard.writeText(t); toast("Copied. Paste it into WhatsApp or an email."); } catch (_) { prompt("Copy:", t); } };
-  box.querySelectorAll("[data-inv]").forEach(b => b.onclick = () => copy(invite(shown[+b.dataset.inv])));
-  const sel = document.getElementById("ppCls"); if (sel) sel.onchange = e => { window.PP_CLASS = e.target.value; parentPortal(s); };
-  const cc = document.getElementById("ppCopyCls"); if (cc) cc.onclick = () => copy(shown.filter(r => !r.parents.length).map(r => r.name + ": " + r.link).join("\n") || "Every family in this class has joined.");
-  const sl = document.getElementById("ppSlips"); if (sl) sl.onclick = () => {
-    const html = `<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif}td{border:1px dashed #999;padding:12px;width:50%;vertical-align:top;font-size:10.5pt}</style></head><body><table width="100%" cellspacing="6">${rows.reduce((a, x, i) => a + (i % 2 ? "" : "<tr>") + `<td><b>${esc(s.name)}</b> · Parent portal<br><br>For the parents of <b>${esc(x.name)}</b> (${esc(x.cls)})<br>Open this link on your phone and create your account:<br><b>${esc(x.link)}</b><br><br>Or go to ${esc(base)} and type the code <b style="font-size:14pt;letter-spacing:2px">${esc(x.code)}</b><br><br><span dir="rtl" lang="ar">افتح الرابط وأنشئ حسابك، وستتم إضافة طفلك تلقائيًا.</span></td>` + (i % 2 ? "</tr>" : ""), "")}${rows.length % 2 ? "<td></td></tr>" : ""}</table></body></html>`;
-    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + html], { type: "application/msword" })); a.download = "Parent portal invites.doc"; document.body.appendChild(a); a.click(); a.remove(); };
-  const cv = document.getElementById("ppCsv"); if (cv) cv.onclick = () => { const q = v => '"' + String(v).replace(/"/g, '""') + '"', t = "\ufeff" + [["Student", "Class", "Parent code", "Invite link", "Joined"], ...rows.map(r => [r.name, r.cls, r.code, r.link, r.parents.length ? "Yes" : "No"])].map(r => r.map(q).join(",")).join("\n");
-    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([t], { type: "text/csv" })); a.download = "Parent portal invites.csv"; document.body.appendChild(a); a.click(); a.remove(); };
 }
 </script></body></html>

@@ -43,6 +43,7 @@ const app = document.getElementById("app"), hr = document.getElementById("hr");
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const dshort = d => new Date(d + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 let kids = [], cur = null, view = null, tab = "news", term = null, pend = null;
+const PREVIEW = new URLSearchParams(location.search).get("preview");
 { const c = new URLSearchParams(location.search).get("code"); if (c) { try { localStorage.setItem("nest_pcode", c.toUpperCase()); } catch (_) {} history.replaceState(null, "", location.pathname); } try { pend = localStorage.getItem("nest_pcode"); } catch (_) {} }
 const msg = (t, ok) => t ? `<p class="${ok ? "ok" : "err"}">${esc(t)}</p>` : "";
 
@@ -83,12 +84,12 @@ function linkView(m, ok){
 async function loadKids(){ const { data } = await sb.rpc("parent_my_children"); kids = data || []; }
 async function show(id, note){
   if (!kids.length) return linkView(note);
-  cur = id || kids[0].id; const { data, error } = await sb.rpc("parent_child_view", { p_student: String(cur) });
+  cur = id || kids[0].id; const { data, error } = PREVIEW ? await sb.rpc("staff_parent_preview", { p_student: String(PREVIEW) }) : await sb.rpc("parent_child_view", { p_student: String(cur) });
   if (error) { app.innerHTML = `<div class="card">${msg(error.message)}</div>`; return; }
   view = data; const S = view.show || {};
-  const tabs = [["news", "📢 News · الأخبار", true], ["messages", "💬 Messages · الرسائل", true], ["reports", "Reports · التقارير", S.reports], ["attendance", "Attendance · الحضور", S.attendance], ["behaviour", "Merits · النقاط", S.merits || S.incidents], ["calendar", "Calendar · التقويم", S.calendar]].filter(t => t[2]);
+  const tabs = [["news", "📢 News · الأخبار", !PREVIEW], ["messages", "💬 Messages · الرسائل", !PREVIEW], ["reports", "Reports · التقارير", S.reports], ["attendance", "Attendance · الحضور", S.attendance], ["behaviour", "Merits · النقاط", S.merits || S.incidents], ["calendar", "Calendar · التقويم", S.calendar]].filter(t => t[2]);
   if (!tabs.some(t => t[0] === tab)) tab = tabs[0] ? tabs[0][0] : null;
-  app.innerHTML = `${note ? msg(note, true) : ""}<div class="row" style="justify-content:space-between">${kids.length > 1 ? `<div class="row">${kids.map(k => `<button class="tab" aria-selected="${String(k.id) === String(cur)}" data-kid="${esc(k.id)}">${esc(k.name.split(" ")[0])}</button>`).join("")}</div>` : "<span></span>"}<button class="btn ghost small" id="add">+ Add another child · إضافة طفل</button></div>
+  app.innerHTML = `${PREVIEW ? '<p class="ok" style="background:#FBEBD5;color:#8A5A10">👀 Preview: this is what the parents of this student see (news and messages are not shown in the preview).</p>' : ""}${note ? msg(note, true) : ""}<div class="row" style="justify-content:space-between${PREVIEW ? ";display:none" : ""}">${kids.length > 1 ? `<div class="row">${kids.map(k => `<button class="tab" aria-selected="${String(k.id) === String(cur)}" data-kid="${esc(k.id)}">${esc(k.name.split(" ")[0])}</button>`).join("")}</div>` : "<span></span>"}<button class="btn ghost small" id="add">+ Add another child · إضافة طفل</button></div>
     <h1>${esc(view.name)}${view.arabic_name ? ` <span class="muted" dir="rtl" lang="ar" style="font-size:.7em">${esc(view.arabic_name)}</span>` : ""}</h1>
     <p class="muted" style="margin:0 0 6px">${esc([view.class, view.school].filter(Boolean).join(" · "))}${(view.teachers || []).length ? " · " + esc(view.teachers.join(", ")) : ""}</p>
     ${(view.conferences || []).length ? `<div class="card" style="border-left:5px solid var(--plum)"><b>📅 Parent–teacher conferences are open for booking.</b><span class="ar" dir="rtl" lang="ar">الحجز متاح للقاءات أولياء الأمور.</span>${view.conferences.map(c => `<p style="margin:8px 0 0"><a class="btn small" href="book.html?c=${esc(c.code)}">Book: ${esc(c.title)} · احجز</a></p>`).join("")}</div>` : ""}
@@ -150,7 +151,7 @@ function reports(){
 }
 async function attendance(){
   const p = document.getElementById("pane"), a = view.attendance || { days: 0 };
-  let notes = []; try { const r = await sb.rpc("parent_absence_notes", { p_student: String(cur) }); notes = r.data || []; } catch (_) {}
+  let notes = []; if (!PREVIEW) try { const r = await sb.rpc("parent_absence_notes", { p_student: String(cur) }); notes = r.data || []; } catch (_) {}
   const NS = { pending: "⏳ Waiting for the school · بانتظار المدرسة", accepted: "✅ Accepted: authorised absence · تم القبول", declined: "❌ Not accepted · لم يُقبل" };
   const today = new Date().toISOString().slice(0, 10);
   const noteCard = `<div class="card"><h2>📨 Tell the school about an absence · إبلاغ المدرسة عن غياب</h2>
@@ -163,7 +164,8 @@ async function attendance(){
   const pc = a.days ? Math.round(a.in / a.days * 100) : null;
   p.innerHTML = `<div class="card"><h2>Attendance this school year · الحضور هذا العام</h2>${a.days ? `<p class="big" style="margin:0;color:${pc >= 95 ? "var(--sage)" : pc >= 90 ? "var(--amber)" : "var(--red)"}">${pc}%</p><p class="muted" style="margin:4px 0 0">${a.days - a.in} day${a.days - a.in === 1 ? "" : "s"} absent · late ${a.late} time${a.late === 1 ? "" : "s"} · out of ${a.days} school days</p>
       ${(a.recent || []).length ? `<table style="margin-top:12px">${a.recent.map(r => `<tr><td>${dshort(r.day)}</td><td>${{ late: "Late · متأخر", absent: "Unauthorised absence · غياب بدون عذر", excused: "Authorised absence · غياب بعذر" }[r.status] || r.status}</td></tr>`).join("")}</table>` : ""}
-      <p class="muted" style="margin:12px 0 0">Every school day counts. 95% or more is the goal. · كل يوم دراسي مهم.</p>` : '<p class="muted" style="margin:0">No registers yet this year.</p>'}</div>` + noteCard;
+      <p class="muted" style="margin:12px 0 0">Every school day counts. 95% or more is the goal. · كل يوم دراسي مهم.</p>` : '<p class="muted" style="margin:0">No registers yet this year.</p>'}</div>` + (PREVIEW ? "" : noteCard);
+  if (PREVIEW) return;
   document.getElementById("anf").onsubmit = async e => { e.preventDefault(); const btn = document.getElementById("asb"), from = document.getElementById("af").value, to = document.getElementById("at").value || from;
     if (to < from) return alert("The end date must be after the start date. · يجب أن يكون تاريخ النهاية بعد البداية.");
     btn.disabled = true; btn.textContent = "Sending… · جارٍ الإرسال";
@@ -187,6 +189,7 @@ function calendar(){
   p.innerHTML = `<div class="card"><h2>Coming up · القادم</h2>${ev.length ? `<table>${ev.map(e => `<tr><td style="white-space:nowrap">${dshort(e.start)}${e.end && e.end !== e.start ? " – " + dshort(e.end) : ""}</td><td><b>${esc(e.title)}</b>${e.time ? ` <span class="muted">· ${esc(e.time)}</span>` : ""}</td></tr>`).join("")}</table>` : '<p class="muted" style="margin:0">Nothing in the next two months.</p>'}</div>`;
 }
 async function start(){
+  if (PREVIEW) { const { data: { session } } = await sb.auth.getSession(); if (!session) return authView("in", "Please sign in with your staff account to preview."); hr.innerHTML = '<a class="btn ghost small" href="parents.html">← Back to Nestopia</a>'; kids = [{ id: PREVIEW, name: "" }]; tab = "reports"; return show(PREVIEW); }
   if (pend && !window.INVITE) { try { const { data } = await sb.rpc("parent_code_info", { p_code: pend }); if (data) window.INVITE = data; } catch (_) {} }
   const { data: { session } } = await sb.auth.getSession();
   if (!session) return authView(window.INVITE ? "up" : "in");
