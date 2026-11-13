@@ -4,6 +4,15 @@ async function twigLoad(sbc, schoolId, onlyIds){
   const set = await sbc.from("school_setups").select("year,config").eq("school_id", schoolId).order("updated_at", { ascending: false }).limit(1);
   const C = set.data && set.data[0] ? set.data[0].config : null; const year = set.data && set.data[0] ? set.data[0].year : null;
   if (!C || !C.subjects || !C.terms) return null;
+  const WT3 = ["working towards", "expected", "greater depth"];
+  const isLvOk = c => !!(c && c.scale && c.scale.length && (c.objMode === "levels" || (c.objMode === undefined && c.scale.every(x => /^\d+$/.test(String(x))))));
+  function lvCols(cfg) { if (!isLvOk(cfg)) return false; let ch = false; const first = k => Math.max(0, cfg.gradePos.indexOf(k));
+    (cfg.subjects || []).forEach(sb => (sb.strands || []).forEach(st => (st.cols || []).forEach(c => {
+      if (c.type !== "list") return; const wt = c.options && c.options.length === 3 && c.options.every((o, i) => String(o).trim().toLowerCase() === WT3[i]);
+      if (!(c.lv || wt)) return;
+      if (wt && !c.lv) { c.legacy = Object.assign({ [c.options[0]]: cfg.scale[Math.max(0, first("inline") - 1)], [c.options[1]]: cfg.scale[first("inline")], [c.options[2]]: cfg.scale[first("above")] }, c.legacy || {}); ch = true; }
+      c.lv = true; c.options = cfg.scale.slice(); c.below = first("inline"); c.above = first("above"); }))); return ch; }
+  lvCols(C);
   let cq = sbc.from("classes").select("*").eq("school_id", schoolId); if (year) cq = cq.eq("year", year);
   const classes = (await cq).data || [];
   const all = async (t, cols, f0) => { const out = []; for (let f = 0; ; f += 1000) { let q = sbc.from(t).select(cols); if (f0) q = f0(q); const { data, error } = await q.range(f, f + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; } return out; };
@@ -16,9 +25,13 @@ async function twigLoad(sbc, schoolId, onlyIds){
   (await all("taught", "class_id,obj_id")).forEach(x => (TG[x.class_id] = TG[x.class_id] || new Set()).add(x.obj_id));
   const esc_ = t => String(t ?? ""), clamp = n => Math.max(0, Math.min(1, n));
   const DEF_OS = [{ code: "s", label: "Secure", short: "✓", kind: "secure" }, { code: "n", label: "Not yet secure", short: "!", kind: "notyet" }, { code: "e", label: "Exceeding", short: "+", kind: "exceed" }];
-  const OS = () => (C && C.objScale && C.objScale.length ? C.objScale : DEF_OS);
+  const gradeLevels = () => { const sc = (C && C.scale) || [], gm = (C && C.gradeMin) || [], gp = (C && C.gradePos) || [];
+    return sc.map((n, i) => ({ code: "L" + (i + 1), label: /^\d+$/.test(String(n)) ? "Level " + n : String(n), short: String(n).slice(0, 3), kind: gp[i] === "below" ? "notyet" : gp[i] === "above" ? "exceed" : "secure", pct: gm[i + 1] == null ? gm[i] : (gm[i] + gm[i + 1]) / 2 })); };
+  const useLv = () => !!(C && C.objMode === "levels" && C.scale && C.scale.length);
+  const OS = () => (useLv() ? gradeLevels() : C && C.objScale && C.objScale.length ? C.objScale : DEF_OS);
   const osOf = v => OS().find(x => x.code === v) || DEF_OS.find(x => x.code === v) || { code: v, label: v, short: "?", kind: "secure" };
   const credit = v => ({ notyet: 0, partial: .5, secure: 1, exceed: 1 })[osOf(v).kind] ?? 1;
+  const markPct = v => { const o = osOf(v); if (o.pct != null) return o.pct; const gl = gradeLevels(), g = o.kind === "notyet" ? gl.filter(x => x.kind === "notyet").pop() : gl.find(x => x.kind === o.kind); return g ? g.pct : credit(v) * 100; };
   const isEx = v => osOf(v).kind === "exceed", isGap = v => !!v && credit(v) < 1;
   const _dc = v => v ? ({ notyet: "n", partial: "p", secure: "s", exceed: "e" })[osOf(v).kind] : "";
   const _dt = v => v ? esc_(osOf(v).short) : "";
@@ -34,12 +47,16 @@ async function twigLoad(sbc, schoolId, onlyIds){
     if (c.type === "comment") return null;
     if (c.type === "objectives") {
       if (k === "b") return null; const cl = clsOf(s), tg = TG[cl.id] || new Set(); let a = 0, sec = 0, ex = 0;
+      if (useLv()) { let sum = 0; objsFor(c, cl.grade_id, +k).filter(o => tg.has(o.id)).forEach(o => { const v = stat(s.id, o.id); if (v) { a++; sum += markPct(v); } });
+        if (!a) return null; const p = sum / a; return { band: ({ below: -1, inline: 0, above: 1 })[C.gradePos[levelFromPct(p)]] ?? 0, norm: clamp(p / 100) }; }
       objsFor(c, cl.grade_id, +k).filter(o => tg.has(o.id)).forEach(o => { const v = stat(s.id, o.id); if (v) { a++; sec += credit(v); if (isEx(v)) ex++; } });
       if (!a) return null; const p = sec / a * 100, e = ex / a * 100; return { band: p < c.belowPct ? -1 : (p >= 90 && e >= c.abovePct) ? 1 : 0, norm: clamp(p / 100) };
     }
     const v = val(s.id, c.id, k); if (v === undefined || v === "") return null;
     const pos = C.gradePos, gm = C.gradeMin, iS = (gm[pos.indexOf("inline")] ?? 50) / 100, aS = (gm[pos.indexOf("above")] ?? 90) / 100;
     const piece = (x, lo, hi, ls, hs) => x < lo ? iS * clamp((x - (lo - ls)) / ls) * .999 : x < hi ? iS + (aS - iS) * (x - lo) / (hi - lo) : aS + (1 - aS) * clamp((x - hi) / hs);
+    if (c.type === "list" && c.lv) { let i = C.scale.indexOf(v); if (i < 0 && c.legacy && c.legacy[v] != null) i = C.scale.indexOf(c.legacy[v]); if (i < 0) return null;
+      const p = gm[i + 1] == null ? gm[i] : (gm[i] + gm[i + 1]) / 2; return { band: ({ below: -1, inline: 0, above: 1 })[C.gradePos[i]] ?? 0, norm: clamp(p / 100) }; }
     if (c.type === "list") { const i = c.options.indexOf(v); if (i < 0) return null; const n = c.options.length;
       return { band: i < c.below ? -1 : i >= c.above ? 1 : 0, norm: i < c.below ? iS * (i + .5) / c.below : i < c.above ? iS + (aS - iS) * (i - c.below + .5) / (c.above - c.below) : aS + (1 - aS) * (i - c.above + .5) / (n - c.above) }; }
     const n = +v; if (isNaN(n)) return null;
@@ -51,7 +68,8 @@ async function twigLoad(sbc, schoolId, onlyIds){
     const ev = st.cols.filter(c => k === "b" ? c.baseline : !c.baseline).map(c => colEval(s, c, k)).filter(Boolean); if (!ev.length) return null;
     const pct = ev.reduce((a, x) => a + x.norm, 0) / ev.length * 100, sug = levelFromPct(pct); return { band: C.gradePos[sug] || "inline", sug };
   }
-  function level(s, st, k) { const t = ((LV[s.id] || {})[st.id] || {})[k]; if (t !== undefined && t !== null) return t; const e = strandEval(s, st, k); return e ? e.sug : null; }
+  const baseIsLv = st => { const b = st.cols.filter(c => c.baseline); return b.length === 1 && b[0].type === "list" && !!b[0].lv; };
+  function level(s, st, k) { const t = k === "b" && baseIsLv(st) ? null : ((LV[s.id] || {})[st.id] || {})[k]; if (t !== undefined && t !== null) return t; const e = strandEval(s, st, k); return e ? e.sug : null; }
   function progress(s, st, t) { const b = level(s, st, "b"), c = level(s, st, String(t)); if (b == null || c == null) return null; const steps = c - b, exp = C.steps * (t + 1) / C.terms.length; return { band: steps < exp - .5 ? "below" : steps > exp + .5 ? "above" : "inline" }; }
   function onTrack(s, st, t) { const b = level(s, st, "b"), c = level(s, st, String(t)); if (b == null || c == null) return null; const max = C.scale.length - 1; return Math.min(max, Math.round(b + (c - b) / (t + 1) * C.terms.length)) >= Math.min(max, b + C.steps); }
   function avgBand(s, list, k) { const bs = list.map(st => strandEval(s, st, k)).filter(Boolean).map(e => ({ below: -1, inline: 0, above: 1 })[e.band]); if (!bs.length) return null; const b = bs.reduce((a, x) => a + x, 0) / bs.length; return b < -.33 ? "below" : b > .33 ? "above" : "inline"; }
