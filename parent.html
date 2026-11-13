@@ -287,11 +287,17 @@ async function schoolInfo(){
 function account(){
   const p = document.getElementById("pane");
   p.innerHTML = `<div class="card"><h2>👨‍👩‍👧 My children · أطفالي</h2>${kids.map(k => `<p style="margin:6px 0;font-size:17px">${avs[k.id] || "🌟"} <b>${esc(k.name)}</b> <span class="muted">· ${esc(k.class || "")}</span></p>`).join("")}<button class="btn ghost small" id="addK">+ Add another child · إضافة طفل</button></div>
+    <div class="card"><h2>📧 Emails · رسائل البريد</h2><p class="muted" style="margin-top:0">Choose which emails you’d like. Everything is always in the portal too. · اختر الرسائل التي تريد استلامها.</p><div id="prefs"><p class="muted">Loading… · جارٍ التحميل</p></div></div>
     <div class="card"><h2>🌐 Language · اللغة</h2><div class="row"><button class="btn ${LANG === "en" ? "" : "ghost"} small" data-l="en">English</button><button class="btn ${LANG === "ar" ? "" : "ghost"} small" data-l="ar">العربية</button></div></div>
     <div class="card"><h2>📲 On your phone · على هاتفك</h2><p class="muted" style="margin-top:0">Open the portal like an app, straight from your home screen. · افتح البوابة كتطبيق من شاشتك الرئيسية.</p><button class="btn ghost small" id="inst">📲 Add to home screen · أضف إلى الشاشة الرئيسية</button> <button class="btn ghost small" id="tourB">👋 Show the welcome tour again · عرض الجولة مرة أخرى</button></div>
     <div class="card"><h2>🔑 Password · كلمة المرور</h2><form id="pwf" class="row"><input type="password" id="npw" minlength="8" placeholder="New password · كلمة مرور جديدة" style="max-width:280px" required><button class="btn small">Change · تغيير</button></form></div>
     <div class="card"><p style="margin:0" class="row"><a href="privacy.html">Privacy notice · الخصوصية</a> · <a href="terms.html">Terms · الشروط</a></p><p style="margin:12px 0 0"><button class="btn ghost small" id="out2">Sign out · تسجيل الخروج</button></p></div>`;
   document.getElementById("addK").onclick = () => linkView();
+  (async () => { const box = document.getElementById("prefs"); let pr = { news: true, replies: true, surveys: true }; try { const r = await sb.rpc("parent_get_prefs"); if (r.data) pr = r.data; } catch (_) {}
+    const OPT = [["news", "📢 News from school · أخبار المدرسة"], ["replies", "💬 Replies from teachers · ردود المعلمين"], ["surveys", "📋 Survey invitations · دعوات الاستبيانات"]];
+    box.innerHTML = OPT.map(([k, l]) => `<label style="display:flex;gap:10px;align-items:center;font-weight:600;margin:8px 0"><input type="checkbox" data-pf="${k}" ${pr[k] !== false ? "checked" : ""} style="width:22px;height:22px"> ${l}</label>`).join("") + '<p class="muted" style="margin:6px 0 0;font-size:13px">Conference booking confirmations are always sent. · تأكيد الحجز يُرسل دائمًا.</p>';
+    applyLang(box);
+    box.querySelectorAll("[data-pf]").forEach(cb => cb.onchange = async () => { pr[cb.dataset.pf] = cb.checked; const { error } = await sb.rpc("parent_set_prefs", { p: pr }); if (error) { cb.checked = !cb.checked; return alert(error.message); } }); })();
   document.getElementById("inst").onclick = installApp; document.getElementById("tourB").onclick = tour;
   p.querySelectorAll("[data-l]").forEach(b => b.onclick = () => { LANG = b.dataset.l; try { localStorage.setItem("nest_lang", LANG); } catch (_) {} show(cur); });
   document.getElementById("pwf").onsubmit = async e => { e.preventDefault(); const { error } = await sb.auth.updateUser({ password: document.getElementById("npw").value }); alert(error ? error.message : L("Password changed.", "تم تغيير كلمة المرور.")); };
@@ -423,6 +429,7 @@ async function start(){
   if (!session) return authView(window.INVITE ? "up" : "in");
   hr.innerHTML = "";
   await loadKids();
+  try { sb.rpc("parent_seen").then(() => {}, () => {}); } catch (_) {}
   // linked automatically from an invite link
   if (pend) { const { data: { user } } = await sb.auth.getUser(); const { data: nm, error } = await sb.rpc("parent_link_child", { p_code: pend, p_name: (user.user_metadata || {}).full_name || "", p_rel: "" });
     try { localStorage.removeItem("nest_pcode"); } catch (_) {} pend = null; window.INVITE = null;
