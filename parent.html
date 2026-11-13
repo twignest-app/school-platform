@@ -148,12 +148,32 @@ function reports(){
       return rows.length ? `<tr><td colspan="3" style="background:var(--plum-soft);font-weight:800">${esc(sub.name)}</td></tr>` + rows.map(([st, c]) => `<tr><td><b>${esc(st.name)}</b></td><td style="text-align:center">${esc(lab(c.level))}</td><td ${sub.lang === "ar" ? 'dir="rtl" lang="ar"' : ""}>${esc(c.text)}</td></tr>`).join("") : ""; }).join("")}</table></div>`;
   p.querySelectorAll("[data-term]").forEach(b => b.onclick = () => { term = +b.dataset.term; reports(); });
 }
-function attendance(){
+async function attendance(){
   const p = document.getElementById("pane"), a = view.attendance || { days: 0 };
+  let notes = []; try { const r = await sb.rpc("parent_absence_notes", { p_student: String(cur) }); notes = r.data || []; } catch (_) {}
+  const NS = { pending: "⏳ Waiting for the school · بانتظار المدرسة", accepted: "✅ Accepted: authorised absence · تم القبول", declined: "❌ Not accepted · لم يُقبل" };
+  const today = new Date().toISOString().slice(0, 10);
+  const noteCard = `<div class="card"><h2>📨 Tell the school about an absence · إبلاغ المدرسة عن غياب</h2>
+      <p class="muted" style="margin-top:0">For an absence today, one that has happened, or one that’s planned (for example a medical appointment). Attach a medical note or letter if you have one.<span class="ar" dir="rtl" lang="ar">أرفق تقريرًا طبيًا أو خطابًا إن وُجد.</span></p>
+      <form id="anf"><div class="row"><label style="flex:1;min-width:150px">From · من <input type="date" id="af" value="${today}" required></label><label style="flex:1;min-width:150px">To · إلى <input type="date" id="at" value="${today}" required></label></div>
+        <label>Reason · السبب <input id="ar" maxlength="500" required placeholder="For example: unwell with a fever · مثال: مريض"></label>
+        <label>Medical note or letter (optional) · تقرير طبي أو خطاب <input type="file" id="ad" accept="image/*,.pdf,.doc,.docx"></label>
+        <button class="btn" id="asb">Send to the school · إرسال</button></form></div>
+    ${notes.length ? `<div class="card"><h2>Your absence notes · ملاحظاتك</h2><table>${notes.map(n => `<tr><td style="white-space:nowrap">${dshort(n.from)}${n.to !== n.from ? " – " + dshort(n.to) : ""}</td><td>${esc(n.reason)}${n.doc ? ` <span class="muted">· 📎 ${esc(n.doc)}</span>` : ""}<br><span class="muted" style="font-size:13px">${NS[n.status] || ""}</span></td></tr>`).join("")}</table></div>` : ""}`;
   const pc = a.days ? Math.round(a.in / a.days * 100) : null;
   p.innerHTML = `<div class="card"><h2>Attendance this school year · الحضور هذا العام</h2>${a.days ? `<p class="big" style="margin:0;color:${pc >= 95 ? "var(--sage)" : pc >= 90 ? "var(--amber)" : "var(--red)"}">${pc}%</p><p class="muted" style="margin:4px 0 0">${a.days - a.in} day${a.days - a.in === 1 ? "" : "s"} absent · late ${a.late} time${a.late === 1 ? "" : "s"} · out of ${a.days} school days</p>
       ${(a.recent || []).length ? `<table style="margin-top:12px">${a.recent.map(r => `<tr><td>${dshort(r.day)}</td><td>${{ late: "Late · متأخر", absent: "Unauthorised absence · غياب بدون عذر", excused: "Authorised absence · غياب بعذر" }[r.status] || r.status}</td></tr>`).join("")}</table>` : ""}
-      <p class="muted" style="margin:12px 0 0">Every school day counts. 95% or more is the goal. · كل يوم دراسي مهم.</p>` : '<p class="muted" style="margin:0">No registers yet this year.</p>'}</div>`;
+      <p class="muted" style="margin:12px 0 0">Every school day counts. 95% or more is the goal. · كل يوم دراسي مهم.</p>` : '<p class="muted" style="margin:0">No registers yet this year.</p>'}</div>` + noteCard;
+  document.getElementById("anf").onsubmit = async e => { e.preventDefault(); const btn = document.getElementById("asb"), from = document.getElementById("af").value, to = document.getElementById("at").value || from;
+    if (to < from) return alert("The end date must be after the start date. · يجب أن يكون تاريخ النهاية بعد البداية.");
+    btn.disabled = true; btn.textContent = "Sending… · جارٍ الإرسال";
+    let docPath = null, docName = null; const f = document.getElementById("ad").files[0];
+    try {
+      if (f) { if (f.size > 10 * 1024 * 1024) throw new Error("Please choose a file smaller than 10 MB."); const { data: folder } = await sb.rpc("parent_doc_folder", { p_student: String(cur) }); if (!folder) throw new Error("Not linked");
+        docPath = `${folder}/note-${Date.now()}-${f.name.replace(/[^\w.\-]+/g, "_")}`; const up = await sb.storage.from("attendance-docs").upload(docPath, f); if (up.error) throw up.error; docName = f.name; }
+      const { error } = await sb.rpc("parent_absence_note", { p_student: String(cur), p_from: from, p_to: to, p_reason: document.getElementById("ar").value, p_doc_path: docPath, p_doc_name: docName }); if (error) throw error;
+      attendance(); setTimeout(() => alert("Thank you. The school has your note. · شكرًا، تم إرسال الملاحظة إلى المدرسة."), 50);
+    } catch (err) { btn.disabled = false; btn.textContent = "Send to the school · إرسال"; alert(err.message || err); } };
 }
 function behaviour(){
   const p = document.getElementById("pane"), b = view.behaviour || [], m = b.filter(x => x.kind === "merit"), inc = b.filter(x => x.kind === "incident");

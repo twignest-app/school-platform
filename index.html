@@ -897,11 +897,16 @@ function homeView(p, school){
   if (window.hubInit) hubInit("overview");
   overviewData(p, school, lead);
   if (["school_lead", "admin"].includes(p.role) && typeof gsSteps === "function") gsSteps(sb, school).then(steps => { const b = document.getElementById("gsBox"); if (b && steps.some(s => !s[2])) { b.innerHTML = gsHtml(steps, true); b.hidden = false; } }).catch(() => {});
-  Promise.all([inclusionReminder(p, school), wellbeingReminder(p, school), behaviourReminder(p, school), messagesReminder(p, school), surveyReminder(p, school)]).then(() => {
+  Promise.all([inclusionReminder(p, school), wellbeingReminder(p, school), behaviourReminder(p, school), messagesReminder(p, school), surveyReminder(p, school), absenceNoteReminder(p, school)]).then(() => {
     const n = document.querySelectorAll("#hubnotes > div").length;
     const t = document.getElementById("ovTask"); if (t) t.textContent = n;
     const e = document.getElementById("ovNoNotes"); if (e) e.hidden = n > 0;
   });
+}
+// Absence notes from parents waiting to be checked
+async function absenceNoteReminder(p, school){
+  try { const { data, error } = await sb.from("att_parent_notes").select("id").eq("school_id", String(school.id)).eq("status", "pending"); if (error || !data || !data.length) return;
+    const b = document.createElement("div"); b.innerHTML = `<p style="margin:0;font-weight:700">📨 ${data.length} absence note${data.length === 1 ? "" : "s"} from parents to check.</p><p style="margin:8px 0 0"><a class="btn" href="attendance.html#today">Open Attendance</a></p>`; placeNote(b); } catch (_) {}
 }
 // Staff surveys to take
 async function surveyReminder(p, school){
