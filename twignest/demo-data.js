@@ -62,7 +62,7 @@
     school_setups: [{ id: "r1", school_id: "s1", year: "2026–2027", status: "live", config }],
     classes: [{ id: "k1", school_id: "s1", year: "2026–2027", grade_id: "g2", name: "2A" }, { id: "k2", school_id: "s1", year: "2026–2027", grade_id: "g2", name: "2B" }],
     class_teachers: [{ id: "ct1", class_id: "k1", teacher_id: "u2", subject_id: null }, { id: "ct2", class_id: "k2", teacher_id: "u3", subject_id: null }, { id: "ct3", class_id: "k1", teacher_id: "u6", subject_id: "arb" }, { id: "ct4", class_id: "k2", teacher_id: "u6", subject_id: "arb" }],
-    students: [], results: [], objective_status: [], student_levels: [], taught: [], report_comments: [], next_steps: [] };
+    students: [], results: [], objective_status: [], student_levels: [], progress_plans: [], taught: [], report_comments: [], next_steps: [] };
 
   const names = [["Layla Hassan", ["EAL"]], ["Omar Khalid", []], ["Yusuf Rahman", ["SEN"]], ["Mariam Al Shamsi", ["Emirati", "G&T"]], ["Ahmed Al Mansoori", ["Emirati"]], ["Sara Ibrahim", []], ["Hamdan Al Ketbi", ["Emirati"]], ["Aisha Siddiqui", ["EAL"]],
     ["Zayed Al Nuaimi", ["Emirati", "SEN"]], ["Noor Fathi", ["G&T"]], ["Adam Youssef", []], ["Fatima Al Ali", ["Emirati"]], ["Rayan Malik", ["EAL", "SEN"]], ["Hessa Al Suwaidi", ["Emirati"]], ["Ali Hamdan", []], ["Lina Haddad", ["EAL"]],

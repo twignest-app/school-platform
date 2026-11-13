@@ -8,7 +8,7 @@
   const POSS = { below: "Below", inline: "In line", above: "Above", none: "Not yet assessed" }, PROGS = { below: "Below expected", inline: "Expected", above: "Better than expected" };
   function applyLabels(cfg) { const L = (cfg && cfg.labels) || {}; ["below", "inline", "above"].forEach(k => { if (L.att && L.att[k]) POS[k] = L.att[k]; if (L.prog && L.prog[k]) PROG[k] = L.prog[k]; }); }
   const badge = (c, t) => `<span class="badge b-${c}">${t}</span>`;
-  let ctx, C, cls, studs = [], R = {}, ST = {}, TAUGHT = new Set(), LV = {}, CM = {}, NS = {}, ED = null, ui = { sub: null, strand: null, term: 0, group: "All", mode: "strand", view: "grid", more: false, oi: 0, pStrand: null, pid: null }, bound = false, pending = 0;
+  let ctx, C, cls, studs = [], R = {}, ST = {}, TAUGHT = new Set(), LV = {}, CM = {}, NS = {}, PLANS = {}, planErr = false, ED = null, ui = { sub: null, strand: null, term: 0, group: "All", mode: "strand", view: "grid", more: false, oi: 0, pStrand: null, pid: null }, bound = false, pending = 0;
 
   const DEF_OS = [{ code: "s", label: "Secure", short: "✓", kind: "secure" }, { code: "n", label: "Not yet secure", short: "!", kind: "notyet" }, { code: "e", label: "Exceeding", short: "+", kind: "exceed" }];
   const gradeLevels = () => { const sc = (C && C.scale) || [], gm = (C && C.gradeMin) || [], gp = (C && C.gradePos) || [];
@@ -146,13 +146,13 @@
   }
   function renderOverview(head) {
     const t = ui.term, k = String(t), all = allStrands();
-    let h = `<thead><tr><th class="namecol">Student</th>${C.subjects.map(sb => `<th class="colh"><b>${esc(sb.name)}</b>level</th>`).join("")}<th class="colh"><b>Overall</b>all subjects</th><th class="colh"><b>Progress</b>since baseline</th><th class="colh"><b>On track</b>for end-of-year target</th><th class="colh"><b>Gaps</b>to fill</th></tr></thead><tbody>`;
+    let h = `<thead><tr><th class="namecol">Student</th>${C.subjects.map(sb => `<th class="colh"><b>${esc(sb.name)}</b>level</th>`).join("")}<th class="colh"><b>Overall</b>all subjects</th><th class="colh"><b>Progress</b>since baseline</th><th class="colh"><b>On track</b>for end-of-year target</th><th class="colh"><b>Below expected</b>click to plan</th></tr></thead><tbody>`;
     visible().forEach(s => {
-      const ov = avgEval(s.id, all, k), pr = avgProgress(s.id, all, t), tr = trackCount(s.id, all, t), gp = plan(s.id, t).gaps.filter(g => g.pri < 2).length;
+      const ov = avgEval(s.id, all, k), pr = avgProgress(s.id, all, t), tr = trackCount(s.id, all, t), gp = gapList(s.id, t).open.length;
       h += `<tr><td class="namecol"><button class="name" data-prof="${s.id}">${esc(s.full_name)}</button>${s.student_number ? `<span class="sid">${esc(s.student_number)}</span>` : ""}<div class="tags">${(s.groups || []).map(g => `<span class="tag">${esc(g)}</span>`).join("")}</div></td>`;
       C.subjects.forEach(sb => { const e = avgEval(s.id, sb.strands, k); h += `<td>${e ? (lvBadge(e.lv) || badge(e.band, esc(lab(e.lv)))) : badge("none", "–")}</td>`; });
       h += `<td>${ov ? (lvBadge(ov.lv) || badge(ov.band, esc(lab(ov.lv)))) : "–"}</td><td>${pr ? badge(pr.band, signed(pr.steps) + " · " + PROGS[pr.band]) : "–"}</td>
-        <td>${tr.n ? badge(tr.ok === tr.n ? "inline" : tr.ok >= tr.n / 2 ? "none" : "below", `${tr.ok} of ${tr.n}`) : "–"}</td><td>${gp ? badge(gp > 4 ? "below" : "none", gp) : badge("inline", "0")}</td></tr>`;
+        <td>${tr.n ? badge(tr.ok === tr.n ? "inline" : tr.ok >= tr.n / 2 ? "none" : "below", `${tr.ok} of ${tr.n}`) : "–"}</td><td style="white-space:nowrap"><button class="gapbtn" data-gaps="${s.id}" aria-label="Gaps and progress plan for ${esc(s.full_name)}">${gp ? badge(gp > 4 ? "below" : "none", gp) : badge("inline", "0")}</button>${planTag(s.id)}</td></tr>`;
     });
     const vs = visible(); let okN = 0, known = 0, progN = 0, pk = 0, need = 0;
     vs.forEach(x => { const ov = avgEval(x.id, all, k), pr = avgProgress(x.id, all, t), tr = trackCount(x.id, all, t);
@@ -426,6 +426,8 @@
       l.data.forEach(x => { ((LV[x.student_id] = LV[x.student_id] || {})[x.strand_id] = (LV[x.student_id] || {})[x.strand_id] || {})[x.term] = x.level; });
       const cm = await sb.from("report_comments").select("*").in("student_id", ids); if (cm.error) throw cm.error;
       CM = {}; cm.data.forEach(x => { ((CM[x.term] = CM[x.term] || {})[x.student_id] = (CM[x.term] || {})[x.student_id] || {})[x.strand_id] = x; });
+      const pp = await sb.from("progress_plans").select("*").in("student_id", ids).eq("status", "active"); PLANS = {}; planErr = !!pp.error;
+      if (!pp.error) pp.data.forEach(x => { if (!PLANS[x.student_id] || String(x.updated_at) > String(PLANS[x.student_id].updated_at)) PLANS[x.student_id] = x; });
       const ns = await sb.from("next_steps").select("*").in("student_id", ids); NS = {}; if (!ns.error) ns.data.forEach(x => { ((NS[x.term] = NS[x.term] || {})[x.student_id] = (NS[x.term] || {})[x.student_id] || {})[x.strand_id] = x.text; });
     }
   }
@@ -452,6 +454,88 @@
   function summary(s, st) { const k = String(ui.term), lv = level(s.id, st, k), p = progress(s.id, st, ui.term), bd = lv == null ? "none" : (C.gradePos[lv] || "inline");
     return { pos: lvBadge(lv) || badge(bd, lv == null ? "–" : esc(lab(lv))), prog: p ? badge(p.band, (p.steps > 0 ? "+" : "") + p.steps + " · " + PROGS[p.band]) : badge("none", "–") }; }
 
+  /* ---- Gaps and progress plans ---- */
+  const isoDay = d => { const z = new Date(d); z.setMinutes(z.getMinutes() - z.getTimezoneOffset()); return z.toISOString().slice(0, 10); };
+  const fmtD = d => d ? new Date(d + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "";
+  const daysTo = d => Math.round((new Date(d + "T00:00:00") - new Date(isoDay(new Date()) + "T00:00:00")) / 864e5);
+  const mini = v => v ? `<i class="dot ${dotCls(v)}" style="width:24px;height:24px;font-size:11px;font-style:normal;display:inline-flex" title="${esc(osOf(v).label)}">${dotTxt(v)}</i>` : `<i class="dot" style="width:24px;height:24px;display:inline-flex" title="Not assessed"></i>`;
+  function gapList(sid, t) {
+    const open = [], na = [];
+    strands().forEach(([sb, st]) => st.cols.forEach(c => { if (c.type !== "objectives") return;
+      for (let ti = 0; ti <= t; ti++) objs(c, ti).forEach(o => { if (!TAUGHT.has(o.id)) return; const v = stat(sid, o.id), it = { o, nm: sname(sb, st), term: ti, v };
+        if (isGap(v)) open.push(it); else if (!v) na.push(it); }); }));
+    return { open, na };
+  }
+  const planOf = sid => PLANS[sid] || null;
+  const inPlan = (sid, oid) => { const p = planOf(sid); return !!(p && (p.objectives || []).some(x => x.obj_id === oid)); };
+  function planTag(sid) { const p = planOf(sid); if (!p) return ""; const d = daysTo(p.ends);
+    return d < 0 ? `<span class="badge b-below" style="margin-left:6px">Review due</span>` : `<span class="tag" style="margin-left:6px">Plan until ${esc(fmtD(p.ends))}</span>`; }
+  async function savePlan(sid, objectives, ends, note) {
+    const old = planOf(sid), row = { id: old ? old.id : (crypto.randomUUID ? crypto.randomUUID() : "pp" + Date.now() + Math.random().toString(36).slice(2, 8)), school_id: cls.school_id, class_id: cls.id, student_id: sid, objectives, starts: old ? old.starts : isoDay(new Date()), ends, note: note || null, status: "active", updated_at: new Date().toISOString() };
+    const ok = await run(ctx.sb.from("progress_plans").upsert(row)); if (ok) PLANS[sid] = row; return ok;
+  }
+  function openGaps(sid) {
+    ui.gsid = sid; ui.glen = null; const p = planOf(sid); ui.gsel = new Set(p ? p.objectives.map(x => x.obj_id) : []);
+    let d = document.getElementById("tnGaps"); if (!d) { d = document.createElement("dialog"); d.id = "tnGaps"; document.body.appendChild(d); }
+    renderGaps(); if (!d.open) d.showModal();
+  }
+  function renderGaps() {
+    const d = document.getElementById("tnGaps"), sid = ui.gsid, s = studs.find(x => x.id === sid); if (!d || !s) return;
+    const t = ui.term, { open, na } = gapList(sid, t), p = planOf(sid), goalC = defCode();
+    let h = `<div class="dlg"><div class="row" style="justify-content:space-between;align-items:flex-start;gap:10px"><div><h2 style="margin:0;color:var(--plum);font-family:Poppins,sans-serif">${esc(s.full_name)}</h2>
+      <p class="note" style="margin:4px 0 0">${open.length ? `Below the expected level in ${open.length} objective${open.length === 1 ? "" : "s"} taught so far` : "No objectives below the expected level"}${na.length ? ` · ${na.length} not assessed yet` : ""}</p></div><button class="btn ghost small" data-pclose="1">Close</button></div>`;
+    if (planErr) h += `<div class="msg err" style="margin-top:12px">Progress plans can’t be saved yet. The school lead needs to run the one-time database update (progress-plans.sql) in Supabase.</div>`;
+    if (p) {
+      const dl = daysTo(p.ends), done = p.objectives.filter(x => { const v = stat(sid, x.obj_id); return v && !isGap(v); }).length;
+      h += `<div class="card" style="margin-top:14px;border:2px solid var(--plum)"><div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2 style="margin:0">Progress plan</h2>
+        <span class="note">${esc(fmtD(p.starts))} to ${esc(fmtD(p.ends))} · ${dl < 0 ? `<b style="color:var(--red)">review due</b>` : dl === 0 ? "ends today" : dl + " day" + (dl === 1 ? "" : "s") + " left"} · <b>${done} of ${p.objectives.length}</b> reached the expected level</span></div>
+        <table class="onelist" style="margin-top:8px"><tr><th style="text-align:left">Focus objective</th><th>Started at</th><th>Now</th><th></th></tr>${p.objectives.map(x => { const v = stat(sid, x.obj_id), ok = v && !isGap(v);
+          return `<tr><td><span class="note">${esc(x.nm || "")}</span><br><span dir="auto">${esc(x.text)}</span></td><td style="text-align:center">${mini(x.start)}</td><td style="text-align:center">${mini(v)}</td><td>${ok ? badge("inline", "Reached") : badge("none", "Working on it")}</td></tr>`; }).join("")}</table>
+        ${p.note ? `<p style="margin:10px 0 0"><b>Support:</b> ${esc(p.note)}</p>` : ""}
+        <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap"><button class="btn small" data-gpdone="complete">Finish plan</button><button class="btn ghost small" data-gpdone="ended">Remove plan</button><span class="note">To change it, tick or untick objectives below and save again.</span></div></div>`;
+    }
+    h += `<div class="card" style="margin-top:14px"><h2 style="margin-top:0">Choose what to focus on</h2><p class="note">Tick the objectives to work on. Two or three at a time works best. Use <b>Re-check</b> when you assess again: the gap closes once the student reaches ${esc(osOf(goalC).label)}.</p>`;
+    if (!open.length) h += `<p class="ok">Nothing below the expected level right now.</p>`;
+    let last = null;
+    open.forEach(it => { if (it.nm !== last) { h += `<h3 style="font-size:14px;margin:14px 0 4px;color:var(--plum)">${esc(it.nm)}</h3>`; last = it.nm; }
+      h += `<div class="gaprow"><label class="gapchk"><input type="checkbox" data-gsel="${it.o.id}" ${ui.gsel.has(it.o.id) ? "checked" : ""}><span><span dir="auto">${esc(it.o.text)}</span> <span class="tag">${esc(C.terms[it.term])}</span>${inPlan(sid, it.o.id) ? ` <span class="tag">In plan</span>` : ""}</span></label>
+        <div class="row" style="gap:6px;align-items:center;margin:6px 0 0 30px;flex-wrap:wrap"><span class="note">Now</span>${mini(it.v)}<span class="note" style="margin-left:8px">Re-check</span>${OS().map(x => `<button class="dot pick ${it.v === x.code ? dotCls(x.code) : ""}" style="width:30px;height:30px;font-size:12px" data-grc="${sid}|${it.o.id}|${x.code}" title="${esc(x.label)}" aria-label="Re-check: ${esc(x.label)}">${esc(x.short)}</button>`).join("")}</div>
+        <p class="note" style="margin:6px 0 0 30px">Next step: ${esc(it.o.step || "Re-teach in a small group and check again.")}</p></div>`; });
+    if (na.length) h += `<details style="margin-top:14px"><summary class="note">Not assessed yet (${na.length}). These are a reminder for you, not gaps for the student.</summary><ul class="plan">${na.map(it => `<li><b>${esc(it.nm)}.</b> ${esc(it.o.text)}</li>`).join("")}</ul></details>`;
+    h += `</div>`;
+    if (open.length || p) h += `<div class="card gpfoot"><div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-end">
+        <div><b id="gpCount">${ui.gsel.size} selected</b></div>
+        <div><label class="fl" for="gpLen">Focus for</label><select id="gpLen" class="fsel">${[...(p ? [["keep", "Keep end date (" + fmtD(p.ends) + ")"]] : []), [2, "2 weeks"], [3, "3 weeks"], [4, "4 weeks"], [6, "6 weeks"], [8, "8 weeks"], ["date", "Until a date…"]].map(([v, l]) => `<option value="${v}" ${String(v) === String(ui.glen || (p ? "keep" : 4)) ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></div>
+        <div id="gpEndW" style="${String(ui.glen) === "date" ? "" : "display:none"}"><label class="fl" for="gpEnd">End date</label><input type="date" id="gpEnd" class="fsel" value="${esc(p ? p.ends : "")}"></div>
+        <div style="flex:1;min-width:220px"><label class="fl" for="gpNote">How you’ll support (optional)</label><input type="text" id="gpNote" class="fsel" style="width:100%" value="${esc(p ? p.note || "" : "")}" placeholder="e.g. Small group, 3 times a week with the LSA"></div>
+        <button class="btn" data-gpsave="1" ${ui.gsel.size ? "" : "disabled"}>${p ? "Update plan" : "Save progress plan"}</button></div></div>`;
+    d.innerHTML = h + `</div>`;
+  }
+  function renderClassGaps(head) {
+    const t = ui.term, vs = visible(), rows = [];
+    strands().forEach(([sb, st]) => st.cols.forEach(c => { if (c.type !== "objectives") return;
+      for (let ti = 0; ti <= t; ti++) objs(c, ti).forEach(o => { if (!TAUGHT.has(o.id)) return; const below = vs.filter(s => isGap(stat(s.id, o.id))), asd = vs.filter(s => stat(s.id, o.id)).length;
+        if (below.length) rows.push({ o, nm: sname(sb, st), term: ti, below, asd }); }); }));
+    rows.sort((a, b) => b.below.length / Math.max(1, b.asd) - a.below.length / Math.max(1, a.asd) || b.below.length - a.below.length);
+    const sugg = r => r.below.length / Math.max(1, r.asd) >= .5 ? badge("below", "Re-teach to the whole class") : r.below.length >= 2 ? badge("none", "Small group") : badge("inline", "Individual support");
+    let h = `<div class="card"><h2 style="margin-top:0">Objectives to revisit</h2><p class="note">Taught objectives where students are below the expected level, most urgent first. Click a name to open that student’s gaps and progress plan.</p></div>`;
+    if (!rows.length) h += `<div class="card"><p class="ok">No taught objectives are below the expected level for these students.</p></div>`;
+    rows.forEach(r => { h += `<div class="card"><div class="row" style="justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:240px"><span class="note">${esc(r.nm)} · ${esc(C.terms[r.term])}</span><div style="font-weight:700;margin-top:2px" dir="auto">${esc(r.o.text)}</div></div>
+      <div style="text-align:right">${sugg(r)}<div class="note" style="margin-top:4px">${r.below.length} of ${r.asd} assessed below expected</div></div></div>
+      <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:10px">${r.below.map(s => `<button class="chip" data-gaps="${s.id}" style="display:inline-flex;gap:6px;align-items:center">${mini(stat(s.id, r.o.id))}${esc(s.full_name)}${inPlan(s.id, r.o.id) ? " · in plan" : ""}</button>`).join("")}</div>
+      ${r.o.step ? `<p class="note" style="margin:10px 0 0">Next step: ${esc(r.o.step)}</p>` : ""}
+      <div style="margin-top:10px"><button class="btn ghost small" data-gpgroup="${r.o.id}">Add to ${r.below.length === 1 ? "this student’s" : "these students’"} progress plan${r.below.length === 1 ? "" : "s"}</button></div></div>`; });
+    ctx.el.innerHTML = head + h;
+  }
+  async function addGroup(oid) {
+    const t = ui.term, list = visible().filter(s => isGap(stat(s.id, oid))); let o = null, nm = "";
+    strands().forEach(([sb, st]) => st.cols.forEach(c => { if (c.type !== "objectives") return; for (let ti = 0; ti <= t; ti++) objs(c, ti).forEach(x => { if (x.id === oid) { o = x; nm = sname(sb, st); } }); }));
+    if (!o) return; let n = 0;
+    for (const s of list) { const p = planOf(s.id), cur = p ? p.objectives.slice() : [];
+      if (cur.some(x => x.obj_id === oid)) continue; cur.push({ obj_id: oid, start: stat(s.id, oid), text: o.text, nm });
+      const ends = p ? p.ends : isoDay(new Date(Date.now() + 28 * 864e5)); if (await savePlan(s.id, cur, ends, p ? p.note : "")) n++; }
+    render(); const el = document.getElementById("shSave"); if (el && !planErr) el.textContent = n ? `Added to ${n} progress plan${n === 1 ? "" : "s"}` : "Already in their plans";
+  }
   const lvRange = band => { const r = C.scale.filter((x, i) => C.gradePos[i] === band); return r.length > 1 ? `${r[0]}–${r[r.length - 1]}` : (r[0] || ""); };
   const allLbl = () => useLv() ? esc(osOf(defCode()).label) : esc(osOf(defCode()).label.toLowerCase());
   const usePick = () => OS().length > 3;
@@ -469,6 +553,11 @@
 .onehead h2{font-size:19px;line-height:1.4;margin:12px 0 10px}
 .dot.l1,.b-l1{background:#B4473A;border:2px solid #B4473A;color:#fff}.dot.l2,.b-l2{background:#C8623A;border:2px solid #C8623A;color:#fff}.dot.l3,.b-l3{background:#C98A1E;border:2px solid #C98A1E;color:#fff}
 .dot.l4,.b-l4{background:#7FA052;border:2px solid #7FA052;color:#fff}.dot.l5,.b-l5{background:#4F7A47;border:2px solid #4F7A47;color:#fff}.dot.l6,.b-l6{background:#7A5A98;border:2px solid #7A5A98;color:#fff}.dot.l7,.b-l7{background:#462D5B;border:2px solid #462D5B;color:#fff}
+dialog#tnGaps{border:0;border-radius:18px;padding:0;width:min(860px,95vw);max-height:92vh;background:var(--bg);color:var(--ink)}dialog#tnGaps::backdrop{background:rgba(40,25,60,.45)}
+@media (max-width:700px){dialog#tnGaps{width:100vw;max-width:100vw;max-height:100vh;height:100vh;border-radius:0;margin:0}}
+.gapbtn{border:0;background:none;padding:0;cursor:pointer}.gapbtn .badge{text-decoration:underline;text-underline-offset:2px}
+.gaprow{padding:10px 0;border-bottom:1px solid var(--line)}.gapchk{display:flex;gap:10px;align-items:flex-start;cursor:pointer}.gapchk input{width:20px;height:20px;margin-top:2px;flex:none}
+.gpfoot{position:sticky;bottom:0;box-shadow:0 -6px 18px rgba(0,0,0,.08)}
 .dot.pick.l1,.dot.pick.l2,.dot.pick.l3,.dot.pick.l4,.dot.pick.l5,.dot.pick.l6,.dot.pick.l7{color:#fff}`;
     document.head.appendChild(st);
   }
@@ -504,13 +593,13 @@
     const sb = subs.find(s => s.id === ui.sub); if (!sb) { ctx.el.innerHTML = `<div class="card"><p>No subjects are set up yet.</p></div>`; return; }
     if (!sb.strands.find(s => s.id === ui.strand)) ui.strand = sb.strands[0]?.id;
     if (!(ui.term >= 0 && ui.term < C.terms.length)) ui.term = 0;
-    if (!["strand", "overview", "reports"].includes(ui.mode)) ui.mode = "strand";
+    if (!["strand", "overview", "gaps", "reports"].includes(ui.mode)) ui.mode = "strand";
     if (role() === "checker") ui.mode = "reports";
     const [, st] = findStrand(ui.strand), t = ui.term, k = String(t);
     const bc = st.cols.filter(c => c.baseline), tc = st.cols.filter(c => !c.baseline);
     let n = 0; tc.forEach(c => { n += c.type === "objectives" ? objs(c, t).length : 1; });
     savePrefs();
-    const tabs = role() === "checker" ? [["reports", "Report comments"]] : [["strand", "Assess"], ["overview", "Overview"], ["reports", "Report comments"]];
+    const tabs = role() === "checker" ? [["reports", "Report comments"]] : [["strand", "Assess"], ["overview", "Overview"], ["gaps", "Gaps"], ["reports", "Report comments"]];
     const sel = (id, label, opts, cur) => `<label class="fl" for="${id}">${label}</label><select id="${id}" class="fsel">${opts.map(([v, l]) => `<option value="${esc(v)}" ${String(v) === String(cur) ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
     let h = `<div class="crumb"><button class="crumbbtn" data-sh="back">${esc(ctx.crumb || "My classes")}</button> <span aria-hidden="true">›</span> ${esc(cls.name)}</div>
       <div class="phead"><div><h1 class="ptitle">${ctx.siblings && ctx.siblings.length > 1 ? `<select id="shCls" aria-label="Switch class" class="titlesel">${ctx.siblings.map(x => `<option value="${x.id}" ${x.id === cls.id ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select>` : esc(cls.name)}</h1>
@@ -528,6 +617,7 @@
     if (!studs.length) { ctx.el.innerHTML = h + `<div class="card"><p class="note">This class has no students yet. The school lead adds them in Classes and students.</p></div>`; return; }
     if (ui.mode === "overview") return renderOverview(h.replace(/<div class="legend">[\s\S]*$/, ""));
     if (ui.mode === "reports") return renderReports(h.replace(/<div class="legend">[\s\S]*$/, ""));
+    if (ui.mode === "gaps") return renderClassGaps(h.replace(/<div class="legend">[\s\S]*$/, ""));
     if (ui.view === "one") return renderOne(h, tc, t);
     const more = !!ui.more;
     let th = `<thead><tr><th class="namecol"></th>${more ? `<th class="grp" colspan="${bc.length + 1}">Baseline</th>` : ""}<th class="grp" colspan="${n || 1}">${esc(C.terms[t])}</th><th class="grp" colspan="${more ? 3 : 1}">${more ? "Summary" : "Level"}</th></tr><tr><th class="namecol">Student</th>`;
@@ -574,7 +664,17 @@
 
   async function onClick(e) {
     if (!e.target.closest("#tnPick") && !e.target.closest("[data-cell]")) closePick();
-    const t = e.target.closest("button"); if (!t || !ctx || !(ctx.el.contains(t) || t.closest("#tnProfile") || t.closest("#tnEditor") || t.closest("#tnPick"))) return;
+    const t = e.target.closest("button"); if (!t || !ctx || !(ctx.el.contains(t) || t.closest("#tnProfile") || t.closest("#tnEditor") || t.closest("#tnPick") || t.closest("#tnGaps"))) return;
+    if (t.dataset.gaps) return openGaps(t.dataset.gaps);
+    if (t.dataset.grc) { const [sid, oid, code] = t.dataset.grc.split("|"); setMark(sid, oid, code); renderGaps(); if (ui.mode === "overview" || ui.mode === "gaps") render(); return; }
+    if (t.dataset.gpgroup) return addGroup(t.dataset.gpgroup);
+    if (t.dataset.gpdone) { const sid = ui.gsid, p = planOf(sid); if (!p) return; if (t.dataset.gpdone === "ended" && !confirm("Remove this progress plan?")) return;
+      if (await run(ctx.sb.from("progress_plans").update({ status: t.dataset.gpdone === "complete" ? "completed" : "ended", updated_at: new Date().toISOString() }).eq("id", p.id))) { delete PLANS[sid]; ui.gsel = new Set(); } renderGaps(); return render(); }
+    if (t.dataset.gpsave) { const sid = ui.gsid, len = document.getElementById("gpLen").value, end = len === "keep" && planOf(sid) ? planOf(sid).ends : len === "date" ? document.getElementById("gpEnd").value : isoDay(new Date(Date.now() + +len * 7 * 864e5));
+      if (!end) { alert("Choose an end date for the plan."); return; } const { open } = gapList(sid, ui.term), p = planOf(sid), byId = {};
+      open.forEach(it => byId[it.o.id] = { obj_id: it.o.id, start: it.v, text: it.o.text, nm: it.nm }); if (p) p.objectives.forEach(x => { if (!byId[x.obj_id]) byId[x.obj_id] = x; else byId[x.obj_id].start = x.start; });
+      const objectives = [...ui.gsel].map(id => byId[id]).filter(Boolean);
+      if (await savePlan(sid, objectives, end, document.getElementById("gpNote").value.trim())) { renderGaps(); render(); } else renderGaps(); return; }
     if (t.dataset.pk !== undefined) { const [sid, oid, code] = t.dataset.pk.split("|"); closePick(); setMark(sid, oid, code); const c = ctx.el.querySelector(`[data-cell="${sid}|${oid}"]`); if (c) c.focus({ preventScroll: true }); return; }
     if (t.dataset.set !== undefined) { const [sid, oid, code] = t.dataset.set.split("|"); return setMark(sid, oid, code); }
     if (t.dataset.psub) { ui.sub = t.dataset.psub; ui.strand = null; ui.oi = 0; return render(); }
@@ -610,7 +710,9 @@
     if (t.dataset.all) return markAll(t.dataset.all);
   }
   async function onChange(e) {
-    const t = e.target; if (!ctx || !(ctx.el.contains(t) || (t.closest && t.closest("#tnProfile")))) return;
+    const t = e.target; if (!ctx || !(ctx.el.contains(t) || (t.closest && (t.closest("#tnProfile") || t.closest("#tnGaps"))))) return;
+    if (t.dataset.gsel) { t.checked ? ui.gsel.add(t.dataset.gsel) : ui.gsel.delete(t.dataset.gsel); const c = document.getElementById("gpCount"), b = document.querySelector("[data-gpsave]"); if (c) c.textContent = ui.gsel.size + " selected"; if (b) b.disabled = !ui.gsel.size; return; }
+    if (t.id === "gpLen") { ui.glen = t.value; const w = document.getElementById("gpEndW"); if (w) w.style.display = t.value === "date" ? "" : "none"; return; }
     if (t.id === "shCls") { const nc = ctx.siblings.find(x => x.id === t.value); return TNSheet.open(Object.assign({}, ctx, { cls: nc })); }
     if (t.id === "rvStrand") { ui.rstrand = t.value; return render(); }
     if (t.id === "rvStud") { ui.rstud = t.value; return render(); }
