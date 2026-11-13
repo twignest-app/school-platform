@@ -280,6 +280,14 @@ function lateSlip(sid){
     <script>setTimeout(function(){window.print()},200)<\/script>`);
   w.document.close();
 }
+async function emailSlip(sid, fresh){
+  const name = stuName(sid);
+  try { const { data, error } = await sb.functions.invoke("nestopia-mail", { body: { action: "late_slip", id: String(sid) } });
+    if (error || (data && data.error)) throw new Error((data && data.error) || error.message);
+    if (data && data.error === undefined && data.sent === undefined) return toast("Marked late. To email slips, update the nestopia-mail function in Supabase.");
+    toast(data && data.sent ? `Late slip for ${name} emailed to ${data.sent === 1 ? "the class teacher" : data.sent + " teachers"}.` : `Marked late, but ${name}’s class has no teacher linked, so no slip was emailed.`);
+  } catch (e) { toast(/Unknown action/.test(String(e.message)) ? "Marked late. To email slips, update the nestopia-mail function in Supabase." : "Marked late, but the slip email didn’t send: " + e.message); }
+}
 async function deskPane(){
   const pane = document.getElementById("pane"), today = ymd(new Date());
   await loadReqs();
@@ -301,11 +309,12 @@ async function deskPane(){
       ${notIn.length ? Object.entries(byClass).map(([c, list]) => `<h3 style="font-size:15px;margin:12px 0 4px">${esc(cls(c).name || "")}</h3>${list.map(s => { const r = reqOf(s.id, "late"), m = markOf(s.id, today);
         return `<div class="regrow" style="grid-template-columns:1fr auto"><div>${who(s.id)} <span class="note">${m ? "absent" : "not marked"}${r ? ` · 📨 parent says running late${r.at_time ? ", about " + esc(t5(r.at_time)) : ""}` : ""}</span></div><div><button class="btn small" data-arr="${esc(s.id)}" ${r ? `data-req="${esc(r.id)}"` : ""}>🕘 Arrived</button></div></div>`; }).join("")}`).join("") : '<p class="note" style="margin:0">Everyone on the registers taken so far is in.</p>'}
       ${notTaken.length ? `<p class="note" style="margin:12px 0 0">Register not taken yet: ${notTaken.map(c => esc(c.name)).join(", ")}</p>` : ""}</div>
-    <div class="card"><h2>🕘 Late today <span class="note">(${lateT.length})</span></h2>${lateT.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Arrived</th><th>Reason</th><th></th></tr>${lateT.sort((a, b) => String(a.arrived_at || "").localeCompare(String(b.arrived_at || ""))).map(m => `<tr><td>${avOf(m.student_id)} ${esc(stuName(m.student_id))}</td><td>${m.arrived_at ? esc(t5(m.arrived_at)) + ` <span class="note">(${m.minutes_late || 0} min)</span>` : "–"}</td><td>${esc([m.reason_code, m.reason].filter(Boolean).join(" · ") || "–")}</td><td><button class="btn ghost small" data-slip="${esc(m.student_id)}">🖨️ Slip</button></td></tr>`).join("")}</table></div>` : '<p class="note" style="margin:0">No one yet.</p>'}</div>
+    <div class="card"><h2>🕘 Late today <span class="note">(${lateT.length})</span></h2>${lateT.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Arrived</th><th>Reason</th><th></th></tr>${lateT.sort((a, b) => String(a.arrived_at || "").localeCompare(String(b.arrived_at || ""))).map(m => `<tr><td>${avOf(m.student_id)} ${esc(stuName(m.student_id))}</td><td>${m.arrived_at ? esc(t5(m.arrived_at)) + ` <span class="note">(${m.minutes_late || 0} min)</span>` : "–"}</td><td>${esc([m.reason_code, m.reason].filter(Boolean).join(" · ") || "–")}</td><td style="white-space:nowrap"><button class="btn ghost small" data-mslip="${esc(m.student_id)}">✉️ Email slip</button> <button class="btn ghost small" data-slip="${esc(m.student_id)}" title="Print a slip" aria-label="Print a slip">🖨️</button></td></tr>`).join("")}</table></div>` : '<p class="note" style="margin:0">No one yet.</p>'}</div>
     <div class="card"><h2>🚪 Left early today <span class="note">(${leftT.length})</span></h2>${leftT.length ? `<div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Left at</th><th>Reason</th><th>Collected by</th></tr>${leftT.map(m => `<tr><td>${avOf(m.student_id)} ${esc(stuName(m.student_id))}</td><td>${esc(t5(m.left_early_at))}</td><td>${esc(m.left_reason || "–")}</td><td>${esc(m.collected_by || "–")}</td></tr>`).join("")}</table></div>` : '<p class="note" style="margin:0">No one yet.</p>'}</div>`;
   const bind = root => { root.querySelectorAll("[data-arr]").forEach(b => b.onclick = () => deskAct(b.dataset.arr, "arrive", b.dataset.req));
     root.querySelectorAll("[data-left]").forEach(b => b.onclick = () => deskAct(b.dataset.left, "leave", b.dataset.req));
-    root.querySelectorAll("[data-slip]").forEach(b => b.onclick = () => lateSlip(b.dataset.slip)); };
+    root.querySelectorAll("[data-slip]").forEach(b => b.onclick = () => lateSlip(b.dataset.slip));
+    root.querySelectorAll("[data-mslip]").forEach(b => b.onclick = () => emailSlip(b.dataset.mslip)); };
   bind(pane);
   const q = document.getElementById("dq"), res = document.getElementById("dres");
   q.oninput = () => { const t = q.value.trim().toLowerCase(); if (t.length < 2) { res.innerHTML = ""; return; }
@@ -319,7 +328,7 @@ function deskAct(sid, kind, reqId){
   const lr = rq && rq.kind === "late" && rq.reason ? (REASONS.late.find(x => x.toLowerCase() === String(rq.reason).toLowerCase()) || "") : "";
   dlg.innerHTML = `<form class="dlg"><h2>${kind === "arrive" ? "🕘 Arrived late" : "🚪 Leaving early"} · ${esc(s.full_name)}</h2>
     ${rq ? `<p class="note" style="margin-top:0">📨 ${esc(rq.parent_name || "A parent")}: ${rq.kind === "late" ? "running late" + (rq.at_time ? ", about " + esc(t5(rq.at_time)) : "") : "pickup at " + esc(t5(rq.at_time)) + " by " + esc(rq.collector || "")}${rq.reason ? " · " + esc(rq.reason) : ""}</p>` : ""}
-    ${kind === "arrive" ? `<div class="two"><label class="f">Arrived at <input type="time" name="t" value="${now}"></label><label class="f">Reason <select name="r"><option value="">–</option>${REASONS.late.map(r => `<option ${r === lr ? "selected" : ""}>${r}</option>`).join("")}</select></label></div><label class="f">Details (optional) <input name="d" value="${esc(rq && !lr ? rq.reason || "" : "")}"></label><label class="f" style="flex-direction:row;gap:8px;align-items:center"><input type="checkbox" name="slip" checked style="width:auto"> Print a late slip</label>`
+    ${kind === "arrive" ? `<div class="two"><label class="f">Arrived at <input type="time" name="t" value="${now}"></label><label class="f">Reason <select name="r"><option value="">–</option>${REASONS.late.map(r => `<option ${r === lr ? "selected" : ""}>${r}</option>`).join("")}</select></label></div><label class="f">Details (optional) <input name="d" value="${esc(rq && !lr ? rq.reason || "" : "")}"></label><label class="f" style="flex-direction:row;gap:8px;align-items:center"><input type="checkbox" name="mail" checked style="width:auto"> ✉️ Email the late slip to the class teacher</label><label class="f" style="flex-direction:row;gap:8px;align-items:center;font-weight:400"><input type="checkbox" name="slip" style="width:auto"> 🖨️ Also print a slip</label>`
       : `<div class="two"><label class="f">Leaving at <input type="time" name="t" value="${now}"></label><label class="f">Reason <input name="r" value="${esc(rq ? rq.reason || "" : "")}" placeholder="For example: unwell, appointment"></label></div><label class="f">Collected by <input name="c" required value="${esc(rq ? rq.collector || "" : "")}" placeholder="Name and relation, e.g. Huda Ali (aunt)"></label><p class="lock">Check the adult collecting is on the child’s list of contacts.</p>`}
     <div class="row" style="justify-content:flex-end"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn">Save</button></div></form>`;
   const f = dlg.querySelector("form"); dlg.querySelector("[data-x]").onclick = () => dlg.close();
@@ -329,8 +338,8 @@ function deskAct(sid, kind, reqId){
         : { left_early_at: f.t.value, left_reason: f.r.value.trim() || null, collected_by: f.c.value.trim() });
     const { error } = await sb.from("attendance_marks").upsert(row, { onConflict: "student_id,day" }); if (error) return toast(/column/.test(error.message) ? "Please run the Attendance plus database step first." : error.message);
     if (rq) await sb.from("att_parent_requests").update({ status: "done", handled_by: me.id, handled_at: new Date().toISOString() }).eq("id", rq.id);
-    const slip = kind === "arrive" && f.slip && f.slip.checked;
-    dlg.close(); await loadMarks(); if (slip) lateSlip(s.id); toast(kind === "arrive" ? "Marked late. The teacher can see it, and parents will be emailed." : "Leaving early recorded."); if (window.nestAttDue) nestAttDue(true); deskPane(); };
+    const slip = kind === "arrive" && f.slip && f.slip.checked, mail = kind === "arrive" && f.mail && f.mail.checked;
+    dlg.close(); await loadMarks(); if (slip) lateSlip(s.id); if (mail) emailSlip(s.id, true); else toast(kind === "arrive" ? "Marked late. The teacher can see it on the register." : "Leaving early recorded."); if (window.nestAttDue) nestAttDue(true); deskPane(); };
   dlg.showModal();
 }
 
