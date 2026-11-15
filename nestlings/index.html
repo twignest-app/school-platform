@@ -42,7 +42,7 @@
   .go{width:100%;margin-top:14px;border:0;cursor:pointer;background:var(--gold);color:var(--navy);font-size:24px;font-weight:700;
       padding:16px;border-radius:22px;box-shadow:0 6px 0 #C98F22;transition:transform .12s}
   .go:hover{transform:translateY(-2px)} .go:active{transform:translateY(4px);box-shadow:0 2px 0 #C98F22} .go:disabled{opacity:.6;cursor:wait}
-  .help{font-size:14px;color:var(--muted);font-weight:700;margin-top:12px;text-align:center}
+  .help{font-size:14px;color:var(--muted);font-weight:700;margin-top:22px;text-align:center}
   .msg{margin-top:14px;border-radius:18px;padding:14px 16px;font-weight:800;text-align:center}
   .msg.err{background:#FBE9E6;color:var(--coral)}
   .msg.ok{background:var(--sage-soft);color:#3E6A3B;font-size:18px}
@@ -61,6 +61,34 @@
   .star{position:fixed;pointer-events:none;font-size:26px;z-index:20;animation:pop 1.2s ease-out forwards}
   @keyframes pop{0%{transform:translate(0,0) scale(.4);opacity:1}100%{transform:translate(var(--x),var(--y)) scale(1.2);opacity:0}}
   @media (max-width:820px){.hero{grid-template-columns:1fr}.levels{grid-template-columns:1fr}.hero-text{text-align:center}.sub{margin:6px auto 0}}
+
+  .hidden{display:none!important}
+  .linkbtn{background:none;border:0;color:var(--navy);font-weight:800;text-decoration:underline;cursor:pointer;font-family:Nunito,sans-serif;font-size:15px;padding:4px}
+  .field{width:100%;font-size:18px;font-weight:700;border:3px solid var(--line);border-radius:16px;padding:12px 14px;margin-top:8px;font-family:Nunito,sans-serif;color:var(--navy);outline:none}
+  .field:focus{border-color:var(--sky)}
+  .bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card);border:3px solid var(--line);border-radius:22px;padding:10px 14px;margin:6px 0 18px}
+  .bar .grow{flex:1}
+  .chip{font-weight:800;font-size:14px;border-radius:99px;padding:5px 12px;background:var(--sky-soft)}
+  .hello{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin:6px 0 20px}
+  .hello h1{font-size:clamp(34px,6vw,52px);margin:0;line-height:1.05}
+  .hello p{margin:4px 0 0;color:var(--muted);font-weight:800;font-size:17px}
+  .badge{display:inline-flex;align-items:center;gap:6px;font-family:Fredoka,sans-serif;font-weight:600;font-size:16px;border-radius:99px;padding:6px 14px;margin-top:8px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}
+  .tile{background:var(--card);border:3px solid var(--line);border-radius:26px;padding:20px;text-align:left;cursor:pointer;box-shadow:0 6px 0 rgba(51,64,90,.06);transition:transform .12s;font-family:Nunito,sans-serif;color:var(--navy)}
+  .tile:hover{transform:translateY(-3px)}
+  .tile .ic{font-size:40px;line-height:1}
+  .tile h3{margin:10px 0 2px;font-size:22px}
+  .tile p{margin:0;color:var(--muted);font-weight:700;font-size:14.5px}
+  .tile .soon{display:inline-block;margin-top:10px;font-size:12.5px;font-weight:800;border-radius:99px;padding:3px 10px;background:var(--gold-soft)}
+  .t-mat{border-color:var(--sky)} .t-hw{border-color:var(--gold)} .t-msg{border-color:var(--lilac)} .t-cal{border-color:var(--sage)} .t-work{border-color:#E8A13A}
+  .classes{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+  .ctile{background:var(--card);border:3px solid var(--sky);border-radius:22px;padding:18px;cursor:pointer;font-family:Fredoka,sans-serif;font-size:22px;font-weight:600;color:var(--navy);text-align:left}
+  .ctile small{display:block;font-family:Nunito,sans-serif;font-size:14px;font-weight:700;color:var(--muted);margin-top:4px}
+  .btn2{display:inline-block;border:0;cursor:pointer;background:var(--navy);color:#fff;font-family:Fredoka,sans-serif;font-weight:600;font-size:16px;border-radius:99px;padding:10px 18px;text-decoration:none}
+  .btn2.light{background:var(--card);color:var(--navy);border:2px solid var(--line)}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(120px);background:var(--navy);color:#fff;font-family:Fredoka,sans-serif;font-size:18px;padding:12px 20px;border-radius:99px;transition:transform .25s;z-index:30}
+  .toast.on{transform:translateX(-50%) translateY(0)}
+  .lv-hatch{background:var(--gold-soft)} .lv-chirp{background:var(--sky-soft)} .lv-fly{background:var(--lilac-soft)}
 </style>
 </head>
 <body>
@@ -77,55 +105,98 @@
 
 <header>
   <a class="logo" href="./"><svg width="44" height="42" aria-hidden="true"><use href="#bird"/></svg><b>Nestlings</b></a>
-  <nav class="who" aria-label="Other Nestopia portals">
+  <nav class="who" id="topnav" aria-label="Other Nestopia portals">
     <a class="pill" href="../parent.html">Parents</a>
-    <a class="pill" href="../">Teachers</a>
+    <button class="pill" type="button" id="teacherBtn" style="cursor:pointer;font-family:Nunito,sans-serif">Teachers</button>
   </nav>
 </header>
 
 <main>
-  <section class="hero">
-    <div class="hero-text">
-      <h1>Nest<span>lings</span></h1>
-      <p class="motto">Think, try, <i>learn to fly.</i></p>
-      <p class="ar sub" style="margin-top:2px">فكّر، جرّب، وتعلّم الطيران</p>
-      <p class="sub">Your learning nest at school: see what you're learning, collect your stars and show what you can do.</p>
-      <svg class="bird" viewBox="0 0 120 112" role="img" aria-label="The Nestopia bird"><use href="#bird"/></svg>
-    </div>
+  <!-- ===== Landing: child signs in with a code ===== -->
+  <div id="vLanding">
+    <section class="hero">
+      <div class="hero-text">
+        <h1>Nest<span>lings</span></h1>
+        <p class="motto">Think, try, <i>learn to fly.</i></p>
+        <p class="ar sub" style="margin-top:2px">فكّر، جرّب، وتعلّم الطيران</p>
+        <p class="sub">Your learning nest at school: see what you're learning, collect your stars and show what you can do.</p>
+        <svg class="bird" viewBox="0 0 120 112" role="img" aria-label="The Nestopia bird"><use href="#bird"/></svg>
+      </div>
+      <form class="gate" id="gate" autocomplete="off" novalidate>
+        <h2>Hello, nestling! 👋</h2>
+        <p>Type the code on your Nestlings card.</p>
+        <label for="code" style="position:absolute;left:-9999px">Your Nestlings code</label>
+        <input class="code" id="code" maxlength="9" inputmode="text" autocapitalize="characters" spellcheck="false" placeholder="KM7RTP" aria-describedby="help">
+        <button class="go" id="go" type="submit">Hop in, let's begin! 🐣</button>
+        <div id="msg" role="status" aria-live="polite"></div>
+        <p class="help" id="help">No card yet? Ask your teacher for your Nestlings code.<br><span class="ar">ليس لديك بطاقة؟ اطلب الرمز من معلمك.</span></p>
+      </form>
+    </section>
+    <section class="levels" aria-label="Nestlings grows with you">
+      <div class="lvl l1"><div class="ic">🥚</div><h3>Hatchlings</h3><span class="g">Pre-K to KG2</span><p>Big pictures, sounds and stickers. Tap, listen and play.</p></div>
+      <div class="lvl l2"><div class="ic">🐣</div><h3>Chirpers</h3><span class="g">Grades 1 and 2</span><p>Fill your star jar, draw what you learned and share it.</p></div>
+      <div class="lvl l3"><div class="ic">🐦</div><h3>Flyers</h3><span class="g">Grades 3 to 5</span><p>Set learning goals, reflect, and build your own portfolio.</p></div>
+    </section>
+  </div>
 
-    <form class="gate" id="gate" autocomplete="off" novalidate>
-      <h2>Hello, nestling! 👋</h2>
-      <p>Type the code on your Nestlings card.</p>
-      <label for="code" class="fred" style="position:absolute;left:-9999px">Your Nestlings code</label>
-      <input class="code" id="code" maxlength="6" inputmode="text" autocapitalize="characters" spellcheck="false" placeholder="ABC123" aria-describedby="help">
-      <button class="go" id="go" type="submit">Hop in, let's begin! 🐣</button>
-      <div id="msg" role="status" aria-live="polite"></div>
-      <p class="help" id="help">No card yet? Ask your teacher for your Nestlings code.<br><span class="ar">ليس لديك بطاقة؟ اطلب الرمز من معلمك.</span></p>
+  <!-- ===== Teacher sign-in ===== -->
+  <div id="vTeacherIn" class="hidden" style="max-width:480px;margin:20px auto">
+    <form class="gate" id="tform" novalidate>
+      <h2>Teacher sign-in 🍎</h2>
+      <p>Use your Nestopia email and password.</p>
+      <label class="fred" for="tEmail">Email</label><input class="field" id="tEmail" type="email" autocomplete="username">
+      <label class="fred" for="tPw" style="display:block;margin-top:12px">Password</label><input class="field" id="tPw" type="password" autocomplete="current-password">
+      <button class="go" type="submit" id="tGo" style="font-size:20px">Sign in</button>
+      <div id="tMsg" role="status" aria-live="polite"></div>
+      <p class="help">Forgot your password? Reset it at <a href="../">nestopia.school</a>.<br><button type="button" class="linkbtn" data-go="landing">← Back to Nestlings</button></p>
     </form>
-  </section>
+  </div>
 
-  <section class="levels" aria-label="Nestlings grows with you">
-    <div class="lvl l1"><div class="ic">🥚</div><h3>Hatchlings</h3><span class="g">Pre-K to KG2</span>
-      <p>Big pictures, sounds and stickers. Tap, listen and play.</p></div>
-    <div class="lvl l2"><div class="ic">🐣</div><h3>Chirpers</h3><span class="g">Grades 1 and 2</span>
-      <p>Fill your star jar, draw what you learned and share it.</p></div>
-    <div class="lvl l3"><div class="ic">🐦</div><h3>Flyers</h3><span class="g">Grades 3 to 5</span>
-      <p>Set learning goals, reflect, and build your own portfolio.</p></div>
-  </section>
+  <!-- ===== Child's nest ===== -->
+  <div id="vNest" class="hidden"></div>
+
+  <!-- ===== Teacher: classes and class nest ===== -->
+  <div id="vTeacher" class="hidden"></div>
 </main>
 
 <footer>
   Nestlings is part of <a href="../">Nestopia</a> · One nest for the whole school
   <div style="margin-top:6px"><a href="../privacy.html">Privacy</a><a href="../terms.html">Terms</a></div>
 </footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
-const sb = window.supabase ? window.supabase.createClient("https://gvhzbxpgebgjnegdiijp.supabase.co", "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM", { auth: { persistSession: false } }) : null;
+const sb = window.supabase ? window.supabase.createClient("https://gvhzbxpgebgjnegdiijp.supabase.co", "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM") : null;
 const $ = id => document.getElementById(id);
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const clean = v => v.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+const TK = "nestlings_token";
+const store = { get: () => { try { return localStorage.getItem(TK); } catch (_) { return null; } },
+                set: v => { try { localStorage.setItem(TK, v); } catch (_) {} },
+                del: () => { try { localStorage.removeItem(TK); } catch (_) {} } };
+let toastT; const toast = m => { const t = $("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2600); };
+const OFFLINE = '<div class="msg err">Nestlings can’t connect right now. Try again in a moment.</div>';
 
+function show(view){ ["vLanding", "vTeacherIn", "vNest", "vTeacher"].forEach(v => $(v).classList.toggle("hidden", v !== view)); window.scrollTo(0, 0); }
+document.addEventListener("click", e => { const b = e.target.closest("[data-go]"); if (b && b.dataset.go === "landing") show("vLanding"); });
+
+/* the three nest levels, worked out from the class name */
+function level(cls){
+  const n = String(cls || "").toLowerCase();
+  if (/pre|kg|k\s?g|fs\d|foundation|nursery|reception/.test(n)) return { id: "hatch", ic: "🥚", name: "Hatchling" };
+  if (/(grade|gr|g|year|y)\s*[-.]?\s*[12](?!\d)|^\s*[12]\s*[a-z]?\s*$/.test(n)) return { id: "chirp", ic: "🐣", name: "Chirper" };
+  return { id: "fly", ic: "🐦", name: "Flyer" };
+}
+
+const SPACES = me => [
+  { k: "mat", ic: "📚", t: "Materials", d: "Things your teacher shares with you" },
+  { k: "hw", ic: "📝", t: "Homework", d: "Homework and revision to do" },
+  { k: "msg", ic: "💬", t: "Messages", d: me && me.settings && me.settings.student_messages ? "Class news, and you can write to your teacher" : "News from your teacher" },
+  { k: "cal", ic: "📅", t: "Calendar", d: "Trips, events and due dates" },
+  { k: "work", ic: "🎨", t: "My work", d: "Share your writing, photos, voice and videos" }];
+
+/* ---------- child ---------- */
 $("code").addEventListener("input", e => { e.target.value = clean(e.target.value); $("msg").innerHTML = ""; });
 const pre = new URLSearchParams(location.search).get("c"); if (pre) $("code").value = clean(pre);
 
@@ -141,18 +212,105 @@ $("gate").addEventListener("submit", async e => {
   e.preventDefault();
   const code = clean($("code").value), msg = $("msg");
   if (code.length < 6) { msg.innerHTML = '<div class="msg err">Your code has 6 letters and numbers. Check your card. 🔎</div>'; $("code").focus(); return; }
-  if (!sb) { msg.innerHTML = '<div class="msg err">Nestlings can’t connect right now. Try again in a moment.</div>'; return; }
+  if (!sb) { msg.innerHTML = OFFLINE; return; }
   $("go").disabled = true;
   try {
-    const { data, error } = await sb.rpc("nestlings_code_info", { p_code: code });
+    const { data, error } = await sb.rpc("nestlings_sign_in", { p_code: code });
     if (error) throw error;
-    if (!data) { msg.innerHTML = '<div class="msg err">Hmm, that code didn’t work. Check your card, or ask your teacher. 🐦</div>'; return; }
-    stars();
-    msg.innerHTML = `<div class="msg ok"><b>Hi ${esc(data.child)}! 🎉</b>Welcome to your nest at ${esc(data.school)}.<br>Your Nestlings nest is being built. See you very soon!</div>`;
-  } catch (err) {
-    msg.innerHTML = '<div class="msg err">Nestlings can’t connect right now. Try again in a moment.</div>';
-  } finally { $("go").disabled = false; }
+    if (!data || !data.token) { msg.innerHTML = '<div class="msg err">Hmm, that code didn’t work. Check your card, or ask your teacher. 🐦</div>'; return; }
+    store.set(data.token); stars();
+    setTimeout(() => { $("code").value = ""; msg.innerHTML = ""; nest(data); }, 700);
+  } catch (err) { msg.innerHTML = OFFLINE; }
+  finally { $("go").disabled = false; }
 });
+
+function nest(me){
+  const lv = level(me.class);
+  const teachers = (me.teachers || []).filter(Boolean);
+  $("vNest").innerHTML = `
+    <div class="hello"><svg width="96" height="90" aria-hidden="true"><use href="#bird"/></svg>
+      <div><h1>Hi ${esc(me.first)}! 👋</h1>
+        <p>${esc(me.class || "")}${me.class ? " · " : ""}${esc(me.school || "")}${teachers.length ? " · " + esc(teachers.join(", ")) : ""}</p>
+        <span class="badge lv-${lv.id}">${lv.ic} You're a ${lv.name}</span></div></div>
+    <div class="tiles">${SPACES(me).map(s => `<button class="tile t-${s.k}" type="button" data-soon="${esc(s.t)}"><div class="ic">${s.ic}</div><h3>${s.t}</h3><p>${esc(s.d)}</p><span class="soon">Opening soon</span></button>`).join("")}</div>
+    <p style="text-align:center;margin-top:26px"><button class="btn2 light" type="button" id="outBtn">👋 Sign out</button></p>
+    <p class="help" style="margin-top:8px">Not ${esc(me.first)}? Tap Sign out, then type your own code.</p>`;
+  $("vNest").querySelectorAll("[data-soon]").forEach(b => b.onclick = () => toast(`${b.dataset.soon} is opening soon! 🐣`));
+  $("outBtn").onclick = async () => { const t = store.get(); store.del(); if (t && sb) { try { await sb.rpc("nestlings_sign_out", { p_token: t }); } catch (_) {} } toast("See you soon! 👋"); show("vLanding"); };
+  show("vNest");
+}
+
+/* ---------- teacher ---------- */
+$("teacherBtn").onclick = async () => {
+  if (!sb) return toast("Nestlings can’t connect right now.");
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) return teacherHome(); show("vTeacherIn"); setTimeout(() => $("tEmail").focus(), 50);
+};
+$("tform").addEventListener("submit", async e => {
+  e.preventDefault(); const m = $("tMsg"), email = $("tEmail").value.trim(), pw = $("tPw").value;
+  if (!email || !pw) { m.innerHTML = '<div class="msg err">Type your email and password.</div>'; return; }
+  $("tGo").disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+  $("tGo").disabled = false;
+  if (error) { m.innerHTML = `<div class="msg err">${/invalid/i.test(error.message) ? "That email or password isn’t right." : esc(error.message)}</div>`; return; }
+  $("tPw").value = ""; m.innerHTML = ""; teacherHome();
+});
+
+let ME = null, CLASSES = [];
+async function teacherHome(){
+  const box = $("vTeacher"); box.innerHTML = '<p class="sub">Loading your classes…</p>'; show("vTeacher");
+  const { data: { session } } = await sb.auth.getSession(); if (!session) return show("vTeacherIn");
+  const { data: p } = await sb.from("profiles").select("id,full_name,email,role,school_id,active").eq("id", session.user.id).single();
+  if (!p || !p.school_id || !p.active) { box.innerHTML = `<div class="gate"><h2>Almost there</h2><p>Your Nestopia account isn’t linked to an active school yet. Ask your school leader.</p><button class="btn2 light" id="tOut">Sign out</button></div>`; $("tOut").onclick = teacherOut; return; }
+  ME = p; const lead = ["school_lead", "coordinator", "admin"].includes(p.role);
+  let res;
+  if (lead) res = await sb.from("classes").select("id,name").eq("school_id", p.school_id).order("name");
+  else { const ct = await sb.from("class_teachers").select("class_id").eq("teacher_id", p.id);
+    const ids = [...new Set((ct.data || []).map(x => x.class_id))];
+    res = ids.length ? await sb.from("classes").select("id,name").in("id", ids).order("name") : { data: [] }; }
+  if (res.error) { box.innerHTML = `<div class="msg err">Your classes couldn’t be loaded: ${esc(res.error.message)}</div>`; return; }
+  CLASSES = (res.data || []).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
+  box.innerHTML = `
+    <div class="bar"><b class="grow">🍎 ${esc(p.full_name || p.email)}</b>
+      <a class="btn2 light" href="../nestlings-admin.html">Codes and settings</a>
+      <a class="btn2 light" href="../">School Hub</a>
+      <button class="btn2 light" type="button" id="tOut">Sign out</button></div>
+    <h2 style="font-size:32px;margin:0 0 4px">${lead ? "Classes" : "Your classes"}</h2>
+    <p class="sub" style="margin:0 0 16px">Choose a class to open its nest.</p>
+    ${CLASSES.length ? `<div class="classes">${CLASSES.map(c => { const lv = level(c.name); return `<button class="ctile" type="button" data-c="${esc(c.id)}">${lv.ic} ${esc(c.name)}<small>${lv.name}s</small></button>`; }).join("")}</div>`
+      : `<div class="gate"><p style="margin:0">You don’t have any classes yet. Your school leader adds you to your classes in Nestopia.</p></div>`}`;
+  $("tOut").onclick = teacherOut;
+  box.querySelectorAll("[data-c]").forEach(b => b.onclick = () => classNest(CLASSES.find(c => String(c.id) === b.dataset.c)));
+}
+
+function classNest(c){
+  const lv = level(c.name), box = $("vTeacher");
+  box.innerHTML = `
+    <div class="bar"><button class="btn2 light" type="button" id="back">← Classes</button><b class="grow">${lv.ic} ${esc(c.name)}</b>
+      <a class="btn2 light" href="../nestlings-admin.html#class=${encodeURIComponent(c.id)}">Codes and settings</a></div>
+    <div class="hello"><svg width="80" height="75" aria-hidden="true"><use href="#bird"/></svg>
+      <div><h1>${esc(c.name)}</h1><p>The class nest · ${lv.name}s</p></div></div>
+    <div class="tiles">${[
+      { k: "mat", ic: "📚", t: "Materials", d: "Upload lesson materials and links" },
+      { k: "hw", ic: "📝", t: "Homework", d: "Set homework and revision with due dates" },
+      { k: "msg", ic: "💬", t: "Messages", d: "Send messages to the class" },
+      { k: "cal", ic: "📅", t: "Calendar", d: "Trips, events, due dates and assessments" },
+      { k: "work", ic: "🎨", t: "Students’ work", d: "Approve and comment on what students share" }]
+      .map(s => `<button class="tile t-${s.k}" type="button" data-soon="${esc(s.t)}"><div class="ic">${s.ic}</div><h3>${s.t}</h3><p>${esc(s.d)}</p><span class="soon">Coming in the next update</span></button>`).join("")}</div>`;
+  $("back").onclick = teacherHome;
+  box.querySelectorAll("[data-soon]").forEach(b => b.onclick = () => toast(`${b.dataset.soon} is coming in the next update`));
+}
+
+async function teacherOut(){ await sb.auth.signOut(); ME = null; toast("Signed out"); show("vLanding"); }
+
+/* ---------- start: a child already signed in on this device goes straight to their nest ---------- */
+(async () => {
+  const t = store.get(); if (!t || !sb) return;
+  try { const { data, error } = await sb.rpc("nestlings_me", { p_token: t });
+    if (error) return;
+    if (data) nest(data); else store.del();
+  } catch (_) {}
+})();
 </script>
 </body>
 </html>

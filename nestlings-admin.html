@@ -132,6 +132,11 @@ h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
 .nl-cls th{font-size:13px;color:var(--muted)}
 .nl-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
 #cards{display:none}
+.nl-set{display:flex;gap:18px;flex-wrap:wrap;background:var(--bg);border-radius:12px;padding:10px 14px;margin:8px 0 12px}
+.nl-set label{display:flex;gap:8px;align-items:center;font-weight:700;font-size:14.5px;cursor:pointer}
+.nl-set input{width:18px;height:18px;accent-color:var(--plum)}
+.nl-acts{display:flex;gap:6px;flex-wrap:wrap}
+.nl-cls td:last-child{text-align:right;white-space:nowrap}
 @media print{
   header,.hubside,.hubtoggle,#app,.toast{display:none!important}
   body{background:#fff}
@@ -159,7 +164,8 @@ const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "
 const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.style.opacity = 1; setTimeout(() => { t.style.opacity = 0; }, 2600); };
 const LINK = "nestopia.school/nestlings";
 const BIRD = `<svg viewBox="0 0 120 112" width="64" aria-hidden="true"><path d="M40 20C56 2 86 8 90 36c3 18 14 30 22 42-16 7-38 12-56 8C34 82 23 62 27 44c2-10 6-18 13-24z" fill="#7BB3E6"/><path d="M58 52c14-9 34 4 42 24-12 6-30 6-40-2-8-6-8-16-2-22z" fill="#8FC0EC" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/><path d="M42 32q6-7 12 0" stroke="#2A3550" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M29 33 11 28l16 11z" fill="#F2B544"/><path d="M27 39 11 44l18 0z" fill="#F7C863"/><path d="M56 86l-5 16M46 103h12M70 87l2 15M65 103h13" stroke="#E8A13A" stroke-width="3.2" stroke-linecap="round"/></svg>`;
-let S, P, LEAD, STUDS = [], CODES = {};
+const natural = (a, b) => String(a).localeCompare(String(b), undefined, { numeric: true });
+let S, P, LEAD, CLASSES = [], STUDS = [], CODES = {}, SETS = {};
 
 (async () => {
   const { data: { session } } = await sb.auth.getSession(); if (!session) { location.href = "./"; return; }
@@ -173,50 +179,104 @@ let S, P, LEAD, STUDS = [], CODES = {};
       <p class="note" style="margin:0"><i>Think, try, learn to fly.</i> · The student portal for ${esc(s.name)}, Pre-K to Grade 5.</p></div></div>
       <a class="btn ghost" href="nestlings/" target="_blank" rel="noopener">Open Nestlings ↗</a></div>
     <section class="card"><h2>How students sign in</h2>
-      <p style="margin:0">Each student has their own <b>Nestlings code</b>. They go to <b>${LINK}</b>, type their code and tap <b>Hop in, let’s begin!</b></p>
-      <p class="note" style="margin:6px 0 0">Print a code card for each child. For Pre-K and KG, the teacher or a parent can type the code for them. Keep codes private: each one opens one child’s nest.</p></section>
-    <section id="codesBox"><p class="note">Loading codes…</p></section>`;
+      <p style="margin:0">Each student has their own <b>Nestlings code</b>. They go to <b>${LINK}</b>, type their code and tap <b>Hop in, let’s begin!</b> Their device remembers them until they sign out.</p>
+      <p class="note" style="margin:6px 0 0">For Pre-K and KG, the teacher or a parent can type the code. Keep codes private: each one opens one child’s nest. If a code gets shared, press <b>New code</b> and the old one stops working.</p>
+      <p class="note" style="margin:6px 0 0">Teachers open Nestlings with their usual Nestopia email and password, using the <b>Teachers</b> button.</p></section>
+    <section id="codesBox"><p class="note">Loading your classes…</p></section>`;
   load();
 })();
 
 async function load(){
   const box = document.getElementById("codesBox");
-  const [st, cd] = await Promise.all([
-    sb.from("students").select("id,full_name,class_id,classes(name)").eq("school_id", S.id).eq("archived", false).order("full_name"),
-    sb.from("nestling_codes").select("student_id,code")]);
+  let cls;
+  if (LEAD) cls = await sb.from("classes").select("id,name").eq("school_id", S.id);
+  else { const ct = await sb.from("class_teachers").select("class_id").eq("teacher_id", P.id);
+    const ids = [...new Set((ct.data || []).map(x => x.class_id))];
+    cls = ids.length ? await sb.from("classes").select("id,name").in("id", ids) : { data: [] }; }
+  if (cls.error) { box.innerHTML = `<div class="card"><p class="note" style="color:var(--red);margin:0">Classes couldn’t be loaded: ${esc(cls.error.message)}</p></div>`; return; }
+  CLASSES = (cls.data || []).sort((a, b) => natural(a.name, b.name));
+  const ids = CLASSES.map(c => c.id);
+  const [st, cd, se] = await Promise.all([
+    ids.length ? sb.from("students").select("id,full_name,class_id").in("class_id", ids).eq("archived", false).order("full_name") : { data: [] },
+    sb.from("nestling_codes").select("student_id,code"),
+    sb.from("nestling_class_settings").select("class_id,approve_posts,student_messages")]);
   if (st.error) { box.innerHTML = `<div class="card"><p class="note" style="color:var(--red);margin:0">Students couldn’t be loaded: ${esc(st.error.message)}</p></div>`; return; }
-  if (cd.error) { box.innerHTML = `<div class="card"><p class="note" style="color:var(--red);margin:0">Nestlings codes couldn’t be loaded. ${/relation|does not exist|schema cache/i.test(cd.error.message) ? "The Nestlings setup hasn’t been added to the database yet." : esc(cd.error.message)}</p></div>`; return; }
-  CODES = {}; (cd.data || []).forEach(c => { CODES[String(c.student_id)] = c.code; });
-  STUDS = (st.data || []).filter(s => LEAD || CODES[String(s.id)]);
-  const byClass = {}; STUDS.forEach(s => { const k = s.classes ? s.classes.name : "No class"; (byClass[k] = byClass[k] || []).push(s); });
-  const missing = STUDS.filter(s => !CODES[String(s.id)]).length;
-  const names = Object.keys(byClass).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  if (cd.error || se.error) { const e = cd.error || se.error;
+    box.innerHTML = `<div class="card"><p class="note" style="color:var(--red);margin:0">Nestlings couldn’t be loaded. ${/relation|does not exist|schema cache/i.test(e.message) ? "The Nestlings setup hasn’t been added to the database yet." : esc(e.message)}</p></div>`; return; }
+  STUDS = st.data || []; CODES = {}; SETS = {};
+  (cd.data || []).forEach(c => { CODES[String(c.student_id)] = c.code; });
+  (se.data || []).forEach(x => { SETS[String(x.class_id)] = x; });
+  const missingAll = STUDS.filter(s => !CODES[String(s.id)]).length;
   box.innerHTML = `
-    ${LEAD ? `<section class="card"><div class="nl-head"><h2 style="margin:0">Student codes</h2>
-        <span><button class="btn" id="mk">${missing ? `Create codes for ${missing} student${missing === 1 ? "" : "s"}` : "All students have codes"}</button>
-        <button class="btn ghost" id="prAll" ${Object.keys(CODES).length ? "" : "hidden"}>Print all cards</button></span></div>
-        <p class="note" style="margin:0">New students get a code when you press this button again. Codes never change unless you ask us to reset one.</p></section>` : ""}
-    ${!STUDS.length ? `<div class="card"><p class="note" style="margin:0">${LEAD ? "No students yet. Add students in Students first." : "There are no codes for your classes yet. Ask a school leader to create them."}</p></div>` : ""}
-    ${names.map(n => `<section class="card nl-cls"><div class="nl-head"><h2 style="margin:0">${esc(n)}</h2>
-        <button class="btn ghost small" data-pr="${esc(n)}">Print cards for ${esc(n)}</button></div>
-      <table><thead><tr><th>Student</th><th>Nestlings code</th></tr></thead><tbody>
-      ${byClass[n].map(s => `<tr><td>${esc(s.full_name)}</td><td>${CODES[String(s.id)] ? `<span class="nl-code">${esc(CODES[String(s.id)])}</span>` : '<span class="note">No code yet</span>'}</td></tr>`).join("")}
-      </tbody></table></section>`).join("")}`;
-  const mk = document.getElementById("mk");
-  if (mk) mk.onclick = async () => { if (!missing) return toast("Every student already has a code.");
-    mk.disabled = true; const { data, error } = await sb.rpc("nestlings_make_codes"); mk.disabled = false;
-    if (error) return alert("Codes weren’t created: " + error.message);
-    toast(`${data || 0} code${data === 1 ? "" : "s"} created`); load(); };
+    ${LEAD && CLASSES.length ? `<section class="card"><div class="nl-head"><h2 style="margin:0">Whole school</h2>
+        <span class="nl-acts"><button class="btn" id="mkAll">${missingAll ? `Create codes for ${missingAll} student${missingAll === 1 ? "" : "s"}` : "Every student has a code"}</button>
+        <button class="btn ghost" id="prAll">Print all cards</button><button class="btn ghost" id="csvAll">Download list</button></span></div>
+        <p class="note" style="margin:0">Teachers can also do this for their own classes below.</p></section>` : ""}
+    ${!CLASSES.length ? `<div class="card"><p class="note" style="margin:0">${LEAD ? "No classes yet. Add classes in TwigNest first." : "You’re not linked to any classes yet. Ask a school leader to add you to your classes."}</p></div>` : ""}
+    ${CLASSES.map(classCard).join("")}`;
+  bind();
+  const m = location.hash.match(/class=([^&]+)/); if (m) { const el = document.getElementById("cls-" + decodeURIComponent(m[1])); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }
+}
+
+function classCard(c){
+  const list = STUDS.filter(s => String(s.class_id) === String(c.id)), miss = list.filter(s => !CODES[String(s.id)]).length;
+  const set = SETS[String(c.id)] || { approve_posts: true, student_messages: false };
+  return `<section class="card nl-cls" id="cls-${esc(c.id)}"><div class="nl-head"><h2 style="margin:0">${esc(c.name)} <span class="note" style="font-size:14px;font-weight:600">· ${list.length} student${list.length === 1 ? "" : "s"}</span></h2>
+      <span class="nl-acts">${miss ? `<button class="btn small" data-mk="${esc(c.id)}">Create ${miss} code${miss === 1 ? "" : "s"}</button>` : ""}
+        <button class="btn ghost small" data-pr="${esc(c.id)}">Print class cards</button><button class="btn ghost small" data-csv="${esc(c.id)}">Download list</button></span></div>
+    <div class="nl-set" data-set="${esc(c.id)}">
+      <label><input type="checkbox" data-k="approve" ${set.approve_posts ? "checked" : ""}> I approve students’ posts before parents see them</label>
+      <label><input type="checkbox" data-k="msgs" ${set.student_messages ? "checked" : ""}> Students can send me messages</label>
+      <span class="note" data-saved></span></div>
+    ${list.length ? `<table><thead><tr><th>Student</th><th>Nestlings code</th><th></th></tr></thead><tbody>
+      ${list.map(s => { const k = CODES[String(s.id)]; return `<tr><td>${esc(s.full_name)}</td>
+        <td>${k ? `<span class="nl-code">${esc(k)}</span>` : '<span class="note">No code yet</span>'}</td>
+        <td>${k ? `<button class="btn ghost small" data-one="${esc(s.id)}">Print card</button> <button class="btn ghost small" data-reset="${esc(s.id)}">New code</button>`
+               : `<button class="btn small" data-mk1="${esc(s.id)}">Create code</button>`}</td></tr>`; }).join("")}
+      </tbody></table>` : '<p class="note" style="margin:0">No students in this class yet.</p>'}</section>`;
+}
+
+function bind(){
+  const run = async (btn, fn) => { btn.disabled = true; try { await fn(); } finally { btn.disabled = false; } };
+  const make = async args => { const { data, error } = await sb.rpc("nestlings_make_codes", args);
+    if (error) return alert("Codes weren’t created: " + error.message); toast(`${data || 0} code${data === 1 ? "" : "s"} created`); load(); };
+  const all = document.getElementById("mkAll"); if (all) all.onclick = () => run(all, () => make({}));
   const pa = document.getElementById("prAll"); if (pa) pa.onclick = () => printCards(STUDS);
-  box.querySelectorAll("[data-pr]").forEach(b => b.onclick = () => printCards(byClass[b.dataset.pr]));
+  const ca = document.getElementById("csvAll"); if (ca) ca.onclick = () => csv(STUDS, S.name + " Nestlings codes");
+  app.querySelectorAll("[data-mk]").forEach(b => b.onclick = () => run(b, () => make({ p_class: b.dataset.mk })));
+  app.querySelectorAll("[data-mk1]").forEach(b => b.onclick = () => run(b, () => make({ p_student: b.dataset.mk1 })));
+  app.querySelectorAll("[data-pr]").forEach(b => b.onclick = () => printCards(STUDS.filter(s => String(s.class_id) === b.dataset.pr)));
+  app.querySelectorAll("[data-csv]").forEach(b => b.onclick = () => { const c = CLASSES.find(x => String(x.id) === b.dataset.csv);
+    csv(STUDS.filter(s => String(s.class_id) === b.dataset.csv), (c ? c.name : "Class") + " Nestlings codes"); });
+  app.querySelectorAll("[data-one]").forEach(b => b.onclick = () => printCards(STUDS.filter(s => String(s.id) === b.dataset.one)));
+  app.querySelectorAll("[data-reset]").forEach(b => b.onclick = () => { const s = STUDS.find(x => String(x.id) === b.dataset.reset);
+    if (!confirm(`Give ${s ? s.full_name : "this student"} a new code? Their old code will stop working and they’ll need to sign in again.`)) return;
+    run(b, async () => { const { error } = await sb.rpc("nestlings_reset_code", { p_student: b.dataset.reset });
+      if (error) return alert("The code wasn’t changed: " + error.message); toast("New code ready"); load(); }); });
+  app.querySelectorAll("[data-set]").forEach(row => row.querySelectorAll("input").forEach(i => i.onchange = async () => {
+    const cid = row.dataset.set, ap = row.querySelector('[data-k="approve"]').checked, ms = row.querySelector('[data-k="msgs"]').checked, note = row.querySelector("[data-saved]");
+    note.textContent = "Saving…";
+    const { error } = await sb.rpc("nestlings_save_settings", { p_class: cid, p_approve: ap, p_messages: ms });
+    if (error) { note.textContent = ""; i.checked = !i.checked; return alert("This setting wasn’t saved: " + error.message); }
+    SETS[cid] = { approve_posts: ap, student_messages: ms }; note.textContent = "Saved"; setTimeout(() => { note.textContent = ""; }, 1800); }));
+}
+
+const className = id => { const c = CLASSES.find(x => String(x.id) === String(id)); return c ? c.name : ""; };
+
+function csv(list, name){
+  const rows = [["Student", "Class", "Nestlings code", "Sign in at"]].concat(list.slice().sort((a, b) => natural(className(a.class_id), className(b.class_id)) || natural(a.full_name, b.full_name))
+    .map(s => [s.full_name, className(s.class_id), CODES[String(s.id)] || "", LINK]));
+  const text = "﻿" + rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
+  a.download = name.replace(/[\\/:*?"<>|]/g, "") + ".csv"; document.body.appendChild(a); a.click(); a.remove();
 }
 
 function printCards(list){
-  const withCode = (list || []).filter(s => CODES[String(s.id)]);
+  const withCode = (list || []).filter(s => CODES[String(s.id)]).sort((a, b) => natural(className(a.class_id), className(b.class_id)) || natural(a.full_name, b.full_name));
   if (!withCode.length) return toast("Create codes first.");
   document.getElementById("cards").innerHTML = withCode.map(s => `<div class="kcard">
       <div style="display:flex;align-items:center;gap:3mm">${BIRD.replace('width="64"', 'width="44"')}<div><div class="t">Nestlings</div><small>Think, try, learn to fly.</small></div></div>
-      <div class="n">${esc(s.full_name)}</div><small>${esc(s.classes ? s.classes.name : "")} · ${esc(S.name)}</small>
+      <div class="n">${esc(s.full_name)}</div><small>${esc(className(s.class_id))} · ${esc(S.name)}</small>
       <div class="c">${esc(CODES[String(s.id)])}</div>
       <small>Go to <b>${LINK}</b>, type this code and tap <b>Hop in, let’s begin!</b></small></div>`).join("");
   setTimeout(() => window.print(), 150);
