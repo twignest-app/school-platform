@@ -41,7 +41,7 @@
     ["wellbeing", "Wellbeing", "wellbeing.html", "wellbeing"],
     ["evidence", "Evidence packs", "evidence.html", "evidence"],
     ["parents", "Parent portal", "parents.html", "parents"],
-    ["nestlings", "Nestlings", "nestlings-admin.html", "nestlings"],
+    ["nestlings", "Nestlings", "nestlings-admin.html", null],
     ["conferences", "Parent conferences", "conferences.html", "conferences"],
     ["label", ""],
     ["settings", "Settings", "settings.html", null]
