@@ -393,17 +393,21 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
 .plan .badge{align-self:flex-start;font-size:12px;font-weight:800;border-radius:99px;padding:3px 10px;background:var(--amber-soft,#FBEBD5);color:#8A5A10}
 .nav a{white-space:nowrap}
 
-.nests.two{grid-template-columns:repeat(2,1fr)}
-.nest.pp .top{background:linear-gradient(160deg,var(--rose-soft),transparent 85%)}
-.nest.nl .top{background:linear-gradient(160deg,var(--amber-soft),transparent 85%)}
-.nest .top h3{font-size:clamp(24px,2.4vw,30px);color:var(--navy);margin:0}
-.fam-mock{display:grid;gap:10px;margin-top:6px}
-.fm-row{display:grid;grid-template-columns:28px 1fr;align-items:center;column-gap:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;box-shadow:0 6px 16px -12px rgba(42,53,80,.35)}
-.fm-row span{font-size:20px;grid-row:span 2} .fm-row b{font-size:15px;color:var(--ink)} .fm-row em{font-style:normal;color:var(--muted);font-size:13px}
-.fam-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
-.fam-tiles span{display:flex;flex-direction:column;align-items:flex-start;gap:4px;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:12px;font-size:24px}
-.fam-tiles b{font-size:14px;color:var(--ink)}
-@media (max-width:900px){.nests.two{grid-template-columns:1fr}}
+section.band.fam{padding:clamp(28px,4vw,48px) 0}
+.fam .sec-head h2{font-size:clamp(24px,2.6vw,32px)}
+.famgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:20px}
+.famcard{display:flex;gap:16px;align-items:flex-start;text-decoration:none;color:inherit;border:1px solid var(--line);border-radius:20px;padding:18px 20px;background:var(--card);transition:transform .15s,box-shadow .15s}
+.famcard:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px rgba(42,53,80,.35)}
+.famcard.pp{background:linear-gradient(160deg,var(--rose-soft),var(--card) 70%)}
+.famcard.nl{background:linear-gradient(160deg,var(--amber-soft),var(--card) 70%)}
+.fic{flex:none;width:48px;height:48px;border-radius:14px;background:var(--card);display:grid;place-items:center;font-size:24px;box-shadow:0 6px 16px -8px rgba(42,53,80,.25)}
+.fic svg{width:32px;height:30px}
+.fbody{display:flex;flex-direction:column;gap:3px}
+.fkind{letter-spacing:.16em;font-size:11.5px;color:var(--muted)}
+.fbody b{font-size:22px;color:var(--navy);font-weight:700}
+.fdesc{color:var(--muted);font-size:15px;line-height:1.5}
+.fgo{font-weight:700;color:var(--ink);font-size:15px;margin-top:4px}
+@media (max-width:760px){.famgrid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -537,34 +541,21 @@ main.appmain{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(1
   </div>
 </section>
 
-<section class="band" id="families">
+<section class="band fam" id="families">
   <div class="wrap">
     <div class="sec-head reveal"><p class="eyebrow">FOR FAMILIES AND STUDENTS</p>
-      <h2 class="serif">Home and School.<br>In the Same Nest.</h2>
-      <p>Parents stay close to their child’s school day, and students get a learning space of their own. Both are connected to the school, so everyone sees the same picture.</p></div>
-    <div class="nests two">
-      <article class="nest pp reveal">
-        <div class="top"><div class="ico" style="color:var(--rose)"><svg><use href="#i-home"/></svg></div>
-          <p class="kind">FOR PARENTS</p><h3 class="serif">Nestopia Parent Portal</h3><p class="tag">Every Family, Always in the Loop.</p>
-          <div class="fam-mock" aria-hidden="true">
-            <div class="fm-row"><span>✅</span><b>Aisha is in school today</b></div>
-            <div class="fm-row"><span>📝</span><b>Homework handed in</b><em>Read pages 4 to 8</em></div>
-            <div class="fm-row"><span>⭐</span><b>3 stars this week</b></div>
-            <div class="fm-row"><span>💬</span><b>New message from Ms Fatma</b></div>
-          </div></div>
-        <div class="txt"><p>Attendance, reports, merits, homework, school news and messages with teachers, in English and Arabic. Parents book meetings, send absence notes and see the work their child shares in Nestlings.</p>
-          <a href="parent.html">Open the Parent Portal <svg width="14" height="14" aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
-      </article>
-      <article class="nest nl reveal">
-        <div class="top"><div class="ico" style="color:#E8A13A"><svg viewBox="0 0 120 112" style="width:30px;height:30px"><use href="#bird"/></svg></div>
-          <p class="kind">FOR STUDENTS · PRE-K TO GRADE 5</p><h3 class="serif">Nestlings</h3><p class="tag">Think, Try, Learn to Fly.</p>
-          <div class="fam-tiles" aria-hidden="true">
-            <span style="border-color:#7BB3E6">📚<b>Materials</b></span><span style="border-color:#F2B544">📝<b>Homework</b></span><span style="border-color:#B8A1D9">💬<b>Messages</b></span>
-            <span style="border-color:#6F9E6B">📅<b>Calendar</b></span><span style="border-color:#E8A13A">🎨<b>My work</b></span><span style="border-color:#E3E8F1">✋<b>Hand in</b></span>
-          </div></div>
-        <div class="txt"><p>Students sign in with a simple code and find homework, class materials, messages and the calendar. They share their learning with writing, photos, voice notes and short videos. Teachers approve, and families see it at home.</p>
-          <a href="nestlings/">Open Nestlings <svg width="14" height="14" aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
-      </article>
+      <h2 class="serif">Home and School. In the Same Nest.</h2></div>
+    <div class="famgrid">
+      <a class="famcard pp reveal" href="parent.html">
+        <span class="fic" style="color:var(--rose)"><svg viewBox="0 0 24 24" style="width:24px;height:24px"><use href="#i-home"/></svg></span>
+        <span class="fbody"><span class="fkind">FOR PARENTS</span><b class="serif">Parent Portal</b>
+          <span class="fdesc">Attendance, reports, merits, homework, news and messages, in English and Arabic.</span>
+          <span class="fgo">Open the Parent Portal ↗</span></span></a>
+      <a class="famcard nl reveal" href="nestlings/">
+        <span class="fic"><svg viewBox="0 0 120 112" aria-hidden="true"><use href="#bird"/></svg></span>
+        <span class="fbody"><span class="fkind">FOR STUDENTS · PRE-K TO GRADE 5</span><b class="serif">Nestlings</b>
+          <span class="fdesc">Homework, materials and messages, plus a place to share work with photos, voice and video.</span>
+          <span class="fgo">Open Nestlings ↗</span></span></a>
     </div>
   </div>
 </section>
