@@ -19,6 +19,7 @@
     behaviour: '<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>',
     messages: '<path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/>',
     parents: '<circle cx="9" cy="7" r="3"/><path d="M3.5 19c.6-3.4 2.8-5.5 5.5-5.5s4.9 2.1 5.5 5.5"/><circle cx="17" cy="10" r="2.2"/><path d="M15.5 19c.3-2.3 1.4-3.8 3-4.2"/>',
+    nestlings: '<path d="M7 15c0-5 3-9 8-9 2 0 3.5 1 4 2.5L22 9l-2.6 1.4C19 15 16 18 11 18c-1.5 0-3-.4-4-1.2z"/><circle cx="16.5" cy="9" r=".6"/><path d="M4 20h16"/>',
     settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>'
   };
   // [id, label, link, module needed (null = always), soon]
@@ -40,6 +41,7 @@
     ["wellbeing", "Wellbeing", "wellbeing.html", "wellbeing"],
     ["evidence", "Evidence packs", "evidence.html", "evidence"],
     ["parents", "Parent portal", "parents.html", "parents"],
+    ["nestlings", "Nestlings", "nestlings-admin.html", "nestlings"],
     ["conferences", "Parent conferences", "conferences.html", "conferences"],
     ["label", ""],
     ["settings", "Settings", "settings.html", null]

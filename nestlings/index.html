@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nestlings · Think, try, learn to fly</title>
+<meta name="description" content="Nestlings is the Nestopia student portal for Pre-K to Grade 5. Think, try, learn to fly.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 110'%3E%3Cpath d='M40 20C56 2 86 8 90 36c3 18 14 30 22 42-16 7-38 12-56 8C34 82 23 62 27 44c2-10 6-18 13-24z' fill='%237BB3E6'/%3E%3Cpath d='M29 33 12 29l15 11z' fill='%23F2B544'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&family=IBM+Plex+Sans+Arabic:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{--sky:#7BB3E6;--sky-soft:#E3F0FB;--navy:#33405A;--gold:#F2B544;--gold-soft:#FDF3DC;--sage:#6F9E6B;--sage-soft:#E7F1E5;--lilac:#B8A1D9;--lilac-soft:#F0EAF8;--cloud:#F7F9FD;--card:#FFFFFF;--muted:#66708A;--line:#E3E8F2;--coral:#C25A48}
+  *{box-sizing:border-box} html,body{margin:0}
+  body{font-family:"Nunito",system-ui,sans-serif;color:var(--navy);background:var(--cloud);min-height:100vh;
+       background-image:radial-gradient(var(--sky-soft) 2px,transparent 2px);background-size:34px 34px}
+  h1,h2,h3,.fred,button{font-family:"Fredoka","Nunito",sans-serif}
+  .ar{font-family:"IBM Plex Sans Arabic",sans-serif;direction:rtl}
+  a{color:var(--navy)}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 22px;max-width:1100px;margin:0 auto}
+  .logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+  .logo b{font-family:Fredoka,sans-serif;font-size:26px;font-weight:700;color:var(--navy)}
+  .who{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{font-weight:800;font-size:14px;text-decoration:none;padding:8px 14px;border-radius:99px;background:var(--card);border:2px solid var(--line)}
+  .pill:hover{border-color:var(--sky)}
+  main{max-width:1100px;margin:0 auto;padding:10px 22px 40px}
+  .hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:center;margin-top:10px}
+  .hero h1{font-size:clamp(46px,8vw,78px);margin:0;line-height:1;font-weight:700}
+  .hero h1 span{color:var(--sky)}
+  .motto{font-family:Fredoka,sans-serif;font-size:clamp(22px,3vw,30px);font-weight:600;margin:10px 0 4px}
+  .motto i{font-style:normal;color:var(--gold)}
+  .sub{color:var(--muted);font-weight:700;font-size:17px;margin:6px 0 0;max-width:460px}
+  .bird{width:min(260px,60vw);display:block;margin:0 auto;animation:bob 3.6s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-10px) rotate(2deg)}}
+  @media (prefers-reduced-motion: reduce){.bird{animation:none}}
+  .gate{background:var(--card);border:4px solid var(--sky);border-radius:32px;padding:26px;box-shadow:0 8px 0 rgba(51,64,90,.10)}
+  .gate h2{margin:0 0 4px;font-size:28px}
+  .gate p{margin:0 0 14px;color:var(--muted);font-weight:700}
+  .code{width:100%;font-family:Fredoka,sans-serif;font-size:38px;font-weight:600;letter-spacing:.3em;text-align:center;text-transform:uppercase;
+        border:3px dashed var(--gold);background:var(--gold-soft);color:var(--navy);border-radius:20px;padding:12px 8px;outline:none}
+  .code:focus{border-style:solid;border-color:var(--sky);background:#fff}
+  .go{width:100%;margin-top:14px;border:0;cursor:pointer;background:var(--gold);color:var(--navy);font-size:24px;font-weight:700;
+      padding:16px;border-radius:22px;box-shadow:0 6px 0 #C98F22;transition:transform .12s}
+  .go:hover{transform:translateY(-2px)} .go:active{transform:translateY(4px);box-shadow:0 2px 0 #C98F22} .go:disabled{opacity:.6;cursor:wait}
+  .help{font-size:14px;color:var(--muted);font-weight:700;margin-top:12px;text-align:center}
+  .msg{margin-top:14px;border-radius:18px;padding:14px 16px;font-weight:800;text-align:center}
+  .msg.err{background:#FBE9E6;color:var(--coral)}
+  .msg.ok{background:var(--sage-soft);color:#3E6A3B;font-size:18px}
+  .msg.ok b{font-family:Fredoka,sans-serif;font-size:28px;display:block;color:var(--navy)}
+  .levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:40px}
+  .lvl{background:var(--card);border-radius:26px;padding:20px;border:3px solid var(--line);box-shadow:0 6px 0 rgba(51,64,90,.06)}
+  .lvl .ic{font-size:40px;line-height:1}
+  .lvl h3{margin:8px 0 2px;font-size:24px}
+  .lvl .g{font-weight:800;font-size:13px;border-radius:99px;padding:3px 10px;display:inline-block}
+  .lvl p{margin:8px 0 0;color:var(--muted);font-weight:700;font-size:15px}
+  .l1{border-color:var(--gold)} .l1 .g{background:var(--gold-soft)}
+  .l2{border-color:var(--sky)} .l2 .g{background:var(--sky-soft)}
+  .l3{border-color:var(--lilac)} .l3 .g{background:var(--lilac-soft)}
+  footer{text-align:center;color:var(--muted);font-weight:700;font-size:14px;padding:26px 16px 34px}
+  footer a{margin:0 6px}
+  .star{position:fixed;pointer-events:none;font-size:26px;z-index:20;animation:pop 1.2s ease-out forwards}
+  @keyframes pop{0%{transform:translate(0,0) scale(.4);opacity:1}100%{transform:translate(var(--x),var(--y)) scale(1.2);opacity:0}}
+  @media (max-width:820px){.hero{grid-template-columns:1fr}.levels{grid-template-columns:1fr}.hero-text{text-align:center}.sub{margin:6px auto 0}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="bird" viewBox="0 0 120 112">
+    <path d="M40 20C56 2 86 8 90 36c3 18 14 30 22 42-16 7-38 12-56 8C34 82 23 62 27 44c2-10 6-18 13-24z" fill="#7BB3E6"/>
+    <path d="M58 52c14-9 34 4 42 24-12 6-30 6-40-2-8-6-8-16-2-22z" fill="#8FC0EC" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M66 62c8 3 14 9 18 16M63 70c6 3 11 7 14 12" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M42 32q6-7 12 0" stroke="#2A3550" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    <path d="M29 33 11 28l16 11z" fill="#F2B544"/><path d="M27 39 11 44l18 0z" fill="#F7C863"/>
+    <path d="M56 86l-5 16M46 103h12M70 87l2 15M65 103h13" stroke="#E8A13A" stroke-width="3.2" stroke-linecap="round"/>
+  </symbol>
+</svg>
+
+<header>
+  <a class="logo" href="./"><svg width="44" height="42" aria-hidden="true"><use href="#bird"/></svg><b>Nestlings</b></a>
+  <nav class="who" aria-label="Other Nestopia portals">
+    <a class="pill" href="../parent.html">Parents</a>
+    <a class="pill" href="../">Teachers</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-text">
+      <h1>Nest<span>lings</span></h1>
+      <p class="motto">Think, try, <i>learn to fly.</i></p>
+      <p class="ar sub" style="margin-top:2px">فكّر، جرّب، وتعلّم الطيران</p>
+      <p class="sub">Your learning nest at school: see what you're learning, collect your stars and show what you can do.</p>
+      <svg class="bird" viewBox="0 0 120 112" role="img" aria-label="The Nestopia bird"><use href="#bird"/></svg>
+    </div>
+
+    <form class="gate" id="gate" autocomplete="off" novalidate>
+      <h2>Hello, nestling! 👋</h2>
+      <p>Type the code on your Nestlings card.</p>
+      <label for="code" class="fred" style="position:absolute;left:-9999px">Your Nestlings code</label>
+      <input class="code" id="code" maxlength="6" inputmode="text" autocapitalize="characters" spellcheck="false" placeholder="ABC123" aria-describedby="help">
+      <button class="go" id="go" type="submit">Hop in, let's begin! 🐣</button>
+      <div id="msg" role="status" aria-live="polite"></div>
+      <p class="help" id="help">No card yet? Ask your teacher for your Nestlings code.<br><span class="ar">ليس لديك بطاقة؟ اطلب الرمز من معلمك.</span></p>
+    </form>
+  </section>
+
+  <section class="levels" aria-label="Nestlings grows with you">
+    <div class="lvl l1"><div class="ic">🥚</div><h3>Hatchlings</h3><span class="g">Pre-K to KG2</span>
+      <p>Big pictures, sounds and stickers. Tap, listen and play.</p></div>
+    <div class="lvl l2"><div class="ic">🐣</div><h3>Chirpers</h3><span class="g">Grades 1 and 2</span>
+      <p>Fill your star jar, draw what you learned and share it.</p></div>
+    <div class="lvl l3"><div class="ic">🐦</div><h3>Flyers</h3><span class="g">Grades 3 to 5</span>
+      <p>Set learning goals, reflect, and build your own portfolio.</p></div>
+  </section>
+</main>
+
+<footer>
+  Nestlings is part of <a href="../">Nestopia</a> · One nest for the whole school
+  <div style="margin-top:6px"><a href="../privacy.html">Privacy</a><a href="../terms.html">Terms</a></div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const sb = window.supabase ? window.supabase.createClient("https://gvhzbxpgebgjnegdiijp.supabase.co", "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM", { auth: { persistSession: false } }) : null;
+const $ = id => document.getElementById(id);
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const clean = v => v.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+
+$("code").addEventListener("input", e => { e.target.value = clean(e.target.value); $("msg").innerHTML = ""; });
+const pre = new URLSearchParams(location.search).get("c"); if (pre) $("code").value = clean(pre);
+
+function stars(){
+  const r = $("go").getBoundingClientRect(), x = r.left + r.width / 2, y = r.top;
+  for (let i = 0; i < 14; i++) { const s = document.createElement("span"); s.className = "star"; s.textContent = ["⭐", "🌟", "✨", "💛"][i % 4];
+    const a = Math.PI * 2 * i / 14, d = 70 + Math.random() * 80; s.style.left = x + "px"; s.style.top = y + "px";
+    s.style.setProperty("--x", Math.cos(a) * d + "px"); s.style.setProperty("--y", Math.sin(a) * d - 40 + "px");
+    document.body.appendChild(s); setTimeout(() => s.remove(), 1300); }
+}
+
+$("gate").addEventListener("submit", async e => {
+  e.preventDefault();
+  const code = clean($("code").value), msg = $("msg");
+  if (code.length < 6) { msg.innerHTML = '<div class="msg err">Your code has 6 letters and numbers. Check your card. 🔎</div>'; $("code").focus(); return; }
+  if (!sb) { msg.innerHTML = '<div class="msg err">Nestlings can’t connect right now. Try again in a moment.</div>'; return; }
+  $("go").disabled = true;
+  try {
+    const { data, error } = await sb.rpc("nestlings_code_info", { p_code: code });
+    if (error) throw error;
+    if (!data) { msg.innerHTML = '<div class="msg err">Hmm, that code didn’t work. Check your card, or ask your teacher. 🐦</div>'; return; }
+    stars();
+    msg.innerHTML = `<div class="msg ok"><b>Hi ${esc(data.child)}! 🎉</b>Welcome to your nest at ${esc(data.school)}.<br>Your Nestlings nest is being built. See you very soon!</div>`;
+  } catch (err) {
+    msg.innerHTML = '<div class="msg err">Nestlings can’t connect right now. Try again in a moment.</div>';
+  } finally { $("go").disabled = false; }
+});
+</script>
+</body>
+</html>
