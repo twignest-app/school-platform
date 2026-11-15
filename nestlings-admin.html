@@ -148,7 +148,7 @@ h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
 <div id="cards" aria-hidden="true"></div>
 <div class="toast" id="toast" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="hub.js?v=20"></script>
+<script src="hub.js?v=21"></script>
 <script>
 const PLATFORM = "Nestopia";
 const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
@@ -169,11 +169,9 @@ let S, P, LEAD, STUDS = [], CODES = {};
   who.innerHTML = `<span>${esc(p.full_name || p.email)}</span><a class="btn ghost small" href="./">← ${PLATFORM}</a>`;
   const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single(); S = s;
   hubInit("nestlings");
-  const on = ((s && s.modules) || []).includes("nestlings");
   app.innerHTML = `<div class="phead"><div class="nl-hero">${BIRD}<div><h1 class="ptitle">Nestlings</h1>
       <p class="note" style="margin:0"><i>Think, try, learn to fly.</i> · The student portal for ${esc(s.name)}, Pre-K to Grade 5.</p></div></div>
       <a class="btn ghost" href="nestlings/" target="_blank" rel="noopener">Open Nestlings ↗</a></div>
-    ${on ? "" : `<div class="card" style="border-left:5px solid var(--amber);border-radius:0 16px 16px 0"><b>Nestlings isn’t switched on for your school yet.</b><p class="note" style="margin:4px 0 0">You can already create codes and print cards. Students will be able to use them once Nestlings is switched on.</p></div>`}
     <section class="card"><h2>How students sign in</h2>
       <p style="margin:0">Each student has their own <b>Nestlings code</b>. They go to <b>${LINK}</b>, type their code and tap <b>Hop in, let’s begin!</b></p>
       <p class="note" style="margin:6px 0 0">Print a code card for each child. For Pre-K and KG, the teacher or a parent can type the code for them. Keep codes private: each one opens one child’s nest.</p></section>
