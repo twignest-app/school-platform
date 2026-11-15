@@ -157,3 +157,6 @@
     } catch (_) { /* the page still works without the sidebar */ }
   };
 })();
+
+// Nesty, the AI helper (chat bubble) on every page that uses hub.js
+(function () { if (document.querySelector('script[src^="/nesty.js"]')) return; const s = document.createElement('script'); s.src = '/nesty.js?v=1'; s.defer = true; document.head.appendChild(s); })();
