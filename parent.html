@@ -64,6 +64,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px so
 <header><a class="brand" href="parent.html">Nestopia <span style="font-weight:500;font-size:14px;color:var(--muted)">· Parents · أولياء الأمور</span></a><div id="hr"></div></header>
 <main id="app"><p class="muted">Loading…</p></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="/reportcard.js?v=1"></script>
 <script>
 const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
 const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
@@ -398,7 +399,30 @@ async function messages(open){
     const { data: tid, error: er } = await sb.rpc("parent_send", { p_student: String(cur), p_thread: null, p_teacher: to || null, p_subject: document.getElementById("sj").value, p_body: document.getElementById("bd").value });
     if (er) return alert(er.message); sb.functions.invoke("nestopia-mail", { body: { action: "pmsg", id: tid } }).catch(() => {}); messages(tid); };
 }
-function reports(){
+// Report cards: the school's own template (reportcard.js), published terms and approved comments only
+async function reports(){
+  const p = document.getElementById("pane"), sid = String(PREVIEW || cur);
+  if (!window.ReportCard) return reportsOld();
+  const { data: R, error } = await sb.rpc("parent_report_card", { p_student: sid });
+  if (error) return reportsOld();           // older database: show the previous report view
+  const vis = (R.visible || []).filter(k => (R.comments || []).some(c => String(c.term) === String(k)));
+  if (!vis.length) { p.innerHTML = '<div class="card"><p class="muted" style="margin:0">No report card has been shared yet this year.<span class="ar" dir="rtl" lang="ar">لم تتم مشاركة أي تقرير بعد.</span></p></div>'; return; }
+  if (term == null || !vis.includes(term)) term = vis[vis.length - 1];
+  const html = ReportCard.render({ card: R.card, scale: R.scale || [], subjects: R.subjects || [], termName: (R.terms || [])[term], termIndex: term, year: R.year, school: R.school,
+    student: R.student || {}, teachers: R.teachers || [], att: R.att, stars: R.stars, ack: (R.acks || {})[term],
+    cm: stid => (R.comments || []).find(c => c.strand === stid && String(c.term) === String(term)) || null });
+  const seen = (R.acks || {})[term];
+  p.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">📄 Report card · بطاقة التقرير</h2>
+      <div class="row">${vis.map(k => `<button class="tab" aria-selected="${k === term}" data-term="${k}">${esc((R.terms || [])[k])}</button>`).join("")}<button class="btn ghost small" id="repPdf">🖨 Save as PDF · حفظ</button></div></div>
+    <div style="overflow-x:auto;margin-top:12px;background:#E9EEF5;border-radius:14px;padding:12px"><div style="background:#fff;border-radius:8px;padding:22px 24px;min-width:640px;max-width:794px;margin:0 auto">${html}</div></div>
+    ${PREVIEW ? "" : `<div class="row" style="margin-top:12px">${seen ? `<span class="muted">✅ You confirmed you’ve seen this report on ${esc(ReportCard.fmtDate(seen))}. · تم التأكيد</span>`
+      : `<button class="btn" id="repAck">✅ I’ve read this report · قرأت التقرير</button><span class="muted">Lets the school know you’ve seen it.</span>`}</div>`}</div>`;
+  p.querySelectorAll("[data-term]").forEach(b => b.onclick = () => { term = +b.dataset.term; reports(); });
+  document.getElementById("repPdf").onclick = () => ReportCard.printPage([html], `${(R.student || {}).name || "Report card"} - ${(R.terms || [])[term] || ""}`);
+  const ak = document.getElementById("repAck"); if (ak) ak.onclick = async () => { ak.disabled = true;
+    const { error: e2 } = await sb.rpc("parent_report_ack", { p_student: sid, p_term: term }); if (e2) { ak.disabled = false; return alert(e2.message); } reports(); };
+}
+function reportsOld(){
   const p = document.getElementById("pane"), terms = view.terms || [], cms = view.comments || [];
   const has = terms.map((t, k) => cms.some(c => String(c.term) === String(k)));
   if (term == null || !has[term]) term = has.lastIndexOf(true);

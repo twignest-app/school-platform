@@ -96,7 +96,18 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 
 .cnt{font-size:12.5px;font-weight:800;border-radius:8px;padding:2px 8px;white-space:nowrap}
 .cnt.ok{background:var(--sage-soft);color:var(--sage)}.cnt.part{background:var(--amber-soft);color:var(--amber)}.cnt.none{background:var(--empty);color:var(--muted)}
-.prev{border:1px solid var(--line);border-radius:14px;padding:18px;background:#fff;color:#222;max-height:520px;overflow:auto}
+.prev{border:1px solid var(--line);border-radius:14px;padding:18px;background:#fff;color:#222;max-height:70vh;overflow:auto}
+dialog.wide{width:min(900px,96vw)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:10px 18px;border-radius:999px;font-weight:700;opacity:0;transition:.2s;pointer-events:none;z-index:50}.toast.on{opacity:1}
+.pub{font-size:12.5px;font-weight:800;border-radius:8px;padding:3px 9px}.pub.on{background:var(--sage-soft);color:var(--sage)}.pub.off{background:var(--empty);color:var(--muted)}
+.setgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:start}
+@media (max-width:980px){.setgrid{grid-template-columns:1fr}}
+.setgrid fieldset{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 12px}
+.setgrid legend{font-weight:800;color:var(--plum);padding:0 6px}
+.setgrid .live{position:sticky;top:12px;border:1px solid var(--line);border-radius:14px;background:#E9EEF5;padding:14px;max-height:88vh;overflow:auto}
+.setgrid .live .rc{padding:22px 24px;border-radius:6px;box-shadow:0 4px 18px rgba(0,0,0,.08)}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}@media (max-width:560px){.f2{grid-template-columns:1fr}}
+input[type=color]{width:48px;height:36px;border:1px solid var(--line);border-radius:8px;padding:2px;background:var(--card)}
 
 </style>
 </head>
@@ -107,6 +118,7 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="hub.js?v=19"></script>
+<script src="reportcard.js?v=1"></script>
 <script>
 /* Keep this the same as in index.html */
 const PLATFORM = "Nestopia";
@@ -116,7 +128,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const app = document.getElementById("app"), who = document.getElementById("who"), dlg = document.getElementById("dlg");
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2800); };
-let me, school, lead = false, C = null, year = null, classes = [], myClassIds = [], studs = [], cms = [], teachers = {}, ui = { tab: "cards", term: 0, cls: null, incl: "approved" };
+let setupId = null, starsBy = {}, me, school, lead = false, C = null, year = null, classes = [], myClassIds = [], studs = [], cms = [], teachers = {}, ui = { tab: "cards", term: 0, cls: null, incl: "approved" };
 const cls = id => classes.find(c => String(c.id) === String(id)) || {};
 function fail(t){ app.innerHTML = `<div class="card"><div class="msg">${esc(t)}</div></div>`; }
 async function fetchAll(q){ const out = []; for (let f = 0; ; f += 1000) { const { data, error } = await q().range(f, f + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; } return out; }
@@ -132,8 +144,8 @@ const strandsFor = c => (C.subjects || []).flatMap(sb => sb.strands.map(st => [s
   if (window.hubInit) hubInit("reports");
   if (!(school.modules || []).includes("twignest")) return fail("Reports use TwigNest, which isn’t switched on for your school.");
   lead = ["school_lead", "coordinator", "admin"].includes(p.role);
-  const set = await sb.from("school_setups").select("year,config").eq("school_id", school.id).order("updated_at", { ascending: false }).limit(1);
-  C = set.data && set.data[0] ? set.data[0].config : null; year = set.data && set.data[0] ? set.data[0].year : null;
+  const set = await sb.from("school_setups").select("id,year,config").eq("school_id", school.id).order("updated_at", { ascending: false }).limit(1);
+  setupId = set.data && set.data[0] ? set.data[0].id : null; C = set.data && set.data[0] ? set.data[0].config : null; year = set.data && set.data[0] ? set.data[0].year : null;
   if (!C || !C.subjects) return fail("Finish the school setup in TwigNest first.");
   let cq = sb.from("classes").select("*").eq("school_id", school.id); if (year) cq = cq.eq("year", year);
   classes = ((await cq).data || []).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
@@ -155,13 +167,13 @@ const strandsFor = c => (C.subjects || []).flatMap(sb => sb.strands.map(st => [s
 const cmOf = (sid, stid, t) => cms.find(c => String(c.student_id) === String(sid) && c.strand_id === stid && String(c.term) === String(t));
 
 function draw(){
-  const tabs = [["cards", "Report cards"], ["progress", "Progress"]];
+  const tabs = [["cards", "Report cards"], ["progress", "Progress"]].concat(lead ? [["template", "Template settings"]] : []);
   app.innerHTML = `<div class="phead"><div><h1 class="ptitle">Report cards</h1><p class="note">${esc(school.name)} · Report cards made from the comments in TwigNest, ready to print or share.</p></div><a class="btn ghost" href="twignest/#sheets">✏️ Write comments in TwigNest</a></div>
     <div class="row" style="margin-bottom:12px"><select id="tm" aria-label="Term">${C.terms.map((t, k) => `<option value="${k}" ${+ui.term === k ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></div>
     <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${l}</button>`).join("")}</div><div id="pane"></div>`;
   document.getElementById("tm").onchange = e => { ui.term = +e.target.value; draw(); };
   app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; draw(); });
-  ui.tab === "cards" ? cardsPane() : progressPane();
+  ui.tab === "cards" ? cardsPane() : ui.tab === "template" ? templatePane() : progressPane();
 }
 const statusCount = (list, t) => { const sts = strandsFor(), out = { total: 0, approved: 0, ready: 0, draft: 0, none: 0 };
   list.forEach(s => sts.forEach(([, st]) => { out.total++; const c = cmOf(s.id, st.id, t); if (!c || !c.text) out.none++; else if (c.status === "approved") out.approved++; else if (c.status === "ready") out.ready++; else out.draft++; })); return out; };
@@ -172,17 +184,22 @@ function cardsPane(){
   const kids = studs.filter(s => String(s.class_id) === String(ui.cls)), t = ui.term;
   pane.innerHTML = `<div class="card"><div class="row" style="margin-bottom:12px"><select id="rc" aria-label="Class">${choices.map(c => `<option value="${esc(c.id)}" ${String(c.id) === String(ui.cls) ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select>
       <select id="inc" aria-label="Which comments"><option value="approved" ${ui.incl === "approved" ? "selected" : ""}>Approved comments only</option><option value="ready" ${ui.incl === "ready" ? "selected" : ""}>Approved and ready comments</option><option value="all" ${ui.incl === "all" ? "selected" : ""}>All comments (drafts too)</option></select>
-      <button class="btn" id="wordAll">⬇ Word: report cards for the class</button></div>
+      <button class="btn" id="wordAll">⬇ Word: report cards for the class</button><button class="btn ghost" id="pdfAll">🖨 Print or PDF: whole class</button></div>
+    ${pubBar()}
     <div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Comments approved</th><th></th></tr>${kids.map(s => { const n = statusCount([s], t), cl = n.approved === n.total ? "ok" : n.approved ? "part" : "none";
       return `<tr><td><b>${esc(s.full_name)}</b>${s.arabic_name ? ` <span class="note" dir="rtl" lang="ar">${esc(s.arabic_name)}</span>` : ""}</td><td><span class="cnt ${cl}">${n.approved} of ${n.total}</span>${n.ready ? ` <span class="note">· ${n.ready} ready to check</span>` : ""}${n.none ? ` <span class="note">· ${n.none} not written</span>` : ""}</td>
-        <td style="text-align:right"><button class="btn ghost small" data-prev="${esc(s.id)}">Preview</button> <button class="btn ghost small" data-one="${esc(s.id)}">⬇ Word</button></td></tr>`; }).join("")}</table></div>
+        <td style="text-align:right"><button class="btn ghost small" data-prev="${esc(s.id)}">Preview</button> <button class="btn ghost small" data-pdf="${esc(s.id)}">🖨 PDF</button> <button class="btn ghost small" data-one="${esc(s.id)}">⬇ Word</button></td></tr>`; }).join("")}</table></div>
     <p class="note" style="margin:10px 0 0">Each report card has the student’s details, attendance this school year, and every subject with its level and comment. Comments are written and checked in TwigNest.</p></div>`;
   document.getElementById("rc").onchange = e => { ui.cls = e.target.value; cardsPane(); };
   document.getElementById("inc").onchange = e => { ui.incl = e.target.value; };
   document.getElementById("wordAll").onclick = () => makeWord(kids);
+  document.getElementById("pdfAll").onclick = () => makePdf(kids);
+  pane.querySelectorAll("[data-pdf]").forEach(b => b.onclick = () => makePdf(kids.filter(s => String(s.id) === b.dataset.pdf)));
+  const pb = document.getElementById("pubBtn"); if (pb) pb.onclick = () => publish(!isPub(ui.term, ui.cls));
   pane.querySelectorAll("[data-one]").forEach(b => b.onclick = () => makeWord(kids.filter(s => String(s.id) === b.dataset.one)));
-  pane.querySelectorAll("[data-prev]").forEach(b => b.onclick = async () => { const s = kids.find(x => String(x.id) === b.dataset.prev), att = await attendance([s]);
-    dlg.innerHTML = `<div class="dlg"><div class="row" style="justify-content:space-between"><h2>Preview</h2><button class="btn ghost small" data-x>Close</button></div><div class="prev">${cardHtml(s, att[s.id])}</div></div>`; dlg.querySelector("[data-x]").onclick = () => dlg.close(); dlg.showModal(); });
+  pane.querySelectorAll("[data-prev]").forEach(b => b.onclick = async () => { const s = kids.find(x => String(x.id) === b.dataset.prev), att = await attendance([s]); await loadStars([s]);
+    dlg.className = "wide"; dlg.innerHTML = `<div class="dlg"><div class="row" style="justify-content:space-between"><h2>Preview · what parents will see</h2><div class="row"><button class="btn ghost small" data-p>🖨 Print or PDF</button><button class="btn ghost small" data-x>Close</button></div></div><div class="prev">${cardHtml(s, att[s.id])}</div></div>`;
+    dlg.querySelector("[data-x]").onclick = () => dlg.close(); dlg.querySelector("[data-p]").onclick = () => makePdf([s]); dlg.showModal(); });
 }
 function progressPane(){
   const pane = document.getElementById("pane"), t = ui.term, list = classes.filter(c => lead || myClassIds.includes(String(c.id)));
@@ -202,24 +219,115 @@ async function attendance(list){
   } catch (_) {} return out;
 }
 const keep = c => c && c.text && (ui.incl === "all" || c.status === "approved" || (ui.incl === "ready" && c.status === "ready"));
-function cardHtml(s, att){
-  const t = ui.term, c = cls(s.class_id), lab = lv => lv == null ? "" : (C.scale && C.scale[lv] != null ? C.scale[lv] : lv);
-  const rows = (C.subjects || []).map(sub => { const ar = sub.lang === "ar", items = sub.strands.map(st => [st, cmOf(s.id, st.id, t)]).filter(([, cm]) => keep(cm)); if (!items.length) return "";
-    return `<tr><td colspan="3" style="background:#EDE6F5;font-weight:bold;padding:6px;border:1px solid #bbb">${esc(sub.name)}</td></tr>` + items.map(([st, cm]) => `<tr><td style="padding:6px;border:1px solid #bbb;width:22%;vertical-align:top"><b>${esc(st.name)}</b></td><td style="padding:6px;border:1px solid #bbb;width:10%;text-align:center;vertical-align:top">${esc(lab(cm.level))}</td><td style="padding:6px;border:1px solid #bbb;vertical-align:top" ${ar ? 'dir="rtl" lang="ar"' : ""}>${esc(cm.text)}</td></tr>`).join(""); }).join("");
-  const ap = att && att.n ? Math.round(att.in / att.n * 100) : null;
-  return `<div style="font-family:Arial,sans-serif;font-size:10.5pt;color:#222">
-    <table width="100%" cellspacing="0" cellpadding="0"><tr><td style="background:#462D5B;color:#fff;padding:10px 12px"><span style="font-size:17pt;font-weight:bold">${esc(school.name)}</span><br><span style="font-size:11pt">Report card · ${esc(C.terms[t])}${year ? " · " + esc(year) : ""}</span></td></tr></table>
-    <table width="100%" cellspacing="0" style="border-collapse:collapse;margin:10px 0"><tr><td style="padding:5px;border:1px solid #bbb"><b>Student:</b> ${esc(s.full_name)}${s.arabic_name ? ` <span dir="rtl" lang="ar">(${esc(s.arabic_name)})</span>` : ""}</td><td style="padding:5px;border:1px solid #bbb"><b>Class:</b> ${esc(c.name || "")}</td></tr>
-      <tr><td style="padding:5px;border:1px solid #bbb"><b>Teacher(s):</b> ${esc([...(teachers[s.class_id] || [])].join(", "))}</td><td style="padding:5px;border:1px solid #bbb"><b>Attendance this year:</b> ${ap == null ? "–" : ap + "%" + (att.late ? " · late " + att.late + " time" + (att.late === 1 ? "" : "s") : "")}</td></tr></table>
-    ${rows ? `<table width="100%" cellspacing="0" style="border-collapse:collapse"><tr><th style="background:#462D5B;color:#fff;padding:6px;border:1px solid #bbb;text-align:left">Subject</th><th style="background:#462D5B;color:#fff;padding:6px;border:1px solid #bbb">Level</th><th style="background:#462D5B;color:#fff;padding:6px;border:1px solid #bbb;text-align:left">Comment</th></tr>${rows}</table>` : '<p style="color:#888">No comments to show yet for this term.</p>'}
-    <table width="100%" cellspacing="0" style="border-collapse:collapse;margin-top:16px"><tr><td style="padding:6px;border:1px solid #bbb;width:25%"><b>Class teacher</b></td><td style="padding:6px;border:1px solid #bbb;height:30px"></td><td style="padding:6px;border:1px solid #bbb;width:25%"><b>Principal</b></td><td style="padding:6px;border:1px solid #bbb"></td></tr></table></div>`;
+function cardData(s, att){
+  const t = ui.term, c = cls(s.class_id);
+  return { card: C.card, scale: C.scale || [], subjects: C.subjects || [], termName: C.terms[t], termIndex: t, year, school: school.name,
+    student: { name: s.full_name, arabic: s.arabic_name, number: s.student_number, cls: c.name || "" }, teachers: [...(teachers[s.class_id] || [])],
+    att: att || null, stars: starsBy[s.id] ?? 0, cm: stid => { const x = cmOf(s.id, stid, t); return keep(x) ? x : null; } };
+}
+function cardHtml(s, att){ return ReportCard.render(cardData(s, att)); }
+async function loadStars(list){
+  try { const now = new Date(), y0 = (now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1) + "-08-01";
+    const need = list.filter(s => starsBy[s.id] == null).map(s => s.id); if (!need.length) return;
+    const data = await fetchAll(() => sb.from("behaviour_events").select("student_id,points").eq("kind", "merit").in("student_id", need).gte("happened_on", y0));
+    need.forEach(id => starsBy[id] = 0); data.forEach(e => starsBy[e.student_id] = (starsBy[e.student_id] || 0) + (+e.points || 1));
+  } catch (_) {}
+}
+async function makePdf(list){
+  if (!list.length) return; toast("Getting the report cards ready…");
+  const att = await attendance(list); await loadStars(list); const c = cls(list[0].class_id);
+  ReportCard.printPage(list.map(s => cardHtml(s, att[s.id])), `${list.length === 1 ? list[0].full_name : (c.name || "Class") + " report cards"} - ${C.terms[ui.term]}`);
 }
 async function makeWord(list){
   if (!list.length) return; toast("Making the report cards…");
-  const att = await attendance(list), c = cls(list[0].class_id);
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Report cards</title><style>@page{margin:1.6cm}body{margin:0}</style></head><body>${list.map((s, i) => (i ? '<br clear="all" style="page-break-before:always">' : "") + cardHtml(s, att[s.id])).join("")}</body></html>`;
+  const att = await attendance(list), c = cls(list[0].class_id); await loadStars(list);
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Report cards</title><style>@page{margin:1.4cm}body{margin:0}</style></head><body>${list.map((s, i) => (i ? '<br clear="all" style="page-break-before:always">' : "") + cardHtml(s, att[s.id])).join("")}</body></html>`;
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + html], { type: "application/msword" }));
   a.download = `${list.length === 1 ? list[0].full_name : (c.name || "Class") + " report cards"} - ${C.terms[ui.term]}.doc`.replace(/[\\/:*?"<>|]/g, ""); document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ---------- Publishing to the Parent Portal ---------- */
+const cardSet = () => ReportCard.settings(C.card);
+const isPub = (t, cid) => !!((cardSet().published || {})[t + "|" + cid]);
+async function saveCard(change){
+  // read the newest TwigNest setup first, so nothing changed meanwhile in TwigNest is lost
+  const { data: row, error: e1 } = await sb.from("school_setups").select("id,config").eq("id", setupId).single();
+  if (e1 || !row) { alert("This wasn’t saved: " + (e1 ? e1.message : "setup not found")); return false; }
+  const cfg = row.config || {}; cfg.card = change(Object.assign({}, cfg.card || {}));
+  const { error } = await sb.from("school_setups").update({ config: cfg }).eq("id", setupId);
+  if (error) { alert("This wasn’t saved: " + error.message); return false; }
+  C = cfg; return true;
+}
+function pubBar(){
+  const S = cardSet(), t = ui.term, on = isPub(t, ui.cls), when = (S.published || {})[t + "|" + ui.cls];
+  if (S.parents === "approved") return `<p class="note" style="margin:0 0 10px">Parents see each comment on the Parent Portal as soon as it is approved. ${lead ? "To publish whole report cards instead, change this in Template settings." : ""}</p>`;
+  return `<div class="row" style="margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)">
+    <span class="pub ${on ? "on" : "off"}">${on ? "Published to parents" : "Not published yet"}</span>
+    <span class="note">${on ? `Parents can see ${esc(C.terms[t])} report cards for this class${when ? " since " + new Date(when).toLocaleDateString("en-GB") : ""}. Only approved comments are shown.` : `Parents can’t see ${esc(C.terms[t])} report cards for this class until they are published.`}</span>
+    ${lead ? `<button class="btn ${on ? "ghost " : ""}small" id="pubBtn" style="margin-left:auto">${on ? "Unpublish" : "📤 Publish to parents"}</button>` : ""}</div>`;
+}
+async function publish(on){
+  const t = ui.term, key = t + "|" + ui.cls, kids = studs.filter(s => String(s.class_id) === String(ui.cls)), n = statusCount(kids, t);
+  if (on && !confirm(`Publish ${C.terms[t]} report cards for ${cls(ui.cls).name || "this class"} to parents?\n\n${n.approved} of ${n.total} comments are approved. Only approved comments are shown to parents.`)) return;
+  if (!on && !confirm("Hide these report cards from parents again?")) return;
+  const ok = await saveCard(c => { c.published = Object.assign({}, c.published || {}); if (on) c.published[key] = new Date().toISOString(); else delete c.published[key]; return c; });
+  if (ok) { toast(on ? "Published. Parents can now see the report cards." : "Unpublished."); cardsPane(); }
+}
+
+/* ---------- Template settings (school leaders) ---------- */
+function templatePane(){
+  const pane = document.getElementById("pane"), S = cardSet(), scale = C.scale || [];
+  const SHOW = [["arabicName", "Student’s Arabic name"], ["studentNumber", "Student number"], ["teachers", "Teacher names"], ["issued", "Date issued"], ["nextTerm", "Next term start date"],
+    ["attendance", "Attendance box"], ["late", "Late arrivals box"], ["stars", "Stars box (from Behaviour)"], ["key", "Level key"], ["signatures", "Signature lines"], ["parentAck", "Parent acknowledgement"]];
+  const sample = studs.find(x => String(x.class_id) === String(ui.cls)) || studs[0];
+  pane.innerHTML = `<div class="setgrid"><form id="tf" autocomplete="off">
+    <p class="note" style="margin-top:0">Changes show in the preview straight away. Press <b>Save template</b> to use them for every report card in ${esc(school.name)}. Grading levels, subjects and comments come from TwigNest.</p>
+    <fieldset><legend>Title and logo</legend><div class="f2">
+      <label class="f">Report title<input type="text" data-k="title" value="${esc(S.title)}"></label>
+      <label class="f">Title in Arabic<input type="text" dir="rtl" lang="ar" data-k="titleAr" value="${esc(S.titleAr)}"></label>
+      <label class="f">School name in Arabic<input type="text" dir="rtl" lang="ar" data-k="nameAr" value="${esc(S.nameAr)}"></label>
+      <label class="f">Footer text<input type="text" data-k="footer" value="${esc(S.footer)}"></label></div>
+      <div class="row" style="margin-top:10px"><label class="f" style="flex:1">School logo (PNG or JPG)<input type="file" id="logo" accept="image/png,image/jpeg,image/webp"></label>${S.logo ? `<img src="${esc(S.logo)}" alt="Current logo" style="max-height:48px"><button class="btn ghost small" type="button" id="noLogo">Remove logo</button>` : ""}</div>
+      <label class="checks" style="margin-top:10px"><label><input type="checkbox" data-k="bilingual" ${S.bilingual ? "checked" : ""}> Show headings in English and Arabic</label></label></fieldset>
+    <fieldset><legend>Colours</legend><div class="row"><label class="row" style="font-weight:700">Main <input type="color" data-k="color" value="${esc(S.color)}"></label><label class="row" style="font-weight:700">Accent <input type="color" data-k="accent" value="${esc(S.accent)}"></label>
+      <button class="btn ghost small" type="button" id="resetCol">Nestopia colours</button></div></fieldset>
+    <fieldset><legend>What to show</legend><div class="checks">${SHOW.map(([k, l]) => `<label><input type="checkbox" data-show="${k}" ${S.show[k] ? "checked" : ""}> ${l}</label>`).join("")}</div></fieldset>
+    <fieldset><legend>Levels (your TwigNest grading system)</legend>
+      <label class="f">How to show each level<select data-k="levelStyle">${[["bar", "Level, progress bar and name"], ["number", "Level and name"], ["name", "Name only"], ["hide", "Don’t show levels (comments only)"]].map(([v, l]) => `<option value="${v}" ${S.levelStyle === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+      <p class="note" style="margin:8px 0 4px">Optional name for each level, shown on the report card and in the key:</p>
+      <div class="f2">${scale.map((x, i) => `<label class="f">Level ${esc(x)}<input type="text" data-lvname="${i}" value="${esc((S.levelNames || [])[i] || "")}" placeholder="e.g. Secure"></label>`).join("")}</div></fieldset>
+    <fieldset><legend>Subjects</legend><p class="note" style="margin-top:0">In the TwigNest order. “Comment box” suits a class teacher’s comment, learner skills or goals.</p>
+      ${(C.subjects || []).map(sub => `<div class="row" style="justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--line)"><b>${esc(sub.name)}</b><select data-sub="${esc(sub.id)}">${[["table", "In the table"], ["box", "Comment box"], ["hide", "Don’t show"]].map(([v, l]) => `<option value="${v}" ${((S.subjects || {})[sub.id] || "table") === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>`).join("")}</fieldset>
+    <fieldset><legend>Signature lines</legend><p class="note" style="margin-top:0">Leave the name empty on a teacher line to use the class teacher’s name.</p>
+      ${[0, 1, 2].map(i => `<div class="f2" style="margin-bottom:6px"><label class="f">Role<input type="text" data-sig="${i}|role" value="${esc((S.sig[i] || {}).role || "")}" placeholder="${i === 2 ? "e.g. Head of Primary" : ""}"></label><label class="f">Name<input type="text" data-sig="${i}|name" value="${esc((S.sig[i] || {}).name || "")}"></label></div>`).join("")}</fieldset>
+    <fieldset><legend>Dates for each term</legend>${C.terms.map((t, k) => { const x = (S.termInfo || {})[k] || {}; return `<div class="f2" style="margin-bottom:6px"><label class="f">${esc(t)} · issued<input type="date" data-term="${k}|issued" value="${esc(x.issued || "")}"></label><label class="f">${esc(t)} · next term starts<input type="date" data-term="${k}|next" value="${esc(x.next || "")}"></label></div>`; }).join("")}</fieldset>
+    <fieldset><legend>Parent Portal</legend><label class="f">Parents see report cards<select data-k="parents"><option value="publish" ${S.parents !== "approved" ? "selected" : ""}>Only after a leader publishes them (recommended)</option><option value="approved" ${S.parents === "approved" ? "selected" : ""}>As soon as each comment is approved</option></select></label></fieldset>
+    <div class="row" style="position:sticky;bottom:0;background:var(--bg);padding:10px 0"><button class="btn" type="submit">Save template</button><span class="note" id="tmsg"></span></div>
+  </form><div class="live" aria-label="Preview"><div id="tprev"></div></div></div>`;
+  const W = JSON.parse(JSON.stringify(S)), f = document.getElementById("tf"), msg = document.getElementById("tmsg");
+  let att = {};
+  const paint = () => { const prevCard = C.card; C.card = W; let h;
+    try { h = sample ? cardHtml(sample, att[sample.id]) : "<p class='note'>Add students in TwigNest to see a preview.</p>"; } finally { C.card = prevCard; }
+    document.getElementById("tprev").innerHTML = h; msg.textContent = "Not saved yet"; };
+  (async () => { if (sample) { att = await attendance([sample]); await loadStars([sample]); } paint(); msg.textContent = ""; })();
+  f.addEventListener("input", e => { const t = e.target;
+    if (t.dataset.k) W[t.dataset.k] = t.type === "checkbox" ? t.checked : t.value;
+    if (t.dataset.show) W.show[t.dataset.show] = t.checked;
+    if (t.dataset.lvname) { W.levelNames = (W.levelNames || []).slice(); W.levelNames[+t.dataset.lvname] = t.value.trim(); }
+    if (t.dataset.sub) { W.subjects = Object.assign({}, W.subjects); W.subjects[t.dataset.sub] = t.value; }
+    if (t.dataset.sig) { const [i, k] = t.dataset.sig.split("|"); W.sig = [0, 1, 2].map(n => Object.assign({ role: "", name: "" }, W.sig[n] || {})); W.sig[+i][k] = t.value; }
+    if (t.dataset.term) { const [k, x] = t.dataset.term.split("|"); W.termInfo = Object.assign({}, W.termInfo); W.termInfo[k] = Object.assign({}, W.termInfo[k], { [x]: t.value }); }
+    if (t.id !== "logo") paint(); });
+  document.getElementById("resetCol").onclick = () => { W.color = ReportCard.DEF.color; W.accent = ReportCard.DEF.accent; f.querySelector('[data-k="color"]').value = W.color; f.querySelector('[data-k="accent"]').value = W.accent; paint(); };
+  const nl = document.getElementById("noLogo"); if (nl) nl.onclick = () => { W.logo = ""; nl.previousElementSibling.remove(); nl.remove(); paint(); };
+  document.getElementById("logo").onchange = e => { const file = e.target.files[0]; if (!file) return; const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => { const k = Math.min(1, 240 / Math.max(img.width, img.height)), cv = document.createElement("canvas"); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+      cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height); const d = cv.toDataURL("image/png"); URL.revokeObjectURL(url);
+      if (d.length > 200000) return alert("That logo is too detailed. Please choose a smaller or simpler image."); W.logo = d; paint(); };
+    img.onerror = () => alert("That file couldn’t be opened as an image."); img.src = url; };
+  f.onsubmit = async e => { e.preventDefault(); const btn = f.querySelector('[type="submit"]'); btn.disabled = true;
+    const ok = await saveCard(c => { const keepPub = c.published || {}; const out = JSON.parse(JSON.stringify(W)); out.published = keepPub; return out; });
+    btn.disabled = false; if (ok) { msg.textContent = "Saved"; toast("Template saved for every report card."); } };
 }
 </script>
 </body>
