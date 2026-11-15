@@ -165,7 +165,7 @@ const toast = m => { const t = document.getElementById("toast"); t.textContent =
 const LINK = "nestopia.school/nestlings";
 const BIRD = `<svg viewBox="0 0 120 112" width="64" aria-hidden="true"><path d="M40 20C56 2 86 8 90 36c3 18 14 30 22 42-16 7-38 12-56 8C34 82 23 62 27 44c2-10 6-18 13-24z" fill="#7BB3E6"/><path d="M58 52c14-9 34 4 42 24-12 6-30 6-40-2-8-6-8-16-2-22z" fill="#8FC0EC" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/><path d="M42 32q6-7 12 0" stroke="#2A3550" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M29 33 11 28l16 11z" fill="#F2B544"/><path d="M27 39 11 44l18 0z" fill="#F7C863"/><path d="M56 86l-5 16M46 103h12M70 87l2 15M65 103h13" stroke="#E8A13A" stroke-width="3.2" stroke-linecap="round"/></svg>`;
 const natural = (a, b) => String(a).localeCompare(String(b), undefined, { numeric: true });
-let S, P, LEAD, CLASSES = [], STUDS = [], CODES = {}, SETS = {};
+let S, P, LEAD, CLASSES = [], STUDS = [], CODES = {}, SETS = {}, WAIT = {};
 
 (async () => {
   const { data: { session } } = await sb.auth.getSession(); if (!session) { location.href = "./"; return; }
@@ -199,7 +199,8 @@ async function load(){
   const [st, cd, se] = await Promise.all([
     ids.length ? sb.from("students").select("id,full_name,class_id").in("class_id", ids).eq("archived", false).order("full_name") : { data: [] },
     sb.from("nestling_codes").select("student_id,code"),
-    sb.from("nestling_class_settings").select("class_id,approve_posts,student_messages")]);
+    sb.from("nestling_class_settings").select("class_id,approve_posts,student_messages"),
+    sb.from("nestling_posts").select("class_id").eq("status", "pending")]).then(r => { const w = r.pop(); WAIT = {}; (w.data || []).forEach(x => { WAIT[String(x.class_id)] = (WAIT[String(x.class_id)] || 0) + 1; }); return r; });
   if (st.error) { box.innerHTML = `<div class="card"><p class="note" style="color:var(--red);margin:0">Students couldn’t be loaded: ${esc(st.error.message)}</p></div>`; return; }
   if (cd.error || se.error) { const e = cd.error || se.error;
     box.innerHTML = `<div class="card"><p class="note" style="color:var(--red);margin:0">Nestlings couldn’t be loaded. ${/relation|does not exist|schema cache/i.test(e.message) ? "The Nestlings setup hasn’t been added to the database yet." : esc(e.message)}</p></div>`; return; }
@@ -224,6 +225,7 @@ function classCard(c){
   return `<section class="card nl-cls" id="cls-${esc(c.id)}"><div class="nl-head"><h2 style="margin:0">${esc(c.name)} <span class="note" style="font-size:14px;font-weight:600">· ${list.length} student${list.length === 1 ? "" : "s"}</span></h2>
       <span class="nl-acts">${miss ? `<button class="btn small" data-mk="${esc(c.id)}">Create ${miss} code${miss === 1 ? "" : "s"}</button>` : ""}
         <button class="btn ghost small" data-pr="${esc(c.id)}">Print class cards</button><button class="btn ghost small" data-csv="${esc(c.id)}">Download list</button></span></div>
+    ${WAIT[String(c.id)] ? `<p style="margin:4px 0 8px"><a class="btn small" href="nestlings/#work=${encodeURIComponent(c.id)}" target="_blank" rel="noopener">⏳ ${WAIT[String(c.id)]} post${WAIT[String(c.id)] === 1 ? "" : "s"} waiting for approval · Review ↗</a></p>` : ""}
     <div class="nl-set" data-set="${esc(c.id)}">
       <label><input type="checkbox" data-k="approve" ${set.approve_posts ? "checked" : ""}> I approve students’ posts before parents see them</label>
       <label><input type="checkbox" data-k="msgs" ${set.student_messages ? "checked" : ""}> Students can send me messages</label>

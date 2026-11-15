@@ -125,6 +125,43 @@
   .cev{display:flex;gap:10px;align-items:flex-start}
   .cic{font-size:26px;line-height:1}
   .cev b{display:block;font-size:17px} .cev small{display:block;color:var(--muted);font-weight:700;font-size:13.5px}
+
+  .go.small{width:auto;padding:9px 18px;font-size:16px;margin-top:8px;box-shadow:0 4px 0 #C98F22}
+  .vid{width:min(420px,100%);border-radius:14px;border:2px solid var(--line);background:#000}
+  .aud{display:flex;align-items:center;gap:8px;background:var(--cloud);border:2px solid var(--line);border-radius:14px;padding:6px 10px}
+  .aud audio{max-width:260px}
+  .item.k-work{border-color:#E8A13A}
+  .st-wait{background:var(--gold-soft)} .st-ok{background:var(--sage-soft);color:#3E6A3B} .st-back{background:#FBE9E6;color:var(--coral)}
+  .tcomment{margin-top:10px;background:var(--lilac-soft);border-radius:14px;padding:10px 12px;font-weight:700}
+  .handin{margin-top:10px;padding-top:10px;border-top:2px dashed var(--line)}
+  .comp{margin-bottom:10px}
+  .cbtns{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+  .cbtn{display:flex;align-items:center;justify-content:center;gap:6px;font-family:Fredoka,sans-serif;font-weight:600;font-size:18px;background:var(--cloud);border:3px solid var(--line);border-radius:18px;padding:12px;cursor:pointer;color:var(--navy)}
+  .cbtn:hover{border-color:var(--sky)}
+  .catt{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .cthumb{position:relative;border:2px solid var(--line);border-radius:14px;padding:4px;background:#fff;display:flex;flex-direction:column;align-items:center}
+  .cthumb img{height:110px;border-radius:10px} .cthumb video{height:140px;border-radius:10px;background:#000}
+  .cthumb small{font-weight:800;color:var(--muted)}
+  .cx{position:absolute;top:-10px;right:-10px;width:28px;height:28px;border-radius:50%;border:0;background:var(--coral);color:#fff;font-weight:800;cursor:pointer}
+  .recbox{margin-top:12px;border:3px solid var(--coral);border-radius:20px;padding:12px;text-align:center;background:#FFF7F5}
+  .recbox video{width:min(360px,100%);border-radius:14px;background:#000}
+  .mic{font-size:54px;animation:bob 1.2s ease-in-out infinite}
+  .recrow{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:8px;font-family:Fredoka,sans-serif;font-size:22px}
+  .dot{width:14px;height:14px;border-radius:50%;background:var(--coral);animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:.2}}
+  .dm .thread{max-height:340px;overflow:auto;display:flex;flex-direction:column;gap:8px;margin:8px 0 10px;padding:4px}
+  .bub{max-width:80%;border-radius:18px;padding:8px 12px;font-weight:700;line-height:1.45}
+  .bub small{display:block;font-size:12px;color:var(--muted);font-weight:800;margin-bottom:2px}
+  .bub.me{align-self:flex-end;background:var(--sky-soft)} .bub.them{align-self:flex-start;background:var(--gold-soft)}
+  .dmlist{display:grid;gap:8px;margin-bottom:8px}
+  .dmrow{text-align:left;display:grid;grid-template-columns:1fr auto;gap:2px 10px;border:2px solid var(--line);border-radius:16px;padding:10px 12px;background:#fff;cursor:pointer;font-family:Nunito,sans-serif;color:var(--navy)}
+  .dmrow small{grid-column:1/-1;color:var(--muted);font-weight:700} .dmrow.on{border-color:var(--lilac)}
+  .ftabs{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 16px}
+  .ftab{font-family:Fredoka,sans-serif;font-weight:600;font-size:16px;border:2px solid var(--line);background:#fff;border-radius:99px;padding:8px 14px;cursor:pointer;color:var(--navy)}
+  .ftab.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .who{font-family:Fredoka,sans-serif;font-size:19px;margin-right:4px}
+  .wacts{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .wacts .go.small{margin-top:0}
 </style>
 </head>
 <body>
@@ -214,7 +251,17 @@ const store = { get: () => { try { return localStorage.getItem(TK); } catch (_) 
                 del: () => { try { localStorage.removeItem(TK); } catch (_) {} } };
 let toastT; const toast = m => { const t = $("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2800); };
 const OFFLINE = '<div class="msg err">Nestlings can’t connect right now. Try again in a moment.</div>';
-const fileUrl = path => `${SUPA}/storage/v1/object/public/nestlings/${String(path).split("/").map(encodeURIComponent).join("/")}`;
+const fileUrl = (path, bucket) => `${SUPA}/storage/v1/object/public/${bucket || "nestlings"}/${String(path).split("/").map(encodeURIComponent).join("/")}`;
+const isAud = f => /^audio\//.test(f.type || "") || /\.(m4a|mp3|wav|ogg|weba)$/i.test(f.name || "");
+const isVid = f => /^video\//.test(f.type || "") || /\.(mp4|mov|webm|m4v)$/i.test(f.name || "");
+function media(files, bucket){
+  files = files || []; if (!files.length) return "";
+  return `<div class="ipics">${files.map(f => { const u = fileUrl(f.path, bucket);
+    if (isVid(f)) return `<video class="vid" src="${u}" controls playsinline preload="metadata"></video>`;
+    if (isAud(f)) return `<div class="aud">🎤 <audio src="${u}" controls preload="metadata"></audio></div>`;
+    if (/^image\//.test(f.type || "") || /\.(png|jpe?g|gif|webp|heic)$/i.test(f.name || "")) return `<a href="${u}" target="_blank" rel="noopener"><img src="${u}" alt="${esc(f.name)}" loading="lazy"></a>`;
+    return `<a class="att" href="${u}" target="_blank" rel="noopener">📎 ${esc(f.name)}</a>`; }).join("")}</div>`;
+}
 const MAXMB = 25;
 
 function show(view){ ["vLanding", "vTeacherIn", "vNest", "vTeacher"].forEach(v => $(v).classList.toggle("hidden", v !== view)); window.scrollTo(0, 0); }
@@ -310,35 +357,40 @@ $("gate").addEventListener("submit", async e => {
   finally { $("go").disabled = false; }
 });
 
-let KID = null, FEED = { items: [], events: [] };
+let KID = null, FEED = { items: [], events: [] }, MYWORK = [];
 async function loadFeed(){
   const t = store.get(); if (!t || !sb) return;
-  const { data, error } = await sb.rpc("nestlings_feed", { p_token: t });
-  if (!error && data) FEED = { items: data.items || [], events: data.events || [] };
+  const [f, w, me] = await Promise.all([sb.rpc("nestlings_feed", { p_token: t }), sb.rpc("nestlings_my_work", { p_token: t }), sb.rpc("nestlings_me", { p_token: t })]);
+  if (!f.error && f.data) FEED = { items: f.data.items || [], events: f.data.events || [] };
+  if (!w.error && Array.isArray(w.data)) MYWORK = w.data;
+  if (!me.error && me.data) KID = Object.assign({}, KID || {}, me.data);
 }
+const handins = id => MYWORK.filter(p => p.item_id === id);
+const STATUS = { pending: ["⏳", "Waiting for your teacher", "st-wait"], approved: ["✅", "Your teacher saw it", "st-ok"], returned: ["↩️", "Your teacher sent it back. Have another go!", "st-back"] };
+const stChip = s => { const x = STATUS[s] || STATUS.pending; return `<span class="ibadge ${x[2]}">${x[0]} ${x[1]}</span>`; };
 
 async function nest(me){
-  KID = me; await loadFeed();
+  KID = me; await loadFeed(); me = KID;
   const lv = level(me.class), teachers = (me.teachers || []).filter(Boolean), its = FEED.items;
-  const due = its.filter(i => i.kind === "homework" && (!i.on_date || asDate(i.on_date) >= today())).length;
-  const soon = agendaCount();
+  const due = its.filter(i => i.kind === "homework" && (!i.on_date || asDate(i.on_date) >= today()) && !handins(i.id).some(p => p.status !== "returned")).length;
+  const back = MYWORK.filter(p => p.status === "returned").length;
   const tiles = [
     { k: "mat", ic: "📚", t: "Materials", d: "Things your teacher shares with you", n: its.filter(i => i.kind === "material").length },
     { k: "hw", ic: "📝", t: "Homework", d: due ? `${due} to do` : "Nothing to do right now", n: due },
     { k: "msg", ic: "💬", t: "Messages", d: me.settings && me.settings.student_messages ? "Class news, and you can write to your teacher" : "News from your teacher", n: its.filter(i => i.kind === "message").length },
-    { k: "cal", ic: "📅", t: "Calendar", d: "Trips, events and due dates", n: soon },
-    { k: "work", ic: "🎨", t: "My work", d: "Share your writing, photos, voice and videos", soon: true }];
+    { k: "cal", ic: "📅", t: "Calendar", d: "Trips, events and due dates", n: agendaCount() },
+    { k: "work", ic: "🎨", t: "My work", d: back ? `${back} sent back to try again` : "Share your writing, photos, voice and videos", n: MYWORK.length }];
   $("vNest").innerHTML = `
     <div class="hello"><svg width="96" height="90" aria-hidden="true"><use href="#bird"/></svg>
       <div><h1>Hi ${esc(me.first)}! 👋</h1>
         <p>${esc(me.class || "")}${me.class ? " · " : ""}${esc(me.school || "")}${teachers.length ? " · " + esc(teachers.join(", ")) : ""}</p>
         <span class="badge lv-${lv.id}">${lv.ic} You're a ${lv.name}</span></div></div>
     <div class="tiles">${tiles.map(s => `<button class="tile t-${s.k}" type="button" data-sec="${s.k}"><div class="ic">${s.ic}</div><h3>${s.t}</h3><p>${esc(s.d)}</p>
-      ${s.soon ? '<span class="soon">Opening soon</span>' : s.n ? `<span class="count">${s.n}</span>` : ""}</button>`).join("")}</div>
+      ${s.n ? `<span class="count">${s.n}</span>` : ""}</button>`).join("")}</div>
     <p style="text-align:center;margin-top:26px"><button class="btn2 light" type="button" id="outBtn">👋 Sign out</button></p>
     <p class="help" style="margin-top:8px">Not ${esc(me.first)}? Tap Sign out, then type your own code.</p>`;
-  $("vNest").querySelectorAll("[data-sec]").forEach(b => b.onclick = () => b.dataset.sec === "work" ? toast("My work is opening soon! 🐣") : kidSection(b.dataset.sec));
-  $("outBtn").onclick = async () => { const t = store.get(); store.del(); KID = null; if (t && sb) { try { await sb.rpc("nestlings_sign_out", { p_token: t }); } catch (_) {} } toast("See you soon! 👋"); show("vLanding"); };
+  $("vNest").querySelectorAll("[data-sec]").forEach(b => b.onclick = () => kidSection(b.dataset.sec));
+  $("outBtn").onclick = async () => { const t = store.get(); store.del(); KID = null; MYWORK = []; if (t && sb) { try { await sb.rpc("nestlings_sign_out", { p_token: t }); } catch (_) {} } toast("See you soon! 👋"); show("vLanding"); };
   show("vNest");
 }
 function agendaCount(){
@@ -347,24 +399,166 @@ function agendaCount(){
     + FEED.items.filter(i => (i.kind === "event" || i.kind === "homework") && i.on_date && i.on_date >= from && i.on_date <= to).length;
 }
 
-const KSEC = { mat: ["📚", "Materials"], hw: ["📝", "Homework"], msg: ["💬", "Messages"], cal: ["📅", "Calendar"] };
-async function kidSection(k){
+function workCard(p){
+  const hw = p.item_id ? FEED.items.find(i => i.id === p.item_id) : null;
+  return `<article class="item k-work">
+    <div class="ihead">${stChip(p.status)}${hw ? `<span class="ibadge">✋ Homework: ${esc(hw.title)}</span>` : ""}<span class="iwhen">${ago(p.created_at)}</span></div>
+    ${p.body ? `<p class="ibody">${linkify(p.body)}</p>` : ""}${media(p.files, "nestlings-work")}
+    ${p.teacher_comment ? `<div class="tcomment">💬 <b>Your teacher:</b> ${linkify(p.teacher_comment)}</div>` : ""}</article>`;
+}
+
+const KSEC = { mat: ["📚", "Materials"], hw: ["📝", "Homework"], msg: ["💬", "Messages"], cal: ["📅", "Calendar"], work: ["🎨", "My work"] };
+async function kidSection(k, itemId){
   await loadFeed();
   const [ic, title] = KSEC[k], its = FEED.items;
   let body = "";
   if (k === "mat") { const l = its.filter(i => i.kind === "material"); body = l.length ? l.map(i => itemCard(i)).join("") : `<div class="empty">No materials yet. 📚</div>`; }
-  if (k === "msg") { const l = its.filter(i => i.kind === "message"); body = l.length ? l.map(i => itemCard(i)).join("") : `<div class="empty">No messages yet. 💬</div>`; }
+  if (k === "msg") { const l = its.filter(i => i.kind === "message");
+    body = (KID.settings && KID.settings.student_messages ? `<div id="dmBox"><p class="sub">Loading…</p></div><h3 class="subh">From your teacher to the class</h3>` : "")
+      + (l.length ? l.map(i => itemCard(i)).join("") : `<div class="empty">No class messages yet. 💬</div>`); }
   if (k === "hw") { const l = its.filter(i => i.kind === "homework");
     const open = l.filter(i => !i.on_date || asDate(i.on_date) >= today()).sort((a, b) => String(a.on_date || "9999").localeCompare(String(b.on_date || "9999")));
     const past = l.filter(i => i.on_date && asDate(i.on_date) < today());
-    body = (open.length ? open.map(i => itemCard(i)).join("") : `<div class="empty">No homework right now. 🎉</div>`)
-      + (past.length ? `<h3 class="subh">Earlier</h3>${past.map(i => itemCard(i)).join("")}` : ""); }
+    const hand = i => { const h = handins(i.id), last = h[0];
+      return `<div class="handin">${last ? stChip(last.status) : ""}${last && last.teacher_comment ? `<div class="tcomment">💬 <b>Your teacher:</b> ${linkify(last.teacher_comment)}</div>` : ""}
+        <button class="go small" type="button" data-hand="${esc(i.id)}">✋ ${last ? "Hand in again" : "Hand in"}</button></div>`; };
+    body = (open.length ? open.map(i => itemCard(i, hand(i))).join("") : `<div class="empty">No homework right now. 🎉</div>`)
+      + (past.length ? `<h3 class="subh">Earlier</h3>${past.map(i => itemCard(i, hand(i))).join("")}` : ""); }
   if (k === "cal") body = `<div class="agenda">${agenda(its, FEED.events)}</div>`;
+  if (k === "work") { const hw = itemId ? its.find(i => i.id === itemId) : null;
+    body = composer(hw) + `<h3 class="subh">My work${MYWORK.length ? ` (${MYWORK.length})` : ""}</h3>`
+      + (MYWORK.length ? MYWORK.map(workCard).join("") : `<div class="empty">Nothing shared yet. Show your teacher what you can do! 🌟</div>`); }
   $("vNest").innerHTML = `<div class="bar"><button class="btn2 light" type="button" id="kback">← My nest</button><b class="grow">${ic} ${title}</b></div>
     <h2 class="sech">${ic} ${title}</h2>${body}
     <p style="text-align:center;margin-top:20px"><button class="btn2 light" type="button" id="kback2">← Back to my nest</button></p>`;
-  $("kback").onclick = $("kback2").onclick = () => nest(KID);
+  $("kback").onclick = $("kback2").onclick = () => { stopRec(); nest(KID); };
+  $("vNest").querySelectorAll("[data-hand]").forEach(b => b.onclick = () => kidSection("work", b.dataset.hand));
+  if (k === "work") bindComposer(itemId ? itemId : null, itemId ? "hw" : "work");
+  if (k === "msg" && $("dmBox")) kidDMs();
   window.scrollTo(0, 0);
+}
+
+/* ---------- messages to the teacher ---------- */
+async function kidDMs(){
+  const box = $("dmBox"); const { data, error } = await sb.rpc("nestlings_my_msgs", { p_token: store.get() });
+  const th = (!error && data) || [];
+  box.innerHTML = `<div class="gate dm"><h3 style="margin:0 0 6px">💌 Write to your teacher</h3>
+    <div class="thread">${th.length ? th.map(m => `<div class="bub ${m.from_student ? "me" : "them"}"><small>${m.from_student ? "You" : esc(m.teacher || "Your teacher")} · ${ago(m.created_at)}</small>${linkify(m.body)}</div>`).join("") : `<p class="note2" style="margin:0">Ask a question or tell your teacher something.</p>`}</div>
+    <textarea class="field" id="dmText" rows="3" maxlength="2000" placeholder="Type your message…"></textarea>
+    <div id="dmMsg"></div><button class="go small" type="button" id="dmSend">Send 💌</button></div>`;
+  const th2 = box.querySelector(".thread"); th2.scrollTop = th2.scrollHeight;
+  $("dmSend").onclick = async () => { const v = $("dmText").value.trim(); if (!v) return $("dmMsg").innerHTML = '<div class="msg err">Write your message first.</div>';
+    $("dmSend").disabled = true; const { error } = await sb.rpc("nestlings_send_msg", { p_token: store.get(), p_body: v }); $("dmSend").disabled = false;
+    if (error) return $("dmMsg").innerHTML = `<div class="msg err">${esc(error.message)}</div>`;
+    toast("Sent to your teacher 💌"); kidDMs(); };
+}
+
+/* ---------- the composer: writing, photos, voice notes, videos ---------- */
+const MAXSEC = 120, VIDMB = 50; let ATT = [], REC = null;
+function composer(hw){
+  const appr = !KID.settings || KID.settings.approve_posts !== false;
+  return `<form class="gate comp" id="comp" novalidate>
+    <h3 style="margin:0 0 4px;font-size:24px">${hw ? `✋ Hand in: ${esc(hw.title)}` : "🎨 Share something"}</h3>
+    <p style="margin:0 0 10px">${hw ? "Write, add photos, a voice note or a video of your homework." : "Show your teacher what you learned or made."}</p>
+    <textarea class="field" id="cBody" rows="4" maxlength="5000" placeholder="Write here…"></textarea>
+    <div class="cbtns">
+      <label class="cbtn">📷 Photo<input type="file" id="cPhoto" accept="image/*" multiple hidden></label>
+      <button class="cbtn" type="button" id="cVoice">🎤 Voice note</button>
+      <button class="cbtn" type="button" id="cVideo">🎬 Record video</button>
+      <label class="cbtn">📁 Choose a video<input type="file" id="cVidFile" accept="video/*" hidden></label>
+    </div>
+    <div id="cRec"></div><div id="cAtt" class="catt"></div><div id="cMsg" role="status" aria-live="polite"></div>
+    <button class="go" type="submit" id="cSend">${hw ? "Hand in ✋" : "Send to my teacher 🚀"}</button>
+    <p class="help" style="margin-top:12px">${appr ? "Your teacher will look at it first. Videos and voice notes can be up to 2 minutes." : "Videos and voice notes can be up to 2 minutes."}</p>
+    ${hw ? `<p style="text-align:center;margin:6px 0 0"><button class="linkbtn" type="button" id="cCancel">Cancel</button></p>` : ""}</form>`;
+}
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+function drawAtt(){
+  const box = $("cAtt"); if (!box) return;
+  box.innerHTML = ATT.map((a, i) => `<div class="cthumb">${a.kind === "img" ? `<img src="${a.url}" alt="">` : a.kind === "video" ? `<video src="${a.url}" controls playsinline></video>` : `<div class="aud">🎤 <audio src="${a.url}" controls></audio></div>`}
+    ${a.dur ? `<small>${fmt(a.dur)}</small>` : ""}<button type="button" class="cx" data-x="${i}" aria-label="Remove">✕</button></div>`).join("");
+  box.querySelectorAll("[data-x]").forEach(b => b.onclick = () => { const a = ATT.splice(+b.dataset.x, 1)[0]; if (a) URL.revokeObjectURL(a.url); drawAtt(); });
+}
+const say = (h, ok) => { const m = $("cMsg"); if (m) m.innerHTML = h ? `<div class="msg ${ok ? "ok" : "err"}">${h}</div>` : ""; };
+function shrink(file){
+  return new Promise(res => { const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => { const s = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement("canvas");
+      c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob(b => { URL.revokeObjectURL(url); res(b ? { blob: b, type: "image/jpeg", name: (file.name || "photo").replace(/\.[^.]+$/, "") + ".jpg" } : { blob: file, type: file.type, name: file.name }); }, "image/jpeg", 0.85); };
+    img.onerror = () => { URL.revokeObjectURL(url); res({ blob: file, type: file.type, name: file.name }); }; img.src = url; });
+}
+function videoLength(file){
+  return new Promise(res => { const v = document.createElement("video"), u = URL.createObjectURL(file); v.preload = "metadata";
+    v.onloadedmetadata = () => { const d = v.duration; URL.revokeObjectURL(u); res(isFinite(d) ? d : 0); }; v.onerror = () => { URL.revokeObjectURL(u); res(0); }; v.src = u; });
+}
+function stopRec(){ if (REC && REC.mr && REC.mr.state !== "inactive") { REC.cancel = true; REC.mr.stop(); } }
+async function record(kind){
+  say("");
+  if (REC) return say("Finish your recording first.");
+  if (ATT.length >= 10) return say("You can add up to 10 things at a time.");
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) return say(kind === "video" ? "Recording isn’t available on this device. Try “Choose a video”." : "Recording isn’t available on this device.");
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia(kind === "video" ? { audio: true, video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" } } : { audio: true }); }
+  catch (e) { return say(kind === "video" ? "Nestlings needs the camera and microphone. Allow them and try again. 🎬" : "Nestlings needs the microphone. Allow it and try again. 🎤"); }
+  const types = kind === "video" ? ["video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp8,opus", "video/webm"] : ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"];
+  const mime = types.find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || "";
+  let mr; try { mr = new MediaRecorder(stream, Object.assign(mime ? { mimeType: mime } : {}, { audioBitsPerSecond: 64000 }, kind === "video" ? { videoBitsPerSecond: 900000 } : {})); }
+  catch (_) { mr = new MediaRecorder(stream); }
+  const chunks = [], t0 = Date.now(); REC = { mr, kind };
+  const box = $("cRec");
+  box.innerHTML = `<div class="recbox">${kind === "video" ? '<video id="live" autoplay muted playsinline></video>' : '<div class="mic">🎤</div>'}
+    <div class="recrow"><span class="dot"></span><b id="recT">0:00</b><span class="note2" style="margin:0">/ 2:00</span><button class="go small" type="button" id="recStop" style="margin:0;width:auto">⏹ Stop</button></div></div>`;
+  if (kind === "video") $("live").srcObject = stream;
+  const tick = setInterval(() => { const s = (Date.now() - t0) / 1000; const el = $("recT"); if (el) el.textContent = fmt(s); if (s >= MAXSEC) mr.state !== "inactive" && mr.stop(); }, 250);
+  mr.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  mr.onstop = () => { clearInterval(tick); stream.getTracks().forEach(t => t.stop()); const cancelled = REC && REC.cancel; REC = null; if ($("cRec")) $("cRec").innerHTML = "";
+    if (cancelled) return;
+    const type = (mr.mimeType || mime || (kind === "video" ? "video/webm" : "audio/webm")).split(";")[0], blob = new Blob(chunks, { type });
+    const ext = /mp4/.test(type) ? (kind === "video" ? "mp4" : "m4a") : "webm", dur = Math.min(MAXSEC, Math.round((Date.now() - t0) / 1000));
+    if (!blob.size) return say("Nothing was recorded. Try again.");
+    ATT.push({ kind, blob, type, name: (kind === "video" ? "video" : "voice-note") + "." + ext, dur, url: URL.createObjectURL(blob) }); drawAtt();
+    say(kind === "video" ? "Video added! 🎬" : "Voice note added! 🎤", true); };
+  $("recStop").onclick = () => mr.state !== "inactive" && mr.stop();
+  mr.start(1000);
+}
+function bindComposer(itemId, backTo){
+  ATT.forEach(a => URL.revokeObjectURL(a.url)); ATT = []; stopRec();
+  $("cVoice").onclick = () => record("audio");
+  $("cVideo").onclick = () => record("video");
+  if ($("cCancel")) $("cCancel").onclick = () => kidSection("hw");
+  $("cPhoto").onchange = async e => { say(""); for (const f of [...e.target.files]) { if (ATT.length >= 10) { say("You can add up to 10 things at a time."); break; }
+      const s = await shrink(f); if (s.blob.size > VIDMB * 1048576) { say("That photo is too big."); continue; }
+      ATT.push({ kind: "img", blob: s.blob, type: s.type, name: s.name, url: URL.createObjectURL(s.blob) }); } e.target.value = ""; drawAtt(); };
+  $("cVidFile").onchange = async e => { say(""); const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+    if (f.size > VIDMB * 1048576) return say(`That video is too big (more than ${VIDMB} MB). Try “Record video” instead.`);
+    const d = await videoLength(f); if (d > MAXSEC + 1) return say(`That video is ${fmt(d)} long. Videos can be up to 2 minutes. ✂️`);
+    ATT.push({ kind: "video", blob: f, type: f.type || "video/mp4", name: f.name || "video.mp4", dur: Math.round(d) || null, url: URL.createObjectURL(f) }); drawAtt(); };
+  $("comp").onsubmit = async e => {
+    e.preventDefault(); say("");
+    if (REC) return say("Stop your recording first.");
+    const text = $("cBody").value.trim();
+    if (!text && !ATT.length) return say("Add some writing, a photo, a voice note or a video. ✨");
+    const tok = store.get(); if (!tok) return say("Please sign in again.");
+    const btn = $("cSend"), label = btn.textContent; btn.disabled = true;
+    try {
+      const files = [];
+      if (ATT.length) {
+        btn.textContent = "Getting ready…";
+        const tk = await sb.rpc("nestlings_upload_ticket", { p_token: tok }); if (tk.error) throw tk.error;
+        for (let i = 0; i < ATT.length; i++) { const a = ATT[i]; btn.textContent = `Sending ${i + 1} of ${ATT.length}…`;
+          const ext = (a.name.match(/\.([a-z0-9]{2,5})$/i) || [, "bin"])[1].toLowerCase(), path = `${tk.data}/${rid()}.${ext}`;
+          const up = await sb.storage.from("nestlings-work").upload(path, a.blob, { contentType: a.type || undefined, upsert: false });
+          if (up.error) throw new Error(/size|large|exceed/i.test(up.error.message) ? "That file is too big to send." : up.error.message);
+          files.push({ path, name: a.name, type: a.type || "", size: String(a.blob.size), dur: a.dur ? String(a.dur) : "" }); }
+      }
+      btn.textContent = "Sending…";
+      const { data, error } = await sb.rpc("nestlings_post", { p_token: tok, p_body: text, p_files: files, p_item: itemId || null });
+      if (error) throw error;
+      ATT.forEach(a => URL.revokeObjectURL(a.url)); ATT = [];
+      toast(data && data.status === "approved" ? "Shared! 🌟" : "Sent! Your teacher will look at it soon. 🌟");
+      kidSection(backTo === "hw" ? "hw" : "work");
+    } catch (err) { say(esc(err.message || "Something went wrong. Try again.")); btn.disabled = false; btn.textContent = label; }
+  };
 }
 
 /* =====================================================================
@@ -385,7 +579,7 @@ $("tform").addEventListener("submit", async e => {
   $("tPw").value = ""; m.innerHTML = ""; teacherHome();
 });
 
-let ME = null, CLASSES = [], CUR = null, ITEMS = [], EVENTS = [];
+let ME = null, CLASSES = [], CUR = null, ITEMS = [], EVENTS = [], POSTS = [], DMS = [], STUDS = {}, CSET = { approve_posts: true, student_messages: false };
 async function teacherHome(){
   const box = $("vTeacher"); box.innerHTML = '<p class="sub">Loading your classes…</p>'; show("vTeacher");
   const { data: { session } } = await sb.auth.getSession(); if (!session) return show("vTeacherIn");
@@ -410,20 +604,32 @@ async function teacherHome(){
       : `<div class="gate"><p style="margin:0">You don’t have any classes yet. Your school leader adds you to your classes in Nestopia.</p></div>`}`;
   $("tOut").onclick = teacherOut;
   box.querySelectorAll("[data-c]").forEach(b => b.onclick = () => classNest(CLASSES.find(c => String(c.id) === b.dataset.c)));
+  const m = location.hash.match(/work=([^&]+)/); if (m) { const c = CLASSES.find(x => String(x.id) === decodeURIComponent(m[1]));
+    history.replaceState(null, "", location.pathname); if (c) { CUR = c; await loadClass(); teacherWork("pending"); } }
 }
 
 async function loadClass(){
-  const [it, ev] = await Promise.all([
-    sb.from("nestling_items").select("*").eq("class_id", String(CUR.id)).order("created_at", { ascending: false }),
-    sb.rpc("nestlings_class_events", { p_class: String(CUR.id) })]);
+  const cid = String(CUR.id);
+  const [it, ev, po, dm, se, st] = await Promise.all([
+    sb.from("nestling_items").select("*").eq("class_id", cid).order("created_at", { ascending: false }),
+    sb.rpc("nestlings_class_events", { p_class: cid }),
+    sb.from("nestling_posts").select("*").eq("class_id", cid).order("created_at", { ascending: false }),
+    sb.from("nestling_dms").select("*").eq("class_id", cid).order("created_at", { ascending: true }),
+    sb.from("nestling_class_settings").select("approve_posts,student_messages").eq("class_id", cid),
+    sb.from("students").select("id,full_name").eq("class_id", CUR.id).eq("archived", false).order("full_name")]);
   if (it.error) { toast("Couldn’t load this class: " + it.error.message); ITEMS = []; } else ITEMS = it.data || [];
   EVENTS = ev.error ? [] : (ev.data || []);
+  POSTS = po.error ? [] : (po.data || []); DMS = dm.error ? [] : (dm.data || []);
+  CSET = (!se.error && se.data && se.data[0]) || { approve_posts: true, student_messages: false };
+  STUDS = {}; (st.data || []).forEach(s => { STUDS[String(s.id)] = s.full_name; });
 }
+const sname = id => STUDS[String(id)] || "A student";
 
 async function classNest(c){
   if (c) CUR = c; const lv = level(CUR.name), box = $("vTeacher");
   box.innerHTML = '<p class="sub">Opening the class nest…</p>'; await loadClass();
   const n = k => ITEMS.filter(i => i.kind === k).length;
+  const waiting = POSTS.filter(p => p.status === "pending").length, unread = DMS.filter(d => d.from_student && !d.read_at).length;
   box.innerHTML = `
     <div class="bar"><button class="btn2 light" type="button" id="back">← Classes</button><b class="grow">${lv.ic} ${esc(CUR.name)}</b>
       <a class="btn2 light" href="../nestlings-admin.html#class=${encodeURIComponent(CUR.id)}">Codes and settings</a></div>
@@ -432,13 +638,13 @@ async function classNest(c){
     <div class="tiles">${[
       { k: "material", ic: "📚", t: "Materials", d: "Upload lesson materials and links", c: n("material") },
       { k: "homework", ic: "📝", t: "Homework", d: "Set homework and revision with due dates", c: n("homework") },
-      { k: "message", ic: "💬", t: "Messages", d: "Send messages to the class", c: n("message") },
+      { k: "message", ic: "💬", t: "Messages", d: unread ? `${unread} new from students` : "Send messages to the class", c: unread || n("message") },
       { k: "event", ic: "📅", t: "Calendar", d: "Trips, events, due dates and assessments", c: n("event") },
-      { k: "work", ic: "🎨", t: "Students’ work", d: "Approve and comment on what students share", soon: true }]
+      { k: "work", ic: "🎨", t: "Students’ work", d: waiting ? `${waiting} waiting for you` : "Approve and comment on what students share", c: waiting || POSTS.length }]
       .map(s => `<button class="tile t-${s.k === "material" ? "mat" : s.k === "homework" ? "hw" : s.k === "message" ? "msg" : s.k === "event" ? "cal" : "work"}" type="button" data-sec="${s.k}"><div class="ic">${s.ic}</div><h3>${s.t}</h3><p>${esc(s.d)}</p>
         ${s.soon ? '<span class="soon">Coming in the next update</span>' : s.c ? `<span class="count">${s.c}</span>` : ""}</button>`).join("")}</div>`;
   $("back").onclick = teacherHome;
-  box.querySelectorAll("[data-sec]").forEach(b => b.onclick = () => b.dataset.sec === "work" ? toast("Students’ work is coming in the next update") : teacherSection(b.dataset.sec));
+  box.querySelectorAll("[data-sec]").forEach(b => b.onclick = () => b.dataset.sec === "work" ? teacherWork("pending") : teacherSection(b.dataset.sec));
   show("vTeacher");
 }
 
@@ -455,12 +661,14 @@ function teacherSection(kind, editId){
   box.innerHTML = `
     <div class="bar"><button class="btn2 light" type="button" id="back">← ${esc(CUR.name)}</button><b class="grow">${S.ic} ${S.t}</b></div>
     <h2 class="sech">${S.ic} ${S.t}</h2>
+    ${kind === "message" ? dmBlock() : ""}
     ${form(kind, edit)}
     ${kind === "event" ? `<h3 class="subh">Coming up for ${esc(CUR.name)}</h3><p class="note2">School events and trips from the Nestopia calendar, homework due dates and what you add here. This is what your students see.</p><div class="agenda">${agenda(ITEMS, EVENTS)}</div>
       ${list.length ? `<h3 class="subh">What you added</h3>${list.map(i => itemCard(i, tools(i))).join("")}` : ""}`
       : sorted.length ? `<h3 class="subh">Posted (${sorted.length})</h3>${sorted.map(i => itemCard(i, tools(i))).join("")}` : `<div class="empty">${S.empty}</div>`}`;
   $("back").onclick = () => classNest();
   bindForm(kind, edit);
+  if (kind === "message") bindDM();
   box.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => { teacherSection(kind, b.dataset.edit); setTimeout(() => $("iform").scrollIntoView({ behavior: "smooth" }), 50); });
   box.querySelectorAll("[data-del]").forEach(b => b.onclick = () => removeItem(b.dataset.del, kind));
   if (!editId) window.scrollTo(0, 0);
@@ -538,6 +746,64 @@ async function removeItem(id, kind){
   if (error) return alert("This wasn’t deleted: " + error.message);
   if ((it.files || []).length) await sb.storage.from("nestlings").remove(it.files.map(f => f.path));
   toast("Deleted"); await loadClass(); teacherSection(kind);
+}
+
+
+/* ---------- teacher: students' work ---------- */
+function teacherWork(filter){
+  const box = $("vTeacher"), lv = level(CUR.name);
+  const counts = { pending: POSTS.filter(p => p.status === "pending").length, all: POSTS.length, returned: POSTS.filter(p => p.status === "returned").length };
+  const list = filter === "all" ? POSTS : POSTS.filter(p => p.status === filter);
+  const hwTitle = id => { const h = ITEMS.find(i => i.id === id); return h ? h.title : "Homework"; };
+  box.innerHTML = `
+    <div class="bar"><button class="btn2 light" type="button" id="back">← ${esc(CUR.name)}</button><b class="grow">🎨 Students’ work</b>
+      <a class="btn2 light" href="../nestlings-admin.html#class=${encodeURIComponent(CUR.id)}">Settings</a></div>
+    <h2 class="sech">🎨 Students’ work</h2>
+    <p class="note2">${CSET.approve_posts ? "Approval is <b>on</b>: students’ posts wait here until you approve them. Only you and the child’s own family will see them." : "Approval is <b>off</b>: students’ posts are shared straight away. You can still comment or send them back."}</p>
+    <div class="ftabs">${[["pending", "⏳ Waiting"], ["returned", "↩️ Sent back"], ["all", "📚 All"]].map(([k, l]) => `<button type="button" class="ftab ${filter === k ? "on" : ""}" data-f="${k}">${l} (${counts[k]})</button>`).join("")}</div>
+    ${list.length ? list.map(p => `<article class="item k-work" data-post="${esc(p.id)}">
+        <div class="ihead"><b class="who">${esc(sname(p.student_id))}</b>${stChipT(p.status)}${p.item_id ? `<span class="ibadge">✋ ${esc(hwTitle(p.item_id))}</span>` : ""}<span class="iwhen">${ago(p.created_at)}</span></div>
+        ${p.body ? `<p class="ibody">${linkify(p.body)}</p>` : ""}${media(p.files, "nestlings-work")}
+        <label class="fred" style="display:block;margin-top:10px;font-size:15px">Your comment <textarea class="field" rows="2" data-c maxlength="2000" placeholder="Well done! I love how you…">${esc(p.teacher_comment || "")}</textarea></label>
+        <div class="wacts">
+          ${p.status !== "approved" ? `<button class="go small" type="button" data-a="approved">✅ Approve</button>` : `<button class="btn2 light" type="button" data-a="approved">💾 Save comment</button>`}
+          ${p.status !== "returned" ? `<button class="btn2 light" type="button" data-a="returned">↩️ Send back</button>` : ""}
+          <button class="linkbtn" type="button" data-a="delete">🗑️ Delete</button></div></article>`).join("")
+      : `<div class="empty">${filter === "pending" ? "Nothing waiting. 🎉" : "Nothing here yet."}</div>`}`;
+  $("back").onclick = () => classNest();
+  box.querySelectorAll("[data-f]").forEach(b => b.onclick = () => teacherWork(b.dataset.f));
+  box.querySelectorAll("[data-post]").forEach(card => card.querySelectorAll("[data-a]").forEach(b => b.onclick = async () => {
+    const id = card.dataset.post, a = b.dataset.a, comment = card.querySelector("[data-c]").value;
+    if (a === "returned" && !comment.trim()) { card.querySelector("[data-c]").focus(); return toast("Add a comment so the student knows what to change"); }
+    if (a === "delete" && !confirm(`Delete this from ${sname(POSTS.find(p => p.id === id).student_id)}? It can’t be undone.`)) return;
+    b.disabled = true;
+    const { error } = a === "delete" ? await sb.rpc("nestlings_delete_post", { p_post: id }) : await sb.rpc("nestlings_review", { p_post: id, p_status: a, p_comment: comment });
+    if (error) { b.disabled = false; return alert("This wasn’t saved: " + error.message); }
+    toast(a === "approved" ? "Approved ✅" : a === "returned" ? "Sent back with your comment ↩️" : "Deleted");
+    await loadClass(); teacherWork(filter); }));
+  window.scrollTo(0, 0);
+}
+const stChipT = s => s === "approved" ? '<span class="ibadge st-ok">✅ Approved</span>' : s === "returned" ? '<span class="ibadge st-back">↩️ Sent back</span>' : '<span class="ibadge st-wait">⏳ Waiting</span>';
+
+/* ---------- teacher: messages from students ---------- */
+let DMOPEN = null;
+function dmBlock(){
+  const by = {}; DMS.forEach(d => { (by[d.student_id] = by[d.student_id] || []).push(d); });
+  const ids = Object.keys(by).sort((a, b) => String(by[b][by[b].length - 1].created_at).localeCompare(String(by[a][by[a].length - 1].created_at)));
+  if (!CSET.student_messages && !ids.length) return `<div class="note2" style="margin-bottom:16px">💌 Students can’t message you in this class. You can turn it on in <a href="../nestlings-admin.html#class=${encodeURIComponent(CUR.id)}">Codes and settings</a>.</div>`;
+  return `<div class="gate dm" style="margin-bottom:22px"><h3 style="margin:0 0 8px;font-size:22px">💌 Messages from students</h3>
+    ${CSET.student_messages ? "" : '<p class="note2">Students can’t send new messages now (turned off in settings), but you can still reply.</p>'}
+    ${ids.length ? `<div class="dmlist">${ids.map(id => { const un = by[id].filter(d => d.from_student && !d.read_at).length, last = by[id][by[id].length - 1];
+      return `<button type="button" class="dmrow ${DMOPEN === id ? "on" : ""}" data-dm="${esc(id)}"><b>${esc(sname(id))}</b>${un ? `<span class="count" style="margin:0">${un}</span>` : ""}<small>${esc(String(last.body).slice(0, 70))} · ${ago(last.created_at)}</small></button>`; }).join("")}</div>`
+      : '<p class="note2" style="margin:0">No messages from students yet.</p>'}
+    ${DMOPEN && by[DMOPEN] ? `<div class="thread" id="thr">${by[DMOPEN].map(m => `<div class="bub ${m.from_student ? "them" : "me"}"><small>${m.from_student ? esc(sname(m.student_id)) : "You"} · ${ago(m.created_at)}</small>${linkify(m.body)}</div>`).join("")}</div>
+      <textarea class="field" id="rpText" rows="2" maxlength="2000" placeholder="Reply to ${esc(sname(DMOPEN))}…"></textarea><button class="go small" type="button" id="rpSend">Reply 💌</button>` : ""}</div>`;
+}
+function bindDM(){
+  document.querySelectorAll("[data-dm]").forEach(b => b.onclick = async () => { DMOPEN = b.dataset.dm; await sb.rpc("nestlings_mark_read", { p_student: DMOPEN }); await loadClass(); teacherSection("message"); setTimeout(() => { const t = $("thr"); if (t) { t.scrollTop = t.scrollHeight; $("rpText").focus(); } }, 50); });
+  const s = $("rpSend"); if (s) s.onclick = async () => { const v = $("rpText").value.trim(); if (!v) return toast("Write your reply first");
+    s.disabled = true; const { error } = await sb.rpc("nestlings_reply", { p_student: DMOPEN, p_body: v }); s.disabled = false;
+    if (error) return alert("Not sent: " + error.message); toast("Reply sent 💌"); await loadClass(); teacherSection("message"); };
 }
 
 async function teacherOut(){ await sb.auth.signOut(); ME = null; toast("Signed out"); show("vLanding"); }
