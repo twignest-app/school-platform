@@ -57,6 +57,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px so
   .bottom button{font:inherit;font-size:11.5px;font-weight:800;background:none;border:0;color:var(--muted);display:grid;justify-items:center;gap:2px;cursor:pointer;padding:4px 0}
   .bottom button span{font-size:22px}.bottom button[aria-current="page"]{color:var(--plum)}}
 @media print{header,.side,.bottom,.no-print{display:none!important}.shell{display:block}}
+.nlm{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;align-items:center}.nlm img{height:150px;max-width:100%;object-fit:cover;border-radius:14px}.nlm video{width:min(420px,100%);border-radius:14px;background:#000}.nla{display:inline-flex;align-items:center;gap:6px}.nla audio{max-width:260px}.nlc{margin:10px 0 0;background:var(--lav);border-radius:12px;padding:8px 12px}.pill{display:inline-block;font-weight:800;font-size:13px;border-radius:99px;padding:3px 10px}
 </style>
 </head>
 <body>
@@ -124,7 +125,7 @@ function applyLang(root){
 }
 const L = (en, ar) => LANG === "ar" ? ar : en;
 // ---------- Sections ----------
-const NAV = [["home", "🏠", "Home · الرئيسية", "t-lav"], ["learning", "📚", "Learning · التعلّم", "t-sky"], ["attendance", "✅", "Attendance · الحضور", "t-mint"], ["stars", "⭐", "Stars · النجوم", "t-butter"], ["messages", "💬", "Messages · الرسائل", "t-rose"], ["more", "☰", "More · المزيد", "t-peach"]];
+const NAV = [["home", "🏠", "Home · الرئيسية", "t-lav"], ["learning", "📚", "Learning · التعلّم", "t-sky"], ["nestlings", "🐣", "Nestlings · بوابة الطالب", "t-butter"], ["attendance", "✅", "Attendance · الحضور", "t-mint"], ["stars", "⭐", "Stars · النجوم", "t-butter"], ["messages", "💬", "Messages · الرسائل", "t-rose"], ["more", "☰", "More · المزيد", "t-peach"]];
 let avs = {}, sub = {};
 async function show(id, note){
   if (!kids.length) return linkView(note);
@@ -134,7 +135,7 @@ async function show(id, note){
   view = data;
   for (const k of kids) if (!(k.id in avs)) { try { const r = await sb.rpc("parent_merit_extras", { p_student: String(PREVIEW || k.id) }); avs[k.id] = (r.data && r.data.avatar) || "🌟"; } catch (_) { avs[k.id] = "🌟"; } }
   const S = view.show || {};
-  const allowed = { home: true, learning: S.reports !== false, attendance: S.attendance !== false, stars: S.merits !== false || S.incidents, messages: !PREVIEW, more: true };
+  const allowed = { home: true, nestlings: true, learning: S.reports !== false, attendance: S.attendance !== false, stars: S.merits !== false || S.incidents, messages: !PREVIEW, more: true };
   if (!allowed[tab] || ["news", "reports", "behaviour", "calendar"].includes(tab)) tab = { news: "messages", reports: "learning", behaviour: "stars", calendar: "more" }[tab] || "home";
   const nav = NAV.filter(n => allowed[n[0]]);
   hr.innerHTML = `<div class="row">${!PREVIEW && kids.length > 1 ? `<div class="kidsw">${kids.map(k => `<button class="kidb" data-kid="${esc(k.id)}" aria-pressed="${String(k.id) === String(cur)}"><span class="a">${avs[k.id] || "🌟"}</span>${esc(k.name.split(" ")[0])}</button>`).join("")}</div>` : ""}
@@ -147,7 +148,7 @@ async function show(id, note){
   hr.querySelectorAll("[data-kid]").forEach(b => b.onclick = () => { cur = b.dataset.kid; show(cur); });
   document.getElementById("lang").onclick = () => { LANG = LANG === "ar" ? "en" : "ar"; try { localStorage.setItem("nest_lang", LANG); } catch (_) {} show(cur); };
   const bl = document.getElementById("bell"); if (bl) bl.onclick = () => bell();
-  await ({ home, learning, attendance, stars: behaviour, messages: msgSection, more })[tab]();
+  await ({ home, learning, nestlings: nestlingsTab, attendance, stars: behaviour, messages: msgSection, more })[tab]();
   if (!PREVIEW) { let seen = true; try { seen = !!localStorage.getItem("nest_tour"); } catch (_) {} if (!seen) setTimeout(tour, 400); }
   applyLang(document.body);
   if (!PREVIEW) todos().then(t => { const n = t.length, b = document.getElementById("bellN"); if (b) { b.hidden = !n; b.textContent = n; } });
@@ -509,6 +510,67 @@ async function behaviour(){
   p.querySelectorAll("[data-ack]").forEach(b => b.onclick = async () => { const { error } = await sb.rpc("parent_bh_ack", { p_item: b.dataset.ack }); if (error) return alert(error.message); behaviour(); });
 }
 
+// ---------- Nestlings: what the child does in the student portal ----------
+const nlUrl = (path, bucket) => `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${String(path).split("/").map(encodeURIComponent).join("/")}`;
+const nlText = s => esc(s).replace(/(https?:\/\/[^\s<]+)/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`).replace(/\n/g, "<br>");
+const nlDay = s => s ? dshort(String(s).slice(0, 10)) : "";
+const nlAgo = s => new Date(s).toLocaleDateString(LANG === "ar" ? "ar" : "en-GB", { day: "numeric", month: "short" });
+function nlMedia(files, bucket, links){
+  files = files || []; links = links || []; if (!files.length && !links.length) return "";
+  return `<div class="nlm">${files.map(f => { const u = nlUrl(f.path, bucket), ty = f.type || "", nm = f.name || "";
+    if (/^video\//.test(ty) || /\.(mp4|mov|webm|m4v)$/i.test(nm)) return `<video src="${u}" controls playsinline preload="metadata"></video>`;
+    if (/^audio\//.test(ty) || /\.(m4a|mp3|wav|ogg|weba)$/i.test(nm)) return `<span class="nla">🎤 <audio src="${u}" controls preload="metadata"></audio></span>`;
+    if (/^image\//.test(ty) || /\.(png|jpe?g|gif|webp|heic)$/i.test(nm)) return `<a href="${u}" target="_blank" rel="noopener"><img src="${u}" alt="" loading="lazy"></a>`;
+    return `<a class="btn ghost small" href="${u}" target="_blank" rel="noopener">📎 ${esc(nm)}</a>`; }).join("")}
+    ${links.map(l => `<a class="btn ghost small" href="${esc(l.url)}" target="_blank" rel="noopener">🔗 ${esc(l.label || l.url)}</a>`).join("")}</div>`;
+}
+async function nestlingsTab(){
+  const p = document.getElementById("pane"), first = esc((view.name || "").split(" ")[0] || L("your child", "طفلك"));
+  p.innerHTML = `<div class="card"><p class="muted" style="margin:0">Loading… · جارٍ التحميل…</p></div>`;
+  const { data, error } = await sb.rpc("parent_nestlings", { p_student: String(PREVIEW || cur) });
+  if (error) { p.innerHTML = `<div class="card">${/function|does not exist|schema cache/i.test(error.message) ? '<p class="muted" style="margin:0">Nestlings isn’t ready yet at your school. · بوابة الطالب غير متاحة بعد.</p>' : msg(error.message)}</div>`; return; }
+  const N = data || {}, items = N.items || [], work = N.work || [], hins = {}; (N.handins || []).forEach(h => { hins[h.item_id] = h; });
+  sub.n = sub.n || "work";
+  const T = [["work", "🎨", "Work · الأعمال"], ["hw", "📝", "Homework · الواجبات"], ["msgs", "💬", "Class messages · رسائل الصف"], ["mat", "📚", "Materials · المواد"], ["cal", "📅", "Calendar · التقويم"]];
+  const today0 = new Date().toISOString().slice(0, 10);
+  const card = (inner, cls) => `<div class="card ${cls || ""}" style="margin:0 0 12px">${inner}</div>`;
+  let body = "";
+  if (sub.n === "work") body = work.length ? work.map(w => { const hw = w.item_id ? items.find(i => i.id === w.item_id) : null;
+      return card(`<p class="muted" style="margin:0 0 6px">${nlAgo(w.created_at)}${hw ? ` · ✋ ${esc(hw.title)}` : ""}</p>
+        ${w.body ? `<p style="margin:0 0 6px;font-size:17px">${nlText(w.body)}</p>` : ""}${nlMedia(w.files, "nestlings-work")}
+        ${w.teacher_comment ? `<p class="nlc">💬 <b>${esc(w.teacher || L("Teacher", "المعلّم"))}:</b> ${nlText(w.teacher_comment)}</p>` : ""}`); }).join("")
+    : card(`<p style="margin:0">🎨 ${L(`When ${first} shares work in Nestlings and the teacher approves it, it appears here.`, "عندما يشارك طفلك عملاً في بوابة الطالب ويوافق عليه المعلّم، سيظهر هنا.")}</p>`);
+  if (sub.n === "hw") { const hw = items.filter(i => i.kind === "homework").sort((a, b) => String(a.on_date || "9999").localeCompare(String(b.on_date || "9999")));
+    const st = i => { const h = hins[i.id];
+      if (h && h.status === "approved") return `<span class="pill" style="background:var(--mint);color:var(--mint-ink)">✅ ${L("Handed in", "تم التسليم")}</span>`;
+      if (h && h.status === "pending") return `<span class="pill" style="background:var(--butter);color:var(--butter-ink)">⏳ ${L("Handed in, waiting for the teacher", "تم التسليم، بانتظار المعلّم")}</span>`;
+      if (h && h.status === "returned") return `<span class="pill" style="background:var(--peach);color:var(--peach-ink)">↩️ ${L("The teacher asked for changes", "طلب المعلّم بعض التعديلات")}</span>`;
+      return `<span class="pill" style="background:var(--rose);color:var(--rose-ink)">${i.on_date && i.on_date < today0 ? L("Not handed in", "لم يُسلَّم") : L("Not handed in yet", "لم يُسلَّم بعد")}</span>`; };
+    body = hw.length ? hw.map(i => card(`<div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><b style="font-size:17px">${i.sub_kind === "revision" ? "🔁" : "📝"} ${esc(i.title)}</b>${st(i)}</div>
+        ${i.on_date ? `<p class="muted" style="margin:4px 0 0">${L("Due", "موعد التسليم")}: ${nlDay(i.on_date)}</p>` : ""}${i.body ? `<p style="margin:8px 0 0">${nlText(i.body)}</p>` : ""}${nlMedia(i.files, "nestlings", i.links)}`)).join("")
+      : card(`<p style="margin:0">🎉 ${L("No homework at the moment.", "لا توجد واجبات حاليًا.")}</p>`); }
+  if (sub.n === "msgs") { const m = items.filter(i => i.kind === "message");
+    body = m.length ? m.map(i => card(`<p class="muted" style="margin:0 0 6px">${nlAgo(i.created_at)}</p><p style="margin:0;font-size:17px">${nlText(i.body || "")}</p>${nlMedia(i.files, "nestlings", i.links)}`)).join("")
+      : card(`<p style="margin:0">💬 ${L("No class messages yet.", "لا توجد رسائل للصف بعد.")}</p>`); }
+  if (sub.n === "mat") { const m = items.filter(i => i.kind === "material");
+    body = m.length ? m.map(i => card(`<p class="muted" style="margin:0 0 4px">${nlAgo(i.created_at)}</p><b style="font-size:17px">📚 ${esc(i.title)}</b>${i.body ? `<p style="margin:6px 0 0">${nlText(i.body)}</p>` : ""}${nlMedia(i.files, "nestlings", i.links)}`)).join("")
+      : card(`<p style="margin:0">📚 ${L("No materials yet.", "لا توجد مواد بعد.")}</p>`); }
+  if (sub.n === "cal") { const CAT = { holiday: "🏖️", trip: "🚌", assessment: "✏️", event: "🎉", reminder: "🔔" }, rows = [];
+    (N.events || []).forEach(e => rows.push({ d: String(e.start).slice(0, 10), end: e.end && String(e.end).slice(0, 10) !== String(e.start).slice(0, 10) ? String(e.end).slice(0, 10) : null, ic: CAT[String(e.category || "").toLowerCase()] || "🏫", t: e.title, note: L("School", "المدرسة") }));
+    items.forEach(i => { if (i.kind === "event" && i.on_date) rows.push({ d: i.on_date, ic: CAT[i.sub_kind] || "🎉", t: i.title, note: i.body || "" });
+      if (i.kind === "homework" && i.on_date) rows.push({ d: i.on_date, ic: "📝", t: i.title, note: L("Homework due", "موعد تسليم واجب") }); });
+    const up = rows.filter(r => (r.end || r.d) >= today0).sort((a, b) => a.d.localeCompare(b.d));
+    body = card(up.length ? `<table>${up.map(r => `<tr><td style="white-space:nowrap;vertical-align:top;padding:6px 10px 6px 0"><b>${nlDay(r.d)}</b>${r.end ? `<br><span class="muted">→ ${nlDay(r.end)}</span>` : ""}</td><td style="padding:6px 0">${r.ic} <b>${esc(r.t)}</b>${r.note ? `<br><span class="muted">${esc(r.note)}</span>` : ""}</td></tr>`).join("")}</table>`
+      : `<p style="margin:0">🌤️ ${L("Nothing on the calendar yet.", "لا شيء في التقويم بعد.")}</p>`); }
+  p.innerHTML = `<div class="card tile t-butter"><h2 style="margin:0 0 6px">🐣 ${L(`${first}’s Nestlings`, "بوابة الطالب")}</h2>
+      <p style="margin:0">${L(`Nestlings is ${first}’s learning space at school: homework, class messages and the work ${first} shares.`, "بوابة الطالب هي مساحة التعلّم الخاصة بطفلك: الواجبات ورسائل الصف والأعمال التي يشاركها.")}</p>
+      ${N.code && !PREVIEW ? `<p style="margin:10px 0 0">🔑 ${L("Sign-in code for home", "رمز الدخول من البيت")}: <b style="font-size:20px;letter-spacing:.15em">${esc(N.code)}</b> · <a href="nestlings/?c=${encodeURIComponent(N.code)}" target="_blank" rel="noopener">${L("Open Nestlings", "افتح بوابة الطالب")} ↗</a></p>
+        <p class="muted" style="margin:4px 0 0">${L("Please keep this code private: it opens your child’s nest.", "يُرجى الحفاظ على سرية هذا الرمز.")}</p>` : !N.code ? `<p class="muted" style="margin:8px 0 0">${L("The teacher hasn’t created a Nestlings code for your child yet.", "لم يُنشئ المعلّم رمز الدخول لطفلك بعد.")}</p>` : ""}</div>
+    <div class="tabs" role="tablist">${T.map(([k, ic, l]) => `<button class="tab" aria-selected="${sub.n === k}" data-n="${k}">${ic} ${l}</button>`).join("")}</div>
+    ${body}`;
+  p.querySelectorAll("[data-n]").forEach(b => b.onclick = () => { sub.n = b.dataset.n; nestlingsTab(); });
+  applyLang(p);
+}
 function calendar(){
   const p = document.getElementById("pane"), ev = view.events || [];
   p.innerHTML = `<div class="card"><h2>Coming up · القادم</h2>${ev.length ? `<table>${ev.map(e => `<tr><td style="white-space:nowrap">${dshort(e.start)}${e.end && e.end !== e.start ? " – " + dshort(e.end) : ""}</td><td><b>${esc(e.title)}</b>${e.time ? ` <span class="muted">· ${esc(e.time)}</span>` : ""}</td></tr>`).join("")}</table>` : '<p class="muted" style="margin:0">Nothing in the next two months.</p>'}</div>`;
