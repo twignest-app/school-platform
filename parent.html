@@ -517,11 +517,12 @@ const nlDay = s => s ? dshort(String(s).slice(0, 10)) : "";
 const nlAgo = s => new Date(s).toLocaleDateString(LANG === "ar" ? "ar" : "en-GB", { day: "numeric", month: "short" });
 function nlMedia(files, bucket, links){
   files = files || []; links = links || []; if (!files.length && !links.length) return "";
-  return `<div class="nlm">${files.map(f => { const u = nlUrl(f.path, bucket), ty = f.type || "", nm = f.name || "";
-    if (/^video\//.test(ty) || /\.(mp4|mov|webm|m4v)$/i.test(nm)) return `<video src="${u}" controls playsinline preload="metadata"></video>`;
-    if (/^audio\//.test(ty) || /\.(m4a|mp3|wav|ogg|weba)$/i.test(nm)) return `<span class="nla">🎤 <audio src="${u}" controls preload="metadata"></audio></span>`;
-    if (/^image\//.test(ty) || /\.(png|jpe?g|gif|webp|heic)$/i.test(nm)) return `<a href="${u}" target="_blank" rel="noopener"><img src="${u}" alt="" loading="lazy"></a>`;
-    return `<a class="btn ghost small" href="${u}" target="_blank" rel="noopener">📎 ${esc(nm)}</a>`; }).join("")}
+  const sp = (path, attr) => `data-nsp="${esc(path)}" data-nsb="${esc(bucket)}" data-nsa="${attr}"`;
+  return `<div class="nlm">${files.map(f => { const ty = f.type || "", nm = f.name || "";
+    if (/^video\//.test(ty) || /\.(mp4|mov|webm|m4v)$/i.test(nm)) return `<video ${sp(f.path, "src")} controls playsinline preload="metadata"></video>`;
+    if (/^audio\//.test(ty) || /\.(m4a|mp3|wav|ogg|weba)$/i.test(nm)) return `<span class="nla">🎤 <audio ${sp(f.path, "src")} controls preload="metadata"></audio></span>`;
+    if (/^image\//.test(ty) || /\.(png|jpe?g|gif|webp|heic)$/i.test(nm)) return `<a ${sp(f.path, "href")} target="_blank" rel="noopener"><img ${sp(f.path, "src")} alt="" loading="lazy"></a>`;
+    return `<a class="btn ghost small" ${sp(f.path, "href")} target="_blank" rel="noopener">📎 ${esc(nm)}</a>`; }).join("")}
     ${links.map(l => `<a class="btn ghost small" href="${esc(l.url)}" target="_blank" rel="noopener">🔗 ${esc(l.label || l.url)}</a>`).join("")}</div>`;
 }
 async function nestlingsTab(){
@@ -569,7 +570,19 @@ async function nestlingsTab(){
     <div class="tabs" role="tablist">${T.map(([k, ic, l]) => `<button class="tab" aria-selected="${sub.n === k}" data-n="${k}">${ic} ${l}</button>`).join("")}</div>
     ${body}`;
   p.querySelectorAll("[data-n]").forEach(b => b.onclick = () => { sub.n = b.dataset.n; nestlingsTab(); });
-  applyLang(p);
+  applyLang(p); nlResolve(p);
+}
+// private Nestlings files: links that expire after 1 hour, only for files this parent may see
+const NLSIGNED = new Map();
+async function nlResolve(root){
+  const els = [...root.querySelectorAll("[data-nsp]")]; if (!els.length) return;
+  const now = Date.now(), need = {};
+  els.forEach(el => { const c = NLSIGNED.get(el.dataset.nsb + "|" + el.dataset.nsp); if (!c || c.exp < now) (need[el.dataset.nsb] = need[el.dataset.nsb] || new Set()).add(el.dataset.nsp); });
+  for (const b of Object.keys(need)) { const all = [...need[b]];
+    for (let i = 0; i < all.length; i += 80) { const chunk = all.slice(i, i + 80); let urls = null;
+      try { const { data, error } = await sb.functions.invoke("nestlings-media", { body: { bucket: b, paths: chunk } }); if (!error && data && data.urls) urls = data.urls; } catch (_) {}
+      chunk.forEach(p => NLSIGNED.set(b + "|" + p, urls ? { url: urls[p] || "", exp: now + 50 * 60e3 } : { url: nlUrl(p, b), exp: now + 2 * 60e3 })); } }
+  els.forEach(el => { const c = NLSIGNED.get(el.dataset.nsb + "|" + el.dataset.nsp); if (c && c.url) el.setAttribute(el.dataset.nsa, c.url); else if (c) { el.style.opacity = ".4"; el.removeAttribute("href"); } });
 }
 function calendar(){
   const p = document.getElementById("pane"), ev = view.events || [];

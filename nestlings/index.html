@@ -162,6 +162,7 @@
   .who{font-family:Fredoka,sans-serif;font-size:19px;margin-right:4px}
   .wacts{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
   .wacts .go.small{margin-top:0}
+  .nomedia{opacity:.4} img.nomedia{min-width:80px;min-height:60px;background:var(--line)}
 </style>
 </head>
 <body>
@@ -256,13 +257,33 @@ const isAud = f => /^audio\//.test(f.type || "") || /\.(m4a|mp3|wav|ogg|weba)$/i
 const isVid = f => /^video\//.test(f.type || "") || /\.(mp4|mov|webm|m4v)$/i.test(f.name || "");
 function media(files, bucket){
   files = files || []; if (!files.length) return "";
-  return `<div class="ipics">${files.map(f => { const u = fileUrl(f.path, bucket);
-    if (isVid(f)) return `<video class="vid" src="${u}" controls playsinline preload="metadata"></video>`;
-    if (isAud(f)) return `<div class="aud">🎤 <audio src="${u}" controls preload="metadata"></audio></div>`;
-    if (/^image\//.test(f.type || "") || /\.(png|jpe?g|gif|webp|heic)$/i.test(f.name || "")) return `<a href="${u}" target="_blank" rel="noopener"><img src="${u}" alt="${esc(f.name)}" loading="lazy"></a>`;
-    return `<a class="att" href="${u}" target="_blank" rel="noopener">📎 ${esc(f.name)}</a>`; }).join("")}</div>`;
+  return `<div class="ipics">${files.map(f => { const b = bucket || "nestlings";
+    if (isVid(f)) return `<video class="vid" ${sp(f.path, b, "src")} controls playsinline preload="metadata"></video>`;
+    if (isAud(f)) return `<div class="aud">🎤 <audio ${sp(f.path, b, "src")} controls preload="metadata"></audio></div>`;
+    if (/^image\//.test(f.type || "") || /\.(png|jpe?g|gif|webp|heic)$/i.test(f.name || "")) return `<a ${sp(f.path, b, "href")} target="_blank" rel="noopener"><img ${sp(f.path, b, "src")} alt="${esc(f.name)}" loading="lazy"></a>`;
+    return `<a class="att" ${sp(f.path, b, "href")} target="_blank" rel="noopener">📎 ${esc(f.name)}</a>`; }).join("")}</div>`;
 }
 const MAXMB = 25;
+
+/* ---------- private files: ask Nestlings for links that expire after 1 hour ---------- */
+const sp = (path, bucket, attr) => `data-sp="${esc(path)}" data-sb="${esc(bucket)}" data-attr="${attr}"`;
+const SIGNED = new Map(); let mBusy = false, mAgain = false;
+async function resolveMedia(){
+  if (mBusy) { mAgain = true; return; } mBusy = true;
+  try {
+    const els = [...document.querySelectorAll("[data-sp]:not([data-ok])")]; if (!els.length || !sb) return;
+    const now = Date.now(), need = {};
+    els.forEach(el => { const c = SIGNED.get(el.dataset.sb + "|" + el.dataset.sp); if (!c || c.exp < now) (need[el.dataset.sb] = need[el.dataset.sb] || new Set()).add(el.dataset.sp); });
+    for (const b of Object.keys(need)) { const all = [...need[b]];
+      for (let i = 0; i < all.length; i += 80) { const chunk = all.slice(i, i + 80); let urls = null;
+        try { const { data, error } = await sb.functions.invoke("nestlings-media", { body: { bucket: b, paths: chunk, token: store.get() } }); if (!error && data && data.urls) urls = data.urls; } catch (_) {}
+        chunk.forEach(p => SIGNED.set(b + "|" + p, urls ? { url: urls[p] || "", exp: now + 50 * 60e3 } : { url: fileUrl(p, b), exp: now + 2 * 60e3 })); } }
+    els.forEach(el => { const c = SIGNED.get(el.dataset.sb + "|" + el.dataset.sp); if (!c) return;
+      if (c.url) { el.setAttribute(el.dataset.attr || "src", c.url); el.dataset.ok = "1"; } else { el.dataset.ok = "0"; el.classList.add("nomedia"); el.removeAttribute("href"); } });
+  } finally { mBusy = false; if (mAgain) { mAgain = false; resolveMedia(); } }
+}
+new MutationObserver(() => { clearTimeout(window.__rmT); window.__rmT = setTimeout(resolveMedia, 40); }).observe(document.body, { childList: true, subtree: true });
+
 
 function show(view){ ["vLanding", "vTeacherIn", "vNest", "vTeacher"].forEach(v => $(v).classList.toggle("hidden", v !== view)); window.scrollTo(0, 0); }
 document.addEventListener("click", e => { const b = e.target.closest("[data-go]"); if (b && b.dataset.go === "landing") show("vLanding"); });
@@ -295,9 +316,9 @@ const fileIcon = f => /pdf/i.test(f.type || f.name) ? "📄" : /sheet|excel|xlsx
 function itemBody(it){
   const files = it.files || [], links = it.links || [];
   return `${it.body ? `<p class="ibody">${linkify(it.body)}</p>` : ""}
-    ${files.filter(isImg).length ? `<div class="ipics">${files.filter(isImg).map(f => `<a href="${fileUrl(f.path)}" target="_blank" rel="noopener"><img src="${fileUrl(f.path)}" alt="${esc(f.name)}" loading="lazy"></a>`).join("")}</div>` : ""}
+    ${files.filter(isImg).length ? `<div class="ipics">${files.filter(isImg).map(f => `<a ${sp(f.path, "nestlings", "href")} target="_blank" rel="noopener"><img ${sp(f.path, "nestlings", "src")} alt="${esc(f.name)}" loading="lazy"></a>`).join("")}</div>` : ""}
     ${files.filter(f => !isImg(f)).length || links.length ? `<div class="iatt">
-      ${files.filter(f => !isImg(f)).map(f => `<a class="att" href="${fileUrl(f.path)}" target="_blank" rel="noopener">${fileIcon(f)} ${esc(f.name)}</a>`).join("")}
+      ${files.filter(f => !isImg(f)).map(f => `<a class="att" ${sp(f.path, "nestlings", "href")} target="_blank" rel="noopener">${fileIcon(f)} ${esc(f.name)}</a>`).join("")}
       ${links.map(l => `<a class="att" href="${esc(l.url)}" target="_blank" rel="noopener">🔗 ${esc(l.label || l.url)}</a>`).join("")}</div>` : ""}`;
 }
 function itemCard(it, extra){
