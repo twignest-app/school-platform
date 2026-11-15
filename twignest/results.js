@@ -6,7 +6,7 @@
 
   async function loadXLSX() {
     if (window.XLSX) return;
-    await new Promise((res, rej) => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    await new Promise((res, rej) => { const s = document.createElement("script"); s.src = "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
       s.onload = res; s.onerror = () => rej(new Error("Couldn’t load the Excel reader. Check your internet connection and try again.")); document.head.appendChild(s); });
   }
   const cols = () => { const o = []; X.C.subjects.forEach(sb => sb.strands.forEach(st => st.cols.forEach(c => { if (!["objectives", "comment"].includes(c.type)) o.push({ sb, st, c }); }))); return o; };

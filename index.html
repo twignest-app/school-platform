@@ -1132,7 +1132,7 @@ async function adminView(){
     adminView(); }));
   app.querySelectorAll("[data-rqok],[data-rqno]").forEach(b => b.onclick = () => busy(b, async () => { const id = b.dataset.rqok || b.dataset.rqno, r = RQ.find(x => x.id === id);
     if (b.dataset.rqok) { const { error } = await sb.rpc("set_school_plan", { p_school: String(r.school_id), p_plan: r.plan_id, p_status: null, p_trial_ends: null, p_renews: null, p_note: null }); if (error) return alert(friendly(error)); }
-    await sb.from("plan_requests").update({ status: b.dataset.rqok ? "approved" : "declined" }).eq("id", id); adminView(); }));
+    const { error: saveErr } = await sb.from("plan_requests").update({ status: b.dataset.rqok ? "approved" : "declined" }).eq("id", id); if (saveErr) return alert("This wasn’t saved: " + friendly(saveErr)); adminView(); }));
   app.querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => {
     try { await navigator.clipboard.writeText(b.dataset.copy); const t = b.textContent; b.textContent = "Copied"; setTimeout(() => { b.textContent = t; }, 1200); } catch (_) {} });
   app.querySelectorAll(".school").forEach(art => {

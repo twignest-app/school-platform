@@ -46,7 +46,7 @@ function askCode(msg){
   app.innerHTML = `<h1>Book a parent–teacher conference<span class="ar" dir="rtl" lang="ar">احجز موعد لقاء أولياء الأمور والمعلمين</span></h1>
     <div class="card"><p style="margin-top:0">Type the booking code your child’s school sent you.<span class="ar" dir="rtl" lang="ar">اكتب رمز الحجز الذي أرسلته المدرسة.</span></p>
       ${msg ? `<p class="err">${esc(msg)}</p>` : ""}
-      <form id="f" class="row"><input id="code" autocomplete="off" placeholder="For example: 7KQ2FA" style="max-width:220px;text-transform:uppercase;letter-spacing:.15em;font-weight:800" maxlength="6" required><button class="btn">Continue · متابعة</button></form></div>`;
+      <form id="f" class="row"><input id="code" autocomplete="off" placeholder="For example: 7KQ2FA" style="max-width:220px;text-transform:uppercase;letter-spacing:.15em;font-weight:800" maxlength="8" required><button class="btn">Continue · متابعة</button></form></div>`;
   document.getElementById("f").onsubmit = e => { e.preventDefault(); addCode(document.getElementById("code").value); };
 }
 async function addCode(code){
@@ -77,7 +77,7 @@ function render(msg){
         return Object.entries(byDay).map(([d, list]) => `<p class="day">${dayName(d)}</p><div class="slots">${list.map(s => { const taken = (k.taken || []).some(x => x.t === t.id && new Date(x.at).getTime() === s.getTime()) || busyAt.has(s.getTime()) || s < new Date();
           return `<button class="slot ${!taken && near(s.getTime()) ? "near" : ""}" ${taken ? "disabled" : ""} data-book="${esc(t.id)}" data-at="${s.toISOString()}" data-code="${esc(k.code)}">${tm(s)}</button>`; }).join("")}</div>`).join(""); })() : ""}</div>`; }).join("") : '<p class="muted">No teachers are listed for this class yet.</p>'}</div>`).join("")}
     ${mine.length > 1 || kids.length > 1 ? '<p class="muted">Times with a purple border are right next to your other bookings.</p>' : ""}
-    <div class="card"><b>Another child at this school? · طفل آخر في المدرسة؟</b><form id="f2" class="row" style="margin-top:8px"><input id="code2" placeholder="Their booking code" maxlength="6" style="max-width:200px;text-transform:uppercase;letter-spacing:.15em;font-weight:800"><button class="btn ghost">Add · إضافة</button></form></div>`;
+    <div class="card"><b>Another child at this school? · طفل آخر في المدرسة؟</b><form id="f2" class="row" style="margin-top:8px"><input id="code2" placeholder="Their booking code" maxlength="8" style="max-width:200px;text-transform:uppercase;letter-spacing:.15em;font-weight:800"><button class="btn ghost">Add · إضافة</button></form></div>`;
   const sv = () => { parent.name = document.getElementById("pn").value.trim(); parent.contact = document.getElementById("pc").value.trim(); };
   document.getElementById("pn").oninput = sv; document.getElementById("pc").oninput = sv;
   document.getElementById("f2").onsubmit = e => { e.preventDefault(); sv(); addCode(document.getElementById("code2").value); };

@@ -113,8 +113,13 @@
   // Nestopia emails: tell the server what happened; it decides who to email (never blocks the page)
   window.nestMail = function (action, id) { try { const c = window.sb || (typeof sb !== "undefined" ? sb : null); if (c && id) c.functions.invoke("nestopia-mail", { body: { action, id } }).catch(() => {}); } catch (_) {} };
   // attendance emails to parents go out once the school's chosen time has passed: any open hub page asks, at most every 10 minutes
-  window.nestAttDue = function (force) { try { const c = window.sb || (typeof sb !== "undefined" ? sb : null); if (!c) return; const k = "nest_attdue", last = +(localStorage.getItem(k) || 0);
-    if (!force && Date.now() - last < 10 * 60e3) return; localStorage.setItem(k, String(Date.now())); c.functions.invoke("nestopia-mail", { body: { action: "attendance_due" } }).catch(() => {}); } catch (_) {} };
+  // only for signed-in staff: visitors to the public homepage never trigger it (it used to fail with a 401 for them)
+  window.nestAttDue = async function (force) { try { const c = window.sb || (typeof sb !== "undefined" ? sb : null); if (!c) return; const k = "nest_attdue", last = +(localStorage.getItem(k) || 0);
+    if (!force && Date.now() - last < 10 * 60e3) return;
+    const { data: { session } } = await c.auth.getSession(); if (!session) return;
+    localStorage.setItem(k, String(Date.now()));
+    const { error } = await c.functions.invoke("nestopia-mail", { body: { action: "attendance_due" } });
+    if (error) localStorage.setItem(k, String(Date.now() - 8 * 60e3)); /* failed: try again in about 2 minutes */ } catch (_) {} };
   setTimeout(() => window.nestAttDue(false), 4000); setInterval(() => window.nestAttDue(false), 10 * 60e3);
   window.hubInit = async function (active) {
     try {

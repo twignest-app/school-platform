@@ -59,7 +59,7 @@ function editIntv(i){
   f.ms.onchange = () => { const o = f.ms.value === "__other"; f.mso.style.display = o ? "" : "none"; if (o) f.mso.focus(); };
   document.getElementById("addSt").onchange = e => { const v = e.target.value; if (v && !mt.querySelector(`[data-st="${v}"]`)) mt.insertAdjacentHTML("beforeend", mrow({ student_id: v })); e.target.value = ""; };
   mt.onclick = e => { const r = e.target.closest("[data-rm]"); if (r) r.closest("tr").remove(); };
-  const di = document.getElementById("delI"); if (di) di.onclick = async () => { if (!confirm("Delete this intervention?")) return; await sb.from("inclusion_interventions").delete().eq("id", i.id); dlg.close(); provPane(); };
+  const di = document.getElementById("delI"); if (di) di.onclick = async () => { if (!confirm("Delete this intervention?")) return; { const { error: saveErr } = await sb.from("inclusion_interventions").delete().eq("id", i.id); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); } dlg.close(); provPane(); };
   f.onsubmit = async e => { e.preventDefault();
     const row = { school_id: String(school.id), name: f.n.value.trim(), area: f.a.value, staff: f.s.value.trim() || null, frequency: f.fq.value.trim() || null, start_date: f.sd.value || null, end_date: f.ed.value || null, measure: (f.ms.value === "__other" ? f.mso.value.trim() : f.ms.value) || null, status: f.st.value };
     if (row.start_date && row.end_date) row.weeks = Math.max(1, Math.round((new Date(row.end_date) - new Date(row.start_date)) / (7 * 864e5)));
@@ -67,7 +67,7 @@ function editIntv(i){
     if (res.error) return toast(res.error.message);
     const id = res.data.id, rows = [...mt.querySelectorAll("[data-st]")].map(r => ({ intervention_id: id, student_id: r.dataset.st, school_id: String(school.id), entry: r.querySelector("[data-en]").value.trim() || null, exit: r.querySelector("[data-ex]").value.trim() || null, impact: r.querySelector("[data-im]").value || null }));
     const gone = m.map(x => x.student_id).filter(s => !rows.some(r => r.student_id === s));
-    if (gone.length) await sb.from("inclusion_intervention_students").delete().eq("intervention_id", id).in("student_id", gone);
+    if (gone.length) { const { error: saveErr } = await sb.from("inclusion_intervention_students").delete().eq("intervention_id", id).in("student_id", gone); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); }
     if (rows.length) { const { error } = await sb.from("inclusion_intervention_students").upsert(rows, { onConflict: "intervention_id,student_id" }); if (error) return toast(error.message); }
     dlg.close(); toast("Saved"); provPane(); };
   dlg.showModal();

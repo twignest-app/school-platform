@@ -337,7 +337,7 @@ function deskAct(sid, kind, reqId){
       kind === "arrive" ? { status: "late", arrived_at: f.t.value, minutes_late: minsAfter(f.t.value, AS.start_time), reason_code: f.r.value || null, reason: f.d.value.trim() || null, notified_at: null }
         : { left_early_at: f.t.value, left_reason: f.r.value.trim() || null, collected_by: f.c.value.trim() });
     const { error } = await sb.from("attendance_marks").upsert(row, { onConflict: "student_id,day" }); if (error) return toast(/column/.test(error.message) ? "Please run the Attendance plus database step first." : error.message);
-    if (rq) await sb.from("att_parent_requests").update({ status: "done", handled_by: me.id, handled_at: new Date().toISOString() }).eq("id", rq.id);
+    if (rq) { const { error: saveErr } = await sb.from("att_parent_requests").update({ status: "done", handled_by: me.id, handled_at: new Date().toISOString() }).eq("id", rq.id); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); }
     const slip = kind === "arrive" && f.slip && f.slip.checked, mail = kind === "arrive" && f.mail && f.mail.checked;
     dlg.close(); await loadMarks(); if (slip) lateSlip(s.id); if (mail) emailSlip(s.id, true); else toast(kind === "arrive" ? "Marked late. The teacher can see it on the register." : "Leaving early recorded."); if (window.nestAttDue) nestAttDue(true); deskPane(); };
   dlg.showModal();

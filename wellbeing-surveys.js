@@ -61,7 +61,7 @@ function editSurvey(s){
   document.getElementById("addq").onclick = () => box.insertAdjacentHTML("beforeend", row({ type: "scale", text: "" }, box.children.length));
   box.onclick = e => { const r = e.target.closest("[data-rm]"); if (r) r.closest("[data-q]").remove(); };
   if (s.__schedule) { const ds0 = document.getElementById("delS"); if (ds0) ds0.remove(); }
-  const ds = document.getElementById("delS"); if (ds) ds.onclick = async () => { if (!confirm("Delete this survey and all its answers?")) return; await sb.from("wb_surveys").delete().eq("id", s.id); dlg.close(); surveysPane(); };
+  const ds = document.getElementById("delS"); if (ds) ds.onclick = async () => { if (!confirm("Delete this survey and all its answers?")) return; { const { error: saveErr } = await sb.from("wb_surveys").delete().eq("id", s.id); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); } dlg.close(); surveysPane(); };
   f.onsubmit = async e => { e.preventDefault();
     const questions = [...box.querySelectorAll("[data-q]")].map((r, i) => ({ id: (qs[+r.dataset.q] && qs[+r.dataset.q].id) || "q" + Date.now().toString(36) + i, type: r.querySelector("[data-qt]").value, text: r.querySelector("[data-qx]").value.trim() })).filter(q => q.text);
     if (!questions.length) return toast("Add at least one question.");
@@ -175,7 +175,7 @@ function editSchedule(s){
     ${s ? `<p><button type="button" class="btn ghost small" id="schQs">Edit the questions</button></p>` : ""}
     <div class="row" style="justify-content:space-between"><div>${s ? '<button type="button" class="btn ghost small" id="schDel">Delete the schedule</button>' : ""}</div><div class="row"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn">Save</button></div></div></form>`;
   const f = dlg.querySelector("form"); dlg.querySelector("[data-x]").onclick = () => dlg.close();
-  const dl = document.getElementById("schDel"); if (dl) dl.onclick = async () => { if (!confirm("Delete this schedule? Rounds already sent, and their results, are kept.")) return; await sb.from("wb_schedules").delete().eq("id", s.id); dlg.close(); surveysPane(); };
+  const dl = document.getElementById("schDel"); if (dl) dl.onclick = async () => { if (!confirm("Delete this schedule? Rounds already sent, and their results, are kept.")) return; { const { error: saveErr } = await sb.from("wb_schedules").delete().eq("id", s.id); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); } dlg.close(); surveysPane(); };
   const qb = document.getElementById("schQs"); if (qb) qb.onclick = () => editSurvey(Object.assign({}, s, { __schedule: true }));
   f.onsubmit = async e => { e.preventDefault();
     const base = { school_id: String(school.id), frequency: f.fq.value, next_open: f.nx.value, open_days: Math.max(1, Math.min(30, +f.od.value || 7)), email: f.em.checked };

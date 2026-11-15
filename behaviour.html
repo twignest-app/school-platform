@@ -253,7 +253,7 @@ function incidentForm(s, e){
   const bully = () => document.getElementById("bully").hidden = !/bully|unkind/i.test(f.ty.value);
   f.lv.onchange = fillTypes; f.ty.onchange = bully; fillTypes();
   dlg.querySelector("[data-x]").onclick = () => dlg.close();
-  const dl = document.getElementById("del"); if (dl) dl.onclick = async () => { if (!confirm("Delete this incident?")) return; await sb.from("behaviour_events").delete().eq("id", e.id); dlg.close(); await load(); draw(); };
+  const dl = document.getElementById("del"); if (dl) dl.onclick = async () => { if (!confirm("Delete this incident?")) return; { const { error: saveErr } = await sb.from("behaviour_events").delete().eq("id", e.id); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); } dlg.close(); await load(); draw(); };
   f.onsubmit = async ev => {
     ev.preventDefault();
     const row = { school_id: school.id, student_id: s.id, class_id: s.class_id, kind: "incident", ...(f.tp ? { tried_positive: f.tp.checked } : {}), level: f.lv.value, category: f.ty.value, happened_on: f.d.value, location: f.lo.value.trim() || null, details: f.dt.value.trim(), action: [...f.querySelectorAll("input[name=ac]:checked")].map(x => x.value).join("; ") || null, parents_informed: f.pi.checked, status: f.rs ? (f.rs.checked ? "resolved" : "open") : (e ? e.status : (f.lv.value === "high" ? "open" : "resolved")) };

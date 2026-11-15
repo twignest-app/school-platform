@@ -424,13 +424,13 @@ function openMeeting(sid, mid){
   const f = dlg.querySelector("form");
   dlg.querySelector("[data-back]").onclick = () => openStudent(sid);
   const dm = document.getElementById("delm");
-  if (dm) dm.onclick = async () => { if (!confirm("Delete this meeting record?")) return; await sb.from("inclusion_meetings").delete().eq("id", m.id); await load(); render(); openStudent(sid); };
+  if (dm) dm.onclick = async () => { if (!confirm("Delete this meeting record?")) return; { const { error: saveErr } = await sb.from("inclusion_meetings").delete().eq("id", m.id); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); } await load(); render(); openStudent(sid); };
   f.onsubmit = async e => {
     e.preventDefault();
     const row = { school_id: school.id, student_id: sid, plan_id: f.p.value || null, meeting_date: f.d.value, kind: f.k.value, attendees: f.a.value.trim() || null, discussed: f.w.value.trim() || null, agreed: f.g.value.trim() || null, next_date: f.n.value || null, parent_agreed: f.ok.checked, updated_by: me.id };
     const { error } = m ? await sb.from("inclusion_meetings").update(row).eq("id", m.id) : await sb.from("inclusion_meetings").insert(Object.assign(row, { created_by: me.id }));
     if (error) { const er = document.getElementById("merr"); er.textContent = /inclusion_meetings/.test(error.message) ? "Please run the Inclusion Part 2 database step first." : error.message; er.hidden = false; return; }
-    if (row.parent_agreed && !(regOf(sid) || {}).parent_consent && regOf(sid)) await sb.from("inclusion_students").update({ parent_consent: true }).eq("student_id", sid);
+    if (row.parent_agreed && !(regOf(sid) || {}).parent_consent && regOf(sid)) { const { error: saveErr } = await sb.from("inclusion_students").update({ parent_consent: true }).eq("student_id", sid); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); }
     await load(); render(); openStudent(sid); toast("Meeting saved");
   };
   if (!dlg.open) dlg.showModal();
@@ -479,7 +479,7 @@ function openPlan(sid, pid){
     const rows = [...tl.querySelectorAll(".trow")].map((b, i) => ({ id: b.dataset.tid || null, area: b.querySelector("[name=ar]").value || null, who: b.querySelector("[name=wh]").value.trim() || null, target: b.querySelector("[name=t]").value.trim(), success_criteria: b.querySelector("[name=sc]").value.trim() || null, strategy: b.querySelector("[name=st]").value.trim() || null, progress: b.querySelector("[name=pg]").value, position: i })).filter(x => x.target);
     const keep = rows.filter(x => x.id).map(x => x.id);
     const old = targets.filter(t => String(t.plan_id) === String(planId)).map(t => String(t.id)).filter(id => !keep.includes(id));
-    if (old.length) await sb.from("inclusion_targets").delete().in("id", old);
+    if (old.length) { const { error: saveErr } = await sb.from("inclusion_targets").delete().in("id", old); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); }
     for (const t of rows) {
       const data = { school_id: school.id, plan_id: planId, area: t.area, who: t.who, target: t.target, success_criteria: t.success_criteria, strategy: t.strategy, progress: t.progress, position: t.position, updated_at: new Date().toISOString() };
       const { error } = t.id ? await sb.from("inclusion_targets").update(data).eq("id", t.id) : await sb.from("inclusion_targets").insert(data);
@@ -801,7 +801,7 @@ async function addSamples(){
       const rev = new Date(Date.now() + (i * 9 - 5) * 864e5).toISOString().slice(0, 10);
       const { data: pl, error: pe } = await sb.from("inclusion_plans").insert({ school_id: school.id, student_id: s.id, kind: x.plan[0], title: x.plan[1], start_date: new Date(Date.now() - 40 * 864e5).toISOString().slice(0, 10), review_date: rev, strategies: x.plan[3], status: "active", created_by: me.id, updated_by: me.id }).select().single();
       if (pe) return toast(pe.message);
-      await sb.from("inclusion_targets").insert(x.plan[2].map((t, j) => ({ school_id: school.id, plan_id: pl.id, target: t[0], success_criteria: t[1], strategy: t[2], progress: ["w", "n", "a"][j % 3], position: j })));
+      { const { error: saveErr } = await sb.from("inclusion_targets").insert(x.plan[2].map((t, j) => ({ school_id: school.id, plan_id: pl.id, target: t[0], success_criteria: t[1], strategy: t[2], progress: ["w", "n", "a"][j % 3], position: j }))); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); }
     }
   }
   await load(); render(); toast("Sample students added");

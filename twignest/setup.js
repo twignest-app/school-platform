@@ -170,7 +170,7 @@
   // Ready-made curricula shared by every school on the platform (files in the curricula folder)
   let LIB = null, LIBUI = null;
   const LIBRARY = [{ file: "curricula/british-national-curriculum.json", name: "British National Curriculum (England, 2014)" }];
-  async function loadXLSX() { if (window.XLSX) return; await new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; sc.onload = res; sc.onerror = () => rej(new Error("Couldn’t load the Excel reader. Check your internet connection.")); document.head.appendChild(sc); }); }
+  async function loadXLSX() { if (window.XLSX) return; await new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"; sc.onload = res; sc.onerror = () => rej(new Error("Couldn’t load the Excel reader. Check your internet connection.")); document.head.appendChild(sc); }); }
   const nz = v => String(v ?? "").toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]/g, "");
   const objCols = () => { const o = []; C.subjects.forEach(sb => sb.strands.forEach(st => st.cols.filter(c => c.type === "objectives").forEach(c => o.push({ sb, st, c })))); return o; };
   function countObj(gid) { let n = 0; objCols().forEach(({ c }) => ((c.objectives || {})[gid] || []).forEach(l => n += l.length)); return n; }

@@ -165,14 +165,14 @@ async function thread(id){
   const [{ data: t }, { data: ms }] = await Promise.all([sb.from("pm_threads").select("*").eq("id", id).single(), sb.from("pm_messages").select("*").eq("thread_id", id).order("created_at")]);
   if (!t) { ui.open = null; return inbox(); }
   const { data: s } = await sb.from("students").select("id,full_name,class_id").eq("id", t.student_id).maybeSingle();
-  if (t.staff_unread && (t.teacher_id === me.id || (!t.teacher_id && lead))) await sb.from("pm_threads").update({ staff_unread: 0 }).eq("id", id);
+  if (t.staff_unread && (t.teacher_id === me.id || (!t.teacher_id && lead))) { const { error: saveErr } = await sb.from("pm_threads").update({ staff_unread: 0 }).eq("id", id); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); }
   const canReply = t.teacher_id === me.id || lead;
   pane.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between"><button class="btn ghost small" id="bk">← All messages</button>${canReply ? `<button class="btn ghost small" id="cl">${t.status === "closed" ? "Reopen" : "Mark as closed"}</button>` : ""}</div>
     <h2 style="margin:12px 0 2px">${esc(t.subject)}</h2><p class="note" style="margin:0 0 10px">${esc(t.parent_name || "Parent")} · about <a href="students.html?id=${esc(t.student_id)}">${esc(s ? s.full_name : "the student")}</a> · to ${esc(t.teacher_id ? staffN[t.teacher_id] || "a teacher" : "School office")}</p>
     ${(ms || []).map(m => `<div class="bub ${m.sender}">${esc(m.body)}<small>${esc(m.sender === "parent" ? (m.sender_name || "Parent") : (m.sender_name || "Staff"))} · ${ago(m.created_at)}</small></div>`).join("")}
     ${canReply ? `<form id="rf" style="margin-top:12px"><textarea id="rb" rows="3" required placeholder="Write a reply. The parent gets an email."></textarea><p style="margin:8px 0 0"><button class="btn">Send reply</button></p></form>` : '<p class="note">Only the teacher in this conversation, or a school leader, can reply.</p>'}</div>`;
   document.getElementById("bk").onclick = () => { ui.open = null; inbox(); };
-  const cl = document.getElementById("cl"); if (cl) cl.onclick = async () => { await sb.from("pm_threads").update({ status: t.status === "closed" ? "open" : "closed" }).eq("id", id); thread(id); };
+  const cl = document.getElementById("cl"); if (cl) cl.onclick = async () => { const { error: saveErr } = await sb.from("pm_threads").update({ status: t.status === "closed" ? "open" : "closed" }).eq("id", id); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); thread(id); };
   const rf = document.getElementById("rf"); if (rf) rf.onsubmit = async e => { e.preventDefault(); const { error } = await sb.rpc("staff_reply", { p_thread: id, p_body: document.getElementById("rb").value });
     if (error) return toast(error.message); if (window.nestMail) nestMail("pmsg", id); toast("Sent. The parent will get an email."); thread(id); };
 }
@@ -197,7 +197,7 @@ async function meetPane(){
     const { error } = await sb.from("pm_meetings").update({ status: "offered", offered: times, place: box.querySelector("[data-pl]").value.trim() || null, staff_note: box.querySelector("[data-nt]").value.trim() || null, updated_at: new Date().toISOString() }).eq("id", b.dataset.send);
     if (error) return toast(error.message); toast("Sent. The parent will choose a time in their portal."); meetPane(); });
   pane.querySelectorAll("[data-dec]").forEach(b => b.onclick = async () => { const n = prompt("A short note for the parent (for example: I’ll call you tomorrow)", ""); if (n === null) return;
-    await sb.from("pm_meetings").update({ status: "declined", staff_note: n.trim() || null, updated_at: new Date().toISOString() }).eq("id", b.dataset.dec); meetPane(); });
+    { const { error: saveErr } = await sb.from("pm_meetings").update({ status: "declined", staff_note: n.trim() || null, updated_at: new Date().toISOString() }).eq("id", b.dataset.dec); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); } meetPane(); });
 }
 async function newsPane(){
   const pane = document.getElementById("pane");
@@ -228,7 +228,7 @@ async function newsPane(){
       if (photos.length) row.photos = photos;
       const { data, error } = await sb.from("school_news").insert(row).select("id").single(); if (error) return toast(error.message);
       if (row.email_parents && window.nestMail) nestMail("news", data.id); toast(row.email_parents ? "Posted, and emailing parents." : "Posted. Parents see it in their portal."); newsPane(); }; }
-  pane.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => { if (!confirm("Delete this post?")) return; await sb.from("school_news").delete().eq("id", b.dataset.del); newsPane(); });
+  pane.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => { if (!confirm("Delete this post?")) return; { const { error: saveErr } = await sb.from("school_news").delete().eq("id", b.dataset.del); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); } newsPane(); });
 }
 </script>
 </body>

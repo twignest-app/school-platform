@@ -158,7 +158,7 @@
     if (a === "del-class") {
       const n = students.filter(s => s.class_id === id).length;
       if (!confirm(n ? `Remove this class? Its ${n} students will be archived, and their data kept.` : "Remove this class?")) return;
-      if (n) await sb.from("students").update({ archived: true }).eq("class_id", id);
+      if (n) { const { error: saveErr } = await sb.from("students").update({ archived: true }).eq("class_id", id); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); }
       const { error } = await sb.from("classes").delete().eq("id", id); if (error) return alert(error.message);
     }
     if (a === "template") {
@@ -176,7 +176,7 @@
       const ok = p.rows.filter(x => !x.problem && !x.dupe), cid = n => classes.find(c => c.name.toLowerCase() === n.toLowerCase()).id;
       const ins = ok.filter(x => !x.match).map(x => ({ school_id: ctx.school.id, class_id: cid(x.cls), full_name: x.name, groups: x.groups, student_number: x.sn, arabic_name: x.ar }));
       for (let i = 0; i < ins.length; i += 400) { const { error } = await sb.from("students").insert(ins.slice(i, i + 400)); if (error) { msg.textContent = error.message; return; } msg.textContent = `Importing… ${Math.min(i + 400, ins.length)} of ${ins.length}`; }
-      for (const x of ok.filter(x => x.match)) { const ch = { groups: x.groups, class_id: cid(x.cls) }; if (x.sn) ch.student_number = x.sn; if (x.ar) ch.arabic_name = x.ar; await sb.from("students").update(ch).eq("id", x.match.id); }
+      for (const x of ok.filter(x => x.match)) { const ch = { groups: x.groups, class_id: cid(x.cls) }; if (x.sn) ch.student_number = x.sn; if (x.ar) ch.arabic_name = x.ar; { const { error: saveErr } = await sb.from("students").update(ch).eq("id", x.match.id); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); } }
       preview = null; await load(); render();
       ctx.el.insertAdjacentHTML("afterbegin", `<div class="msg ok" style="margin-bottom:12px">Imported ${ins.length} student${ins.length === 1 ? "" : "s"}.</div>`); return;
     }

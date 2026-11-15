@@ -204,7 +204,7 @@ function editPack(p){
     <div class="row" style="justify-content:space-between"><div>${p ? '<button type="button" class="btn ghost small" id="delPack">Delete pack</button>' : ""}</div><div class="row"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn">Save</button></div></div></form>`;
   const f = dlg.querySelector("form"); dlg.querySelector("[data-x]").onclick = () => dlg.close();
   f.s.onchange = () => document.getElementById("refPrev").textContent = f.s.value;
-  const dp = document.getElementById("delPack"); if (dp) dp.onclick = async () => { if (!confirm("Delete this pack and all its evidence? This can’t be undone.")) return; const paths = itemsOf(p.id).map(i => i.file_path).filter(Boolean); if (paths.length) await sb.storage.from("evidence").remove(paths); await sb.from("evidence_packs").delete().eq("id", p.id); dlg.close(); await load(); history.pushState(null, "", "evidence.html"); home(); };
+  const dp = document.getElementById("delPack"); if (dp) dp.onclick = async () => { if (!confirm("Delete this pack and all its evidence? This can’t be undone.")) return; const paths = itemsOf(p.id).map(i => i.file_path).filter(Boolean); if (paths.length) { const { error: saveErr } = await sb.storage.from("evidence").remove(paths); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); } { const { error: saveErr } = await sb.from("evidence_packs").delete().eq("id", p.id); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); } dlg.close(); await load(); history.pushState(null, "", "evidence.html"); home(); };
   f.onsubmit = async e => {
     e.preventDefault();
     const row = { school_id: school.id, standard: f.s.value, title: f.t.value.trim() || null, year: f.y.value.trim() || null, context: f.c.value.trim() || null, updated_at: new Date().toISOString() };
@@ -277,7 +277,7 @@ function editItem(p, it){
     <div class="row" style="justify-content:space-between"><div>${it ? '<button type="button" class="btn ghost small" id="delI">Remove</button>' : ""}</div><div class="row"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn" id="saveI">Save</button></div></div></form>`;
   const f = dlg.querySelector("form"); dlg.querySelector("[data-x]").onclick = () => dlg.close();
   f.k.onchange = () => { f.querySelectorAll("[data-for]").forEach(x => x.hidden = !x.dataset.for.split(" ").includes(f.k.value)); f.fl.accept = f.k.value === "photo" ? "image/*" : ""; };
-  const di = document.getElementById("delI"); if (di) di.onclick = async () => { if (!confirm("Remove this evidence?")) return; if (it.file_path) await sb.storage.from("evidence").remove([it.file_path]); await sb.from("evidence_items").delete().eq("id", it.id); dlg.close(); await load(); packView(p.id); };
+  const di = document.getElementById("delI"); if (di) di.onclick = async () => { if (!confirm("Remove this evidence?")) return; if (it.file_path) { const { error: saveErr } = await sb.storage.from("evidence").remove([it.file_path]); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); } { const { error: saveErr } = await sb.from("evidence_items").delete().eq("id", it.id); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); } dlg.close(); await load(); packView(p.id); };
   f.onsubmit = async e => {
     e.preventDefault(); const kind = it ? it.kind : f.k.value, file = f.fl.files[0], btn = document.getElementById("saveI");
     if (!it && ["photo", "file"].includes(kind) && !file) return toast("Choose a file to upload.");

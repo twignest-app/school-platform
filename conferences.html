@@ -182,7 +182,7 @@ function editConf(c){
   dlg.querySelector("[data-x]").onclick = () => dlg.close();
   document.getElementById("addd").onclick = () => box.insertAdjacentHTML("beforeend", dayRow({}));
   box.onclick = e => { const b = e.target.closest("[data-rm]"); if (b && box.children.length > 1) b.closest(".dayrow").remove(); };
-  const dc = document.getElementById("delc"); if (dc) dc.onclick = async () => { if (!confirm("Delete this conference, its codes and all its bookings?")) return; await sb.from("pc_conferences").delete().eq("id", c.id); confs = confs.filter(x => x.id !== c.id); ui.conf = confs[0] ? confs[0].id : null; dlg.close(); draw(); };
+  const dc = document.getElementById("delc"); if (dc) dc.onclick = async () => { if (!confirm("Delete this conference, its codes and all its bookings?")) return; { const { error: saveErr } = await sb.from("pc_conferences").delete().eq("id", c.id); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); } confs = confs.filter(x => x.id !== c.id); ui.conf = confs[0] ? confs[0].id : null; dlg.close(); draw(); };
   f.onsubmit = async e => {
     e.preventDefault();
     const ds = [...box.querySelectorAll(".dayrow")].map(r => ({ date: r.querySelector("[name=dd]").value, start: r.querySelector("[name=ds]").value, end: r.querySelector("[name=de]").value })).filter(d => d.date && d.start && d.end);

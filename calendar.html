@@ -221,7 +221,7 @@ function editEvent(e, day){
     <label class="f">Details (optional) <textarea name="d" rows="3">${esc(e ? e.details || "" : "")}</textarea></label>
     <div class="row" style="justify-content:space-between"><div>${e ? '<button type="button" class="btn ghost small" id="del">Delete</button>' : ""}</div><div class="row"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn">Save</button></div></div></form>`;
   const f = dlg.querySelector("form"); dlg.querySelector("[data-x]").onclick = () => dlg.close();
-  const dl = document.getElementById("del"); if (dl) dl.onclick = async () => { if (!confirm("Delete this event?")) return; await sb.from("school_events").delete().eq("id", e.id); dlg.close(); await load(); draw(); };
+  const dl = document.getElementById("del"); if (dl) dl.onclick = async () => { if (!confirm("Delete this event?")) return; { const { error: saveErr } = await sb.from("school_events").delete().eq("id", e.id); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); } dlg.close(); await load(); draw(); };
   f.onsubmit = async ev => {
     ev.preventDefault(); if (f.e.value && f.e.value < f.s.value) return toast("The end date must be after the start date.");
     const row = { school_id: school.id, title: f.t.value.trim(), category: f.c.value, start_date: f.s.value, end_date: f.e.value || f.s.value, start_time: f.tm.value || null, grades: [...f.querySelectorAll("input[name=g]:checked")].map(x => x.value), details: f.d.value.trim() || null, updated_at: new Date().toISOString() };

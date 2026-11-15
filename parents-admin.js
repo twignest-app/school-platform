@@ -97,7 +97,7 @@ async function unitEditor(s, box){
       <div style="display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap"><span>${u.id ? '<button class="btn ghost small" id="uDel">Delete</button>' : ""}</span><span><button class="btn ghost small" id="uX">Cancel</button> <button class="btn small" id="uSave">Save</button></span></div></div>`;
     const v = id => f.querySelector("#" + id).value.trim();
     f.querySelector("#uX").onclick = () => f.innerHTML = "";
-    const del = f.querySelector("#uDel"); if (del) del.onclick = async () => { if (!confirm("Delete this unit?")) return; await sb.from("unit_info").delete().eq("id", u.id); unitEditor(s, box); };
+    const del = f.querySelector("#uDel"); if (del) del.onclick = async () => { if (!confirm("Delete this unit?")) return; { const { error: saveErr } = await sb.from("unit_info").delete().eq("id", u.id); if (saveErr) return alert("This wasn’t saved: " + saveErr.message); } unitEditor(s, box); };
     f.querySelector("#uSave").onclick = async () => { if (!v("uT")) return toast("Add the unit title.");
       const row = { school_id: String(s.id), grade_id: v("uG"), title: v("uT"), theme: v("uTh") || null, central_idea: v("uC") || null, inquiry: v("uI") || null, talk_home: v("uH") || null, vocabulary: v("uV") || null, starts_on: v("uS") || null, ends_on: v("uE") || null, updated_at: new Date().toISOString() };
       const file = f.querySelector("#uD").files[0];
