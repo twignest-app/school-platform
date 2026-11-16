@@ -40,6 +40,7 @@ textarea.f{font:inherit;padding:10px 12px;border:1px solid var(--line);border-ra
    <label class="f">Subject observed<select id="subject"><option value="">Choose the lesson subject…</option></select></label>
   </div>
   <label class="f">Lesson topic or learning objective<input id="focus" placeholder="e.g. Maths – adding fractions with different denominators"></label>
+  <div id="lpWrap" class="hide" style="margin:-4px 0 10px"><button type="button" class="btn ghost small" id="lpBtn">📘 See the lesson plan</button><div id="lpBox"></div></div>
   <datalist id="classList"></datalist>
   <p class="muted" id="startHint" style="margin:0">Choose the teacher to start. Everything saves automatically.</p>
  </section>
@@ -293,4 +294,45 @@ $("wordBtn").onclick=async()=>{if(!obs)return;if(!window.JSZip)return showMsg($(
  }catch(e){console.error(e);showMsg($("msg"),"The Word form couldn’t be created. Please try again.","err");}
  finally{$("wordBtn").disabled=false;$("wordBtn").textContent="Word form";}};
 init();</script>
+<script>
+/* Lesson plan link: shows the teacher's lesson plan for this day from Nestopia's Units and lessons planner */
+(function(){
+  const E = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const F = [["success","Success criteria"],["starter","Starter"],["main","Main activities"],["plenary","Plenary"],["support","Support"],["challenge","Challenge"],["resources","Resources"],["assessment","Assessment"],["homework","Homework"]];
+  let cfg = null, open = false;
+  const show = () => { const w = $("lpWrap"); if (w) w.classList.toggle("hide", !($("teacher").value && $("date").value)); };
+  ["teacher", "date"].forEach(k => $(k).addEventListener("change", () => { show(); if (open) load(); }));
+  setInterval(show, 1500);
+  async function objText(ids){
+    if (!cfg) { const r = await sb.from("school_setups").select("config").eq("school_id", ctx.school.id).order("updated_at", { ascending: false }).limit(1); cfg = (r.data && r.data[0] && r.data[0].config) || {}; }
+    const m = {}; (cfg.subjects || []).forEach(sb2 => (sb2.strands || []).forEach(st => (st.cols || []).forEach(c => Object.values(c.objectives || {}).forEach(per => (per || []).forEach(l => (l || []).forEach(o => m[o.id] = o.text))))));
+    return (ids || []).map(id => m[id]).filter(Boolean);
+  }
+  async function load(){
+    const box = $("lpBox"), date = $("date").value, t = teachers.find(x => x.id === $("teacher").value);
+    box.innerHTML = '<p class="muted">Looking for the lesson plan…</p>';
+    try {
+      // the teacher's grades, through their Nestopia account and classes
+      let grades = null;
+      if (t && t.email) { const p = await sb.from("profiles").select("id").ilike("email", t.email).maybeSingle();
+        if (p.data) { const ct = await sb.from("class_teachers").select("class_id").eq("teacher_id", p.data.id);
+          const ids = (ct.data || []).map(x => x.class_id); if (ids.length) { const cl = await sb.from("classes").select("grade_id").in("id", ids); grades = [...new Set((cl.data || []).map(x => String(x.grade_id)))]; } } }
+      const r = await sb.from("lesson_plans").select("*, unit_plans!inner(title, grade_id, school_id, sections)").eq("lesson_date", date).eq("unit_plans.school_id", String(ctx.school.id));
+      if (r.error) { box.innerHTML = '<p class="muted">Lesson plans aren’t available yet. They come from Planning → Units and lessons in Nestopia.</p>'; return; }
+      let list = r.data || []; const mine = grades ? list.filter(l => grades.includes(String(l.unit_plans.grade_id))) : [];
+      if (mine.length) list = mine;
+      if (!list.length) { box.innerHTML = `<p class="muted">No lesson plan in Nestopia for ${E(date)}${grades ? " for this teacher’s grades" : ""}.</p>`; return; }
+      const parts = await Promise.all(list.map(async l => ({ l, objs: await objText(l.objectives) })));
+      box.innerHTML = (mine.length ? "" : '<p class="muted">Lessons planned at your school for this day:</p>') + parts.map(({ l, objs }, i) => `<div style="border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:8px;background:#fff">
+        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div><b>${E(l.title)}</b><div class="muted" style="font-size:.85rem">Unit: ${E(l.unit_plans.title)}${(l.unit_plans.sections || {}).central ? " · “" + E(l.unit_plans.sections.central) + "”" : ""}</div></div>
+          <button type="button" class="btn ghost small" data-use="${i}">Use as lesson topic</button></div>
+        ${objs.length ? `<div style="margin-top:8px"><b style="font-size:.88rem">Objectives</b><ul style="margin:4px 0 0 18px;padding:0">${objs.map(o => `<li>${E(o)}</li>`).join("")}</ul></div>` : ""}
+        ${F.filter(([k]) => (l.fields || {})[k]).map(([k, lab]) => `<div style="margin-top:6px"><b style="font-size:.88rem">${lab}</b><div dir="auto" style="white-space:pre-line">${E(l.fields[k])}</div></div>`).join("")}</div>`).join("");
+      box.querySelectorAll("[data-use]").forEach(b => b.onclick = () => { const p = parts[+b.dataset.use]; const f = $("focus");
+        f.value = p.l.title + (p.objs.length ? " – " + p.objs.join("; ") : ""); f.dispatchEvent(new Event("input")); b.textContent = "Added ✓"; });
+    } catch (e) { box.innerHTML = '<p class="muted">The lesson plan couldn’t load: ' + E(e.message || e) + "</p>"; }
+  }
+  $("lpBtn").onclick = () => { open = !open; $("lpBtn").textContent = open ? "Hide the lesson plan" : "📘 See the lesson plan"; if (open) load(); else $("lpBox").innerHTML = ""; };
+})();
+</script>
 </body></html>
