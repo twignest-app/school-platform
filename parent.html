@@ -369,10 +369,28 @@ async function meetings(){
 // ---------- More: calendar, school information, my account ----------
 async function more(){
   const p = document.getElementById("pane"); sub.o = sub.o || "info";
-  p.innerHTML = `<div class="tabs" role="tablist"><button class="tab" aria-selected="${sub.o === "info"}" data-o="info">📁 School information · معلومات المدرسة</button>${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "trips"}" data-o="trips">🎒 Trips and forms · الرحلات والنماذج</button>`}${(view.show || {}).calendar !== false ? `<button class="tab" aria-selected="${sub.o === "calendar"}" data-o="calendar">📅 Calendar · التقويم</button>` : ""}${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "account"}" data-o="account">👤 My account · حسابي</button>`}</div><div id="pane2"></div>`;
+  p.innerHTML = `<div class="tabs" role="tablist"><button class="tab" aria-selected="${sub.o === "info"}" data-o="info">📁 School information · معلومات المدرسة</button>${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "trips"}" data-o="trips">🎒 Trips and forms · الرحلات والنماذج</button>`}<button class="tab" aria-selected="${sub.o === "tt"}" data-o="tt">🕘 Timetable · الجدول</button>${(view.show || {}).calendar !== false ? `<button class="tab" aria-selected="${sub.o === "calendar"}" data-o="calendar">📅 Calendar · التقويم</button>` : ""}${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "account"}" data-o="account">👤 My account · حسابي</button>`}</div><div id="pane2"></div>`;
   p.querySelectorAll("[data-o]").forEach(b => b.onclick = () => { sub.o = b.dataset.o; show(cur); });
   const inner = document.getElementById("pane2"); inner.id = "pane"; p.id = "paneOuter";
-  if (sub.o === "calendar") calendar(); else if (sub.o === "account") account(); else if (sub.o === "trips") await tripsTab(); else await schoolInfo();
+  if (sub.o === "calendar") calendar(); else if (sub.o === "account") account(); else if (sub.o === "trips") await tripsTab(); else if (sub.o === "tt") await ttTab(); else await schoolInfo();
+}
+// ---------- Class timetable ----------
+async function ttTab(){
+  const p = document.getElementById("pane"); let d = null;
+  try { const r = await sb.rpc("parent_timetable", { p_student: String(PREVIEW || cur) }); if (r.error) throw r.error; d = r.data; } catch (e) { p.innerHTML = `<div class="card">${msg(e.message || "Couldn’t load the timetable.")}</div>`; return; }
+  const T = d.timetable || {}, S = d.slots || [];
+  if (!S.length || !(T.periods || []).length) { p.innerHTML = `<div class="card"><p style="margin:0">🕘 ${L("The class timetable hasn’t been added yet.", "لم يُضف الجدول الدراسي بعد.")}</p></div>`; return; }
+  const DN = { 1: ["Mon", "الإثنين"], 2: ["Tue", "الثلاثاء"], 3: ["Wed", "الأربعاء"], 4: ["Thu", "الخميس"], 5: ["Fri", "الجمعة"], 6: ["Sat", "السبت"], 7: ["Sun", "الأحد"] };
+  const days = T.days || [1, 2, 3, 4, 5], dw = (new Date().getDay() || 7);
+  let pick = days.includes(dw) ? dw : days[0];
+  const dayList = day => T.periods.filter(x => (x.days || days).includes(day)).map(x => {
+    if (x.brk) return `<div class="todo" style="opacity:.7"><span class="e">☕</span><span><b>${esc(x.name)}</b><span class="muted">${esc(x.start || "")}${x.end ? "–" + esc(x.end) : ""}</span></span></div>`;
+    const here = S.filter(s => s.day === day && s.period === x.id);
+    return `<div class="todo"><span class="e" style="font-size:13px;min-width:52px;font-weight:800">${esc(x.start || "")}</span><span><b>${here.length ? here.map(s => esc(s.subject || "")).join(" / ") : "—"}</b><span class="muted">${esc(x.name)}${here.map(s => [s.teacher, s.room].filter(Boolean).join(" · ")).filter(Boolean).length ? " · " + esc(here.map(s => [s.teacher, s.room].filter(Boolean).join(" · ")).join(" / ")) : ""}</span></span></div>`; }).join("");
+  const draw = () => { p.innerHTML = `<div class="card tile t-sky"><h2>🕘 ${L("Class timetable", "الجدول الدراسي")}</h2>
+      <div class="tabs" role="tablist" style="margin-bottom:10px">${days.map(x => `<button class="tab" data-dd="${x}" aria-selected="${x === pick}">${L(DN[x][0], DN[x][1])}${x === dw ? " •" : ""}</button>`).join("")}</div>${dayList(pick)}</div>`;
+    p.querySelectorAll("[data-dd]").forEach(b => b.onclick = () => { pick = +b.dataset.dd; draw(); }); applyLang(p); };
+  draw();
 }
 // ---------- Trips and permission slips ----------
 async function tripsTab(){

@@ -131,15 +131,19 @@ async function requests(){
 // ---------- arrange cover (leaders) ----------
 async function cover(){
   const p = document.getElementById("pane"), d = ui.day;
-  const [cv, aw, wk] = await Promise.all([sb.from("staff_cover").select("*").eq("school_id", String(school.id)).eq("day", d),
-    sb.rpc("staff_away", { p_from: d, p_to: d }), sb.from("staff_cover").select("cover_id").eq("school_id", String(school.id)).gte("day", addD(d, -6)).lte("day", d).not("cover_id", "is", null)]);
+  const dow = (new Date(d + "T12:00:00").getDay() || 7);
+  const [cv, aw, wk, tt] = await Promise.all([sb.from("staff_cover").select("*").eq("school_id", String(school.id)).eq("day", d),
+    sb.rpc("staff_away", { p_from: d, p_to: d }), sb.from("staff_cover").select("cover_id").eq("school_id", String(school.id)).gte("day", addD(d, -6)).lte("day", d).not("cover_id", "is", null),
+    sb.from("timetable_slots").select("teacher_id,period_id,class_id").eq("school_id", String(school.id)).eq("day", dow)]);
+  const PO = ((C.timetable || {}).periods || []).map(p => p.id), pord = c => { const i = PO.indexOf(c.period_id); return i < 0 ? 99 : i; };
+  const teaching = (tid, pid) => pid ? (tt.data || []).filter(x => x.teacher_id === tid && x.period_id === pid).map(x => clsName(x.class_id)) : [];
   if (cv.error) throw cv.error;
-  const rows = (cv.data || []).sort((a, b) => String(nameOf(a.absent_id)).localeCompare(nameOf(b.absent_id)) || clsName(a.class_id).localeCompare(clsName(b.class_id), undefined, { numeric: true }));
+  const rows = (cv.data || []).sort((a, b) => String(nameOf(a.absent_id)).localeCompare(nameOf(b.absent_id)) || pord(a) - pord(b) || clsName(a.class_id).localeCompare(clsName(b.class_id), undefined, { numeric: true }));
   const awayIds = new Set((aw.data || []).map(a => a.staff_id)), load = {}, week = {};
   rows.forEach(c => { if (c.cover_id) load[c.cover_id] = (load[c.cover_id] || 0) + 1; });
   (wk.data || []).forEach(c => week[c.cover_id] = (week[c.cover_id] || 0) + 1);
   const open = rows.filter(c => !c.cover_id).length;
-  const opts = c => `<option value="">Choose who covers…</option>${staff.filter(s => s.id !== c.absent_id).map(s => `<option value="${s.id}" ${c.cover_id === s.id ? "selected" : ""} ${awayIds.has(s.id) ? "disabled" : ""}>${esc(s.full_name)}${awayIds.has(s.id) ? " (away)" : load[s.id] ? ` (${load[s.id]} today` + (week[s.id] ? `, ${week[s.id]} this week)` : ")") : week[s.id] ? ` (${week[s.id]} this week)` : ""}</option>`).join("")}`;
+  const opts = c => `<option value="">Choose who covers…</option>${staff.filter(s => s.id !== c.absent_id).map(s => `<option value="${s.id}" ${c.cover_id === s.id ? "selected" : ""} ${awayIds.has(s.id) ? "disabled" : ""}>${esc(s.full_name)}${awayIds.has(s.id) ? " (away)" : teaching(s.id, c.period_id).length ? ` (teaching ${teaching(s.id, c.period_id).join(", ")})` : load[s.id] ? ` (${load[s.id]} today` + (week[s.id] ? `, ${week[s.id]} this week)` : ")") : week[s.id] ? ` (${week[s.id]} this week)` : ""}</option>`).join("")}`;
   const groups = {}; rows.forEach(c => (groups[c.absent_id || "x"] = groups[c.absent_id || "x"] || []).push(c));
   p.innerHTML = `<div class="row" style="margin-bottom:12px"><button class="btn ghost small" id="dp">←</button><input type="date" id="dd" value="${d}" style="width:auto"><button class="btn ghost small" id="dn">→</button>
       <b>${esc(new Date(d + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }))}</b><span style="flex:1"></span>
