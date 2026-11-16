@@ -149,8 +149,12 @@ async function act(t, action, note){
   toast({ sent: "Sent to parents. They’ll see it in the Parent Portal and get an email.", pending: "Sent to school leaders for approval.", draft: "Sent back to the organiser.", cancelled: "Cancelled. Parents have been told." }[data] || "Done.");
   await load(); openTrip(t.id);
 }
-function openTrip(id){
+const MEDS = {};
+async function medsOf(t){ if (MEDS[t.id]) return MEDS[t.id]; const m = {}; try { const { data } = await sb.rpc("trip_medical", { p_trip: t.id }); (data || []).forEach(x => m[x.student] = x); } catch (_) {} return MEDS[t.id] = m; }
+const medLine = x => x ? [x.allergies && "⚠️ " + x.allergies, x.conditions, x.medication && "💊 " + x.medication, x.dietary && "🍽 " + x.dietary].filter(Boolean).join(" · ") : "";
+async function openTrip(id){
   const t = trips.find(x => x.id === id); if (!t) return listView();
+  const MED = await medsOf(t);
   const c = counts(t), k = KINDS[t.kind] || KINDS.trip, rr = R[t.id] || {}, d0 = today(), live = t.status === "sent" || t.status === "cancelled";
   const last = (t.history || []).slice(-1)[0] || {};
   const rows = studsOf(t).map(s => ({ s, r: rr[String(s.id)] || {} })).filter(({ r }) => ui.filter === "all" || (ui.filter === "wait" && !r.answer) || (ui.filter === "yes" && r.answer === "yes")
@@ -183,7 +187,7 @@ function openTrip(id){
         <td>${r.answer ? `<span class="ans ${r.answer}">${r.answer === "yes" ? "✓ Going" : "✗ Not going"}</span>${r.by_staff ? ' <span class="note">(paper)</span>' : ""}${ok && r.by_staff ? ` <button class="mini" data-m="${s.id}|answer|">undo</button>` : ""}`
           : `<span class="ans wait">Waiting</span>${ok ? ` <button class="mini" data-m="${s.id}|answer|yes" title="Record a paper slip: going">✓</button><button class="mini" data-m="${s.id}|answer|no" title="Record a paper slip: not going">✗</button>` : ""}`}</td>
         <td class="hide-sm">${esc(r.signed_name || "")}${r.answered_at ? `<br><span class="note">${new Date(r.answered_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span>` : ""}</td>
-        <td>${r.note ? `<span class="medi">${esc(r.note)}</span>` : ""}</td>${t.ask_phone ? `<td class="hide-sm">${esc(r.phone || "")}</td>` : ""}
+        <td>${r.note ? `<span class="medi">${esc(r.note)}</span>` : ""}${MED[String(s.id)] ? `<div class="note" style="color:var(--red);font-weight:700;margin-top:2px" title="From the student’s medical record">🩺 ${esc(medLine(MED[String(s.id)]))}</div>` : ""}</td>${t.ask_phone ? `<td class="hide-sm">${esc(r.phone || "")}</td>` : ""}
         ${t.cost ? `<td>${r.answer === "yes" ? `<input type="checkbox" data-m="${s.id}|paid" ${r.paid ? "checked" : ""} ${canMark(t, s) ? "" : "disabled"} aria-label="Paid">` : ""}</td>` : ""}
         ${onDay ? `<td>${r.answer === "yes" ? `<select data-m="${s.id}|attended" ${canMark(t, s) ? "" : "disabled"}><option value="">–</option><option value="true" ${r.attended === true ? "selected" : ""}>Came</option><option value="false" ${r.attended === false ? "selected" : ""}>Didn’t come</option></select>` : ""}</td>` : ""}</tr>`; }).join("") || `<tr><td colspan="8" class="note">No students here.</td></tr>`}
       </tbody></table></div></div>`
@@ -217,15 +221,15 @@ function openTrip(id){
     if (field !== "attended") openTrip(id); else toast("Saved.");
   }; });
 }
-function printList(t){
-  const rr = R[t.id] || {}, going = studsOf(t).filter(s => (rr[String(s.id)] || {}).answer === "yes"), notGoing = studsOf(t).filter(s => (rr[String(s.id)] || {}).answer !== "yes");
+async function printList(t){
+  const MED = await medsOf(t), rr = R[t.id] || {}, going = studsOf(t).filter(s => (rr[String(s.id)] || {}).answer === "yes"), notGoing = studsOf(t).filter(s => (rr[String(s.id)] || {}).answer !== "yes");
   const w = window.open("", "_blank"); if (!w) return alert("Please allow pop-ups to print.");
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(t.title)}</title><style>body{font-family:Arial,sans-serif;font-size:12.5px;margin:24px;color:#222}h1{font-size:19px;margin:0}p{margin:4px 0}
     table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #bbb;padding:6px;text-align:left;vertical-align:top}th{background:#f0ecf5}td.box{width:60px}.n{color:#a35d00;font-weight:bold}</style></head><body>
     <h1>${esc(school.name || "")}: ${esc(t.title)}</h1><p>${esc(fmtD(t.trip_date))}${t.leave_time ? " · leaves " + esc(t.leave_time) : ""}${t.return_time ? " · back " + esc(t.return_time) : ""}${t.place ? " · " + esc(t.place) : ""}</p>
     ${t.staff_going ? `<p>Staff: ${esc(t.staff_going)}</p>` : ""}<p><b>${going.length}</b> going${notGoing.length ? ` · not going or no reply: ${esc(notGoing.map(s => s.full_name).join(", "))}` : ""}</p>
     <table><thead><tr><th>#</th><th>Student</th><th>Class</th><th>Notes for the day</th>${t.ask_phone ? "<th>Phone</th>" : ""}<th>Out</th><th>Back</th></tr></thead><tbody>
-    ${going.map((s, i) => { const r = rr[String(s.id)]; return `<tr><td>${i + 1}</td><td>${esc(s.full_name)}</td><td>${esc(clsName(s.class_id))}</td><td class="n">${esc(r.note || "")}</td>${t.ask_phone ? `<td>${esc(r.phone || "")}</td>` : ""}<td class="box"></td><td class="box"></td></tr>`; }).join("")}
+    ${going.map((s, i) => { const r = rr[String(s.id)]; return `<tr><td>${i + 1}</td><td>${esc(s.full_name)}</td><td>${esc(clsName(s.class_id))}</td><td class="n">${esc([r.note, medLine(MED[String(s.id)])].filter(Boolean).join(" · "))}</td>${t.ask_phone ? `<td>${esc(r.phone || "")}</td>` : ""}<td class="box"></td><td class="box"></td></tr>`; }).join("")}
     </tbody></table><script>setTimeout(()=>print(),300)<\/script></body></html>`);
   w.document.close();
 }

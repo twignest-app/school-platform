@@ -83,15 +83,18 @@ function check(){
 async function student(sid){
   const s = studs.find(x => String(x.id) === String(sid)); if (!s) { ui.sid = null; return draw(); }
   const L = of(sid), block = L.filter(p => p.kind === "blocked");
+  let info = null; try { const r = await sb.rpc("desk_student_info", { p_student: String(sid) }); info = r.data; } catch (_) {}
   app.innerHTML = `<p><a href="#" class="note" id="back">← All students</a></p>
     <div class="phead"><div><h1 class="ptitle">${esc(s.full_name)}</h1><p class="note" style="margin:0">${esc(clsName(s.class_id))}</p></div>${lead ? '<div class="row"><button class="btn" id="add">+ Add a person</button></div>' : ""}</div>
     ${block.length ? `<div class="blk">⛔ Must NOT collect ${esc(s.full_name.split(" ")[0])}: ${block.map(p => esc(p.name) + (p.relation ? " (" + esc(p.relation) + ")" : "") + (p.note ? " · " + esc(p.note) : "")).join("; ")}. If this person comes to collect, do not release the child and tell a school leader straight away.</div>` : ""}
+    ${info && (info.allergies || info.conditions) ? `<div class="blk" style="border-color:var(--amber);background:var(--amber-soft);color:var(--amber)">🩺 ${info.allergies ? "Allergies: " + esc(info.allergies) : ""}${info.allergies && info.conditions ? " · " : ""}${info.conditions ? "Medical: " + esc(info.conditions) : ""}</div>` : ""}
     ${["collector", "emergency", "blocked"].map(k => { const list = L.filter(p => p.kind === k);
       return `<div class="card"><h2>${KIND[k][0]} ${KIND[k][1]}</h2>${list.length ? list.map(p => `<div class="pp"><div class="ph" data-ph="${esc(p.photo_path || "")}">${p.photo_path ? "" : KIND[k][0]}</div>
         <div><b>${esc(p.name)}</b>${p.relation ? " · " + esc(p.relation) : ""}${p.phone ? `<small>📞 <a href="tel:${esc(p.phone.replace(/[^\d+]/g, ""))}">${esc(p.phone)}</a></small>` : ""}${p.note ? `<small>${esc(p.note)}</small>` : ""}
           <small>${p.by_staff ? "Added by the school" : "Added by a parent"}${k === "collector" ? (p.verified_at ? " · <b style='color:var(--sage)'>✓ ID checked</b>" : p.id_path ? " · <b style='color:var(--amber)'>ID not checked yet</b>" : " · no ID photo") : ""}</small></div>
         <div class="row">${lead && p.id_path ? `<button class="btn ghost small" data-id="${p.id}">🪪 ${p.verified_at ? "See ID" : "Check ID"}</button>` : ""}${lead ? `<button class="mini" data-rm="${p.id}">Remove</button>` : ""}</div></div>`).join("")
-        : `<p class="note">${k === "blocked" ? "No restrictions." : "No one yet."}</p>`}</div>`; }).join("")}`;
+        : `<p class="note">${k === "blocked" ? "No restrictions." : "No one yet."}</p>`}
+        ${k === "emergency" && info && ((info.contacts || []).length || (info.emergency || []).length) ? `<h3 style="margin:12px 0 4px;font-size:15px">On the school record</h3>${[...(info.contacts || []), ...(info.emergency || [])].filter(x => x && (x.name || x.phone)).map(x => `<div class="pp" style="grid-template-columns:64px 1fr"><div class="ph">👪</div><div><b>${esc(x.name || "")}</b>${x.relation ? " · " + esc(x.relation) : ""}${x.phone ? `<small>📞 <a href="tel:${esc(String(x.phone).replace(/[^\d+]/g, ""))}">${esc(x.phone)}</a></small>` : ""}</div></div>`).join("")}` : ""}</div>`; }).join("")}`;
   document.getElementById("back").onclick = e => { e.preventDefault(); ui.sid = null; history.replaceState(null, "", "#" + ui.tab); draw(); };
   const ad = document.getElementById("add"); if (ad) ad.onclick = () => addDialog(s);
   app.querySelectorAll("[data-ph]").forEach(async el => { if (!el.dataset.ph) return; const u = await signed(el.dataset.ph); if (u) el.innerHTML = `<img src="${u}" alt="" class="ph">`; });

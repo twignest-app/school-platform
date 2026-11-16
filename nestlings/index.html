@@ -80,7 +80,7 @@
   .tile h3{margin:10px 0 2px;font-size:22px}
   .tile p{margin:0;color:var(--muted);font-weight:700;font-size:14.5px}
   .tile .soon{display:inline-block;margin-top:10px;font-size:12.5px;font-weight:800;border-radius:99px;padding:3px 10px;background:var(--gold-soft)}
-  .t-mat{border-color:var(--sky)} .t-hw{border-color:var(--gold)} .t-msg{border-color:var(--lilac)} .t-cal{border-color:var(--sage)} .t-work{border-color:#E8A13A}
+  .t-mat{border-color:var(--sky)} .t-hw{border-color:var(--gold)} .t-msg{border-color:var(--lilac)} .t-cal{border-color:var(--sage)} .t-tt{border-color:var(--sky)} .t-work{border-color:#E8A13A}
   .classes{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
   .ctile{background:var(--card);border:3px solid var(--sky);border-radius:22px;padding:18px;cursor:pointer;font-family:Fredoka,sans-serif;font-size:22px;font-weight:600;color:var(--navy);text-align:left}
   .ctile small{display:block;font-family:Nunito,sans-serif;font-size:14px;font-weight:700;color:var(--muted);margin-top:4px}
@@ -400,6 +400,7 @@ async function nest(me){
     { k: "hw", ic: "📝", t: "Homework", d: due ? `${due} to do` : "Nothing to do right now", n: due },
     { k: "msg", ic: "💬", t: "Messages", d: me.settings && me.settings.student_messages ? "Class news, and you can write to your teacher" : "News from your teacher", n: its.filter(i => i.kind === "message").length },
     { k: "cal", ic: "📅", t: "Calendar", d: "Trips, events and due dates", n: agendaCount() },
+    { k: "tt", ic: "🕘", t: "My timetable", d: "What’s on today and this week", n: 0 },
     { k: "work", ic: "🎨", t: "My work", d: back ? `${back} sent back to try again` : "Share your writing, photos, voice and videos", n: MYWORK.length }];
   $("vNest").innerHTML = `
     <div class="hello"><svg width="96" height="90" aria-hidden="true"><use href="#bird"/></svg>
@@ -428,7 +429,7 @@ function workCard(p){
     ${p.teacher_comment ? `<div class="tcomment">💬 <b>Your teacher:</b> ${linkify(p.teacher_comment)}</div>` : ""}</article>`;
 }
 
-const KSEC = { mat: ["📚", "Materials"], hw: ["📝", "Homework"], msg: ["💬", "Messages"], cal: ["📅", "Calendar"], work: ["🎨", "My work"] };
+const KSEC = { mat: ["📚", "Materials"], hw: ["📝", "Homework"], msg: ["💬", "Messages"], cal: ["📅", "Calendar"], tt: ["🕘", "My timetable"], work: ["🎨", "My work"] };
 async function kidSection(k, itemId){
   await loadFeed();
   const [ic, title] = KSEC[k], its = FEED.items;
@@ -449,6 +450,7 @@ async function kidSection(k, itemId){
   if (k === "work") { const hw = itemId ? its.find(i => i.id === itemId) : null;
     body = composer(hw) + `<h3 class="subh">My work${MYWORK.length ? ` (${MYWORK.length})` : ""}</h3>`
       + (MYWORK.length ? MYWORK.map(workCard).join("") : `<div class="empty">Nothing shared yet. Show your teacher what you can do! 🌟</div>`); }
+  if (k === "tt") body = await kidTimetable();
   $("vNest").innerHTML = `<div class="bar"><button class="btn2 light" type="button" id="kback">← My nest</button><b class="grow">${ic} ${title}</b></div>
     <h2 class="sech">${ic} ${title}</h2>${body}
     <p style="text-align:center;margin-top:20px"><button class="btn2 light" type="button" id="kback2">← Back to my nest</button></p>`;
@@ -457,6 +459,19 @@ async function kidSection(k, itemId){
   if (k === "work") bindComposer(itemId ? itemId : null, itemId ? "hw" : "work");
   if (k === "msg" && $("dmBox")) kidDMs();
   window.scrollTo(0, 0);
+}
+
+/* ---------- my class timetable (from Nestopia → Timetable) ---------- */
+async function kidTimetable(){
+  let d = null; try { const r = await sb.rpc("nestlings_timetable", { p_token: store.get() }); if (!r.error) d = r.data; } catch (_) {}
+  const T = (d && d.timetable) || {}, S = (d && d.slots) || [];
+  if (!S.length || !(T.periods || []).length) return `<div class="empty">Your timetable isn’t ready yet. 🕘</div>`;
+  const DN = { 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday", 6: "Saturday", 7: "Sunday" }, days = T.days || [1, 2, 3, 4, 5], dw = new Date().getDay() || 7;
+  const one = day => T.periods.filter(x => (x.days || days).includes(day)).map(x => { const card = "background:#fff;border:2px solid var(--line,#E6E0F0);border-radius:16px;padding:10px 14px;margin:8px 0;font-size:17px";
+    if (x.brk) return `<div style="${card};opacity:.7">☕ <b>${esc(x.name)}</b> <span style="color:var(--muted)">${esc(x.start || "")}</span></div>`;
+    const here = S.filter(s => s.day === day && s.period === x.id);
+    return `<div style="${card}"><span style="display:inline-block;min-width:58px;font-weight:800;color:var(--muted)">${esc(x.start || "")}</span> <b>${here.length ? here.map(s => esc(s.subject || "")).join(" / ") : "—"}</b>${here.some(s => s.teacher || s.room) ? `<div style="color:var(--muted);font-size:15px;margin-left:62px">${esc(here.map(s => [s.teacher, s.room].filter(Boolean).join(" · ")).filter(Boolean).join(" / "))}</div>` : ""}</div>`; }).join("");
+  return days.map(day => `<h3 class="subh">${DN[day]}${day === dw ? " · today ⭐" : ""}</h3>${one(day)}`).join("");
 }
 
 /* ---------- messages to the teacher ---------- */

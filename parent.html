@@ -315,7 +315,9 @@ async function learnCard(box){
 async function learning(){
   const p = document.getElementById("pane"); let units = [];
   if (!PREVIEW) try { const r = await sb.rpc("parent_units", { p_student: String(cur) }); units = r.data || []; } catch (_) {}
-  const u = units[0], terms = view.terms || [], cms = view.comments || [], scale = view.scale || [];
+  // levels only from report cards that have been published to parents (never from comments still being written)
+  let pub = null; if (!PREVIEW) try { const r = await sb.rpc("parent_report_card", { p_student: String(cur) }); if (!r.error && r.data) pub = r.data; } catch (_) {}
+  const u = units[0], terms = view.terms || [], cms = pub ? (pub.comments || []) : (PREVIEW ? (view.comments || []) : []), scale = view.scale || [];
   const lastT = Math.max(-1, ...cms.map(c => +c.term));
   const glance = lastT >= 0 ? (view.subjects || []).map(sub => { const l = (sub.strands || []).map(st => cms.find(c => c.strand === st.id && +c.term === lastT)).filter(c => c && c.level != null).map(c => +c.level); return l.length ? [sub.name, Math.round(l.reduce((a, b) => a + b, 0) / l.length)] : null; }).filter(Boolean) : [];
   p.innerHTML = `${u ? `<div class="card tile t-sky"><p class="muted" style="margin:0;font-weight:800">📚 ${u.starts_on && u.starts_on > new Date().toISOString().slice(0, 10) ? "Next unit · الوحدة القادمة" : "This unit · الوحدة الحالية"}${u.theme && u.theme !== u.title ? `<span> · ${esc(u.theme)}</span>` : ""}</p><h2 style="margin:4px 0 8px;font-size:22px">${esc(u.title)}</h2>
@@ -369,7 +371,7 @@ async function meetings(){
 // ---------- More: calendar, school information, my account ----------
 async function more(){
   const p = document.getElementById("pane"); sub.o = sub.o || "info";
-  p.innerHTML = `<div class="tabs" role="tablist"><button class="tab" aria-selected="${sub.o === "info"}" data-o="info">📁 School information · معلومات المدرسة</button>${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "trips"}" data-o="trips">🎒 Trips and forms · الرحلات والنماذج</button>`}<button class="tab" aria-selected="${sub.o === "tt"}" data-o="tt">🕘 Timetable · الجدول</button>${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "pk"}" data-o="pk">👪 Pick-up and contacts · الاستلام وجهات الاتصال</button>`}${(view.show || {}).calendar !== false ? `<button class="tab" aria-selected="${sub.o === "calendar"}" data-o="calendar">📅 Calendar · التقويم</button>` : ""}${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "account"}" data-o="account">👤 My account · حسابي</button>`}</div><div id="pane2"></div>`;
+  p.innerHTML = `<div class="tabs" role="tablist"><button class="tab" aria-selected="${sub.o === "info"}" data-o="info">📁 School information · معلومات المدرسة</button>${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "trips"}" data-o="trips">🎒 Trips and forms · الرحلات والنماذج</button>`}<button class="tab" aria-selected="${sub.o === "tt"}" data-o="tt">🕘 Timetable · الجدول</button>${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "pk"}" data-o="pk">👪 Pick-up, contacts and health · الاستلام وجهات الاتصال والصحة</button>`}${(view.show || {}).calendar !== false ? `<button class="tab" aria-selected="${sub.o === "calendar"}" data-o="calendar">📅 Calendar · التقويم</button>` : ""}${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "account"}" data-o="account">👤 My account · حسابي</button>`}</div><div id="pane2"></div>`;
   p.querySelectorAll("[data-o]").forEach(b => b.onclick = () => { sub.o = b.dataset.o; show(cur); });
   const inner = document.getElementById("pane2"); inner.id = "pane"; p.id = "paneOuter";
   if (sub.o === "calendar") calendar(); else if (sub.o === "account") account(); else if (sub.o === "trips") await tripsTab(); else if (sub.o === "tt") await ttTab(); else if (sub.o === "pk") await pickupTab(); else await schoolInfo();
@@ -390,16 +392,36 @@ async function pickupTab(){
   const K = { collector: ["🚗", L(`Allowed to collect ${first}`, `المسموح لهم باستلام ${first}`), L("Adults who can pick up from school. Add a photo of them and of their ID; the school checks the ID once.", "البالغون المسموح لهم بالاستلام من المدرسة. أضف صورتهم وصورة الهوية، وستتحقق المدرسة منها مرة واحدة."), "t-mint"],
     emergency: ["📞", L("Emergency contacts", "جهات الاتصال في الطوارئ"), L("Who we call if we can’t reach you.", "من نتصل به إذا لم نستطع الوصول إليك."), "t-sky"],
     blocked: ["⛔", L(`Must NOT collect ${first}`, `ممنوع من استلام ${first}`), L("Only if there is a legal or safety reason. The school may ask you for documents.", "فقط عند وجود سبب قانوني أو أمني. قد تطلب المدرسة مستندات.", ""), "t-rose"] };
+  let M = {}; try { const r = await sb.rpc("parent_medical", { p_student: String(cur) }); M = r.data || {}; } catch (_) {}
+  const healthCard = `<div class="card tile t-peach"><h2>🩺 ${L(`${first}’s health and allergies`, `صحة ${first} والحساسية`)}</h2><p class="muted" style="margin:0 0 8px">${L("The school keeps this safe and shares it only with the staff who need it (teachers, trips, the front desk).", "تحفظ المدرسة هذه المعلومات وتشاركها فقط مع من يحتاجها من الموظفين.")}</p>
+    ${[["⚠️", L("Allergies", "الحساسية"), M.allergies], ["❤️‍🩹", L("Medical conditions", "الحالات الطبية"), M.conditions], ["💊", L("Medication", "الأدوية"), M.medication], ["🍽", L("Food and diet", "الطعام والنظام الغذائي"), M.dietary]]
+      .map(([i, l, v]) => `<p style="margin:4px 0">${i} <b>${l}:</b> ${v ? esc(v) : `<span class="muted">${L("None", "لا يوجد")}</span>`}</p>`).join("")}
+    <p style="margin:8px 0 0"><button class="btn small" id="medEd">✏️ ${L("Update", "تحديث")}</button></p></div>`;
   p.innerHTML = Object.entries(K).map(([k, v]) => { const list = P.filter(x => x.kind === k);
     return `<div class="card tile ${v[3]}"><h2>${v[0]} ${v[1]}</h2><p class="muted" style="margin:0 0 8px">${v[2]}</p>
       ${list.map(x => `<div class="todo" style="align-items:center"><span class="e" data-pph="${esc(x.photo || "")}" style="width:52px;height:52px;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center">${v[0]}</span>
         <span style="flex:1"><b>${esc(x.name)}</b><span class="muted">${esc([x.relation, x.phone, x.note].filter(Boolean).join(" · "))}${k === "collector" ? " · " + (x.checked ? "✓ " + L("ID checked by the school", "تحققت المدرسة من الهوية") : x.idp ? L("Waiting for the school to check the ID", "بانتظار تحقق المدرسة من الهوية") : L("Please add a photo of their ID", "يُرجى إضافة صورة الهوية")) : ""}${x.staff ? " · " + L("added by the school", "أضافته المدرسة") : ""}</span></span>
         ${x.staff ? "" : `<button class="btn ghost small" data-pe="${esc(x.id)}">${L("Edit", "تعديل")}</button>`}</div>`).join("") || `<p style="margin:0 0 8px">${L("No one yet.", "لا أحد بعد.")}</p>`}
-      <p style="margin:8px 0 0"><button class="btn small" data-pa="${k}">+ ${L("Add", "إضافة")}</button></p></div>`; }).join("");
+      <p style="margin:8px 0 0"><button class="btn small" data-pa="${k}">+ ${L("Add", "إضافة")}</button></p></div>`; }).join("") + healthCard;
+  const me0 = p.querySelector("#medEd"); if (me0) me0.onclick = () => medEdit(M);
   applyLang(p);
   p.querySelectorAll("[data-pph]").forEach(async el => { if (!el.dataset.pph) return; const u = await pkSigned(el.dataset.pph); if (u) el.innerHTML = `<img src="${u}" alt="" style="width:52px;height:52px;object-fit:cover">`; });
   p.querySelectorAll("[data-pa]").forEach(b => b.onclick = () => pickupEdit(b.dataset.pa, null, d.folder));
   p.querySelectorAll("[data-pe]").forEach(b => b.onclick = () => { const x = P.find(y => y.id === b.dataset.pe); pickupEdit(x.kind, x, d.folder); });
+}
+function medEdit(M){
+  const dd = document.createElement("div"); dd.className = "drawer";
+  const f = (id, l, v, ph) => `<label style="display:grid;gap:4px;font-weight:700">${l}<textarea id="${id}" rows="2" maxlength="400" placeholder="${ph}">${esc(v || "")}</textarea></label>`;
+  dd.innerHTML = `<div class="in"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🩺 ${L("Health and allergies", "الصحة والحساسية")}</h2><button class="btn ghost small" data-x>✕</button></div>
+    <form id="mdf" style="display:grid;gap:12px;margin-top:12px">${f("ma", L("Allergies", "الحساسية"), M.allergies, L("For example: peanuts, carries an EpiPen", "مثال: الفول السوداني، يحمل حقنة إبينفرين"))}${f("mc", L("Medical conditions", "الحالات الطبية"), M.conditions, L("For example: asthma", "مثال: الربو"))}
+      ${f("mm", L("Medication", "الأدوية"), M.medication, L("For example: inhaler before PE", "مثال: بخاخ قبل الرياضة"))}${f("md", L("Food and diet", "الطعام والنظام الغذائي"), M.dietary, L("For example: vegetarian, no dairy", "مثال: نباتي، بدون ألبان"))}
+      <p class="muted" style="margin:0">${L("Leave a box empty if there is nothing to tell us. The school is told that you updated this.", "اترك الخانة فارغة إذا لم يكن هناك ما تخبرنا به. سيتم إبلاغ المدرسة بالتحديث.")}</p>
+      <div id="mde"></div><button class="btn" type="submit">${L("Save", "حفظ")}</button></form></div>`;
+  document.body.appendChild(dd); applyLang(dd);
+  dd.onclick = e => { if (e.target === dd || e.target.closest("[data-x]")) dd.remove(); };
+  dd.querySelector("#mdf").onsubmit = async e => { e.preventDefault(); const g = id => dd.querySelector(id).value;
+    const { error } = await sb.rpc("parent_medical_save", { p_student: String(cur), p_allergies: g("#ma"), p_conditions: g("#mc"), p_medication: g("#mm"), p_dietary: g("#md") });
+    if (error) { dd.querySelector("#mde").innerHTML = msg(error.message); return; } dd.remove(); pickupTab(); };
 }
 function pickupEdit(kind, x, folder){
   x = x || {}; const dd = document.createElement("div"); dd.className = "drawer"; const many = kids.length > 1 && !x.id;

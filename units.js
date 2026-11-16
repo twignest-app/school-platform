@@ -202,7 +202,9 @@ async function scoreDialog(u){
   const draw = async () => {
     dlg.innerHTML = `<div class="dlg"><div class="row" style="justify-content:space-between"><h2>Score the SAT · ${esc(u.title)}</h2><button type="button" class="btn ghost small" data-x>Close</button></div>
       <div class="row"><label class="note" for="sc"><b>Class</b></label><select id="sc">${mineC.map(c => `<option value="${esc(c.id)}" ${String(c.id) === cid ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select><span class="note" id="scm">Scores save as you choose them.</span></div>
-      <div id="sgrid"><p class="note">Loading…</p></div></div>`;
+      <div id="sgrid"><p class="note">Loading…</p></div>
+      ${crit.some(c => c.subject) ? `<div class="box"><h3>📥 Add to TwigNest</h3><p class="note" style="margin:0 0 8px">Turn this class’s SAT scores into TwigNest levels: each subject gets the average of its criteria, on every strand of that subject.</p>
+        <div class="row"><select id="stT">${(C.terms || []).map((t, i) => `<option value="${i}">${esc(t)}</option>`).join("")}</select><label class="note" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="stO"> Replace levels already given</label><button type="button" class="btn small" id="stGo">Add to TwigNest</button></div></div>` : ""}</div>`;
     dlg.querySelector("[data-x]").onclick = () => dlg.close();
     dlg.querySelector("#sc").onchange = e => { cid = e.target.value; draw(); };
     if (!dlg.open) dlg.showModal();
@@ -217,6 +219,21 @@ async function scoreDialog(u){
       const q = e.target.value === "" ? sb.from("sat_scores").delete().eq("unit_id", u.id).eq("student_id", sid).eq("crit", crk)
         : sb.from("sat_scores").upsert({ unit_id: u.id, student_id: sid, crit: crk, level: +e.target.value, updated_at: new Date().toISOString() });
       const { error } = await q; m.textContent = error ? "Not saved: " + error.message : "Saved ✓"; };
+    const go = dlg.querySelector("#stGo"); if (go) go.onclick = async () => {
+      const term = String(dlg.querySelector("#stT").value), over = dlg.querySelector("#stO").checked, m = dlg.querySelector("#scm");
+      const fresh = st.length ? (await sb.from("sat_scores").select("student_id,crit,level").eq("unit_id", u.id).in("student_id", st.map(x => String(x.id)))).data || [] : [];
+      const bySub = {}; crit.filter(c => c.subject).forEach(c => (bySub[c.subject] = bySub[c.subject] || []).push(c.key));
+      const strandsOf = sid => (((C.subjects || []).find(x => x.id === sid) || {}).strands || []).map(x => x.id);
+      const allStr = Object.keys(bySub).flatMap(strandsOf);
+      if (!allStr.length) return alert("The linked subjects have no strands in TwigNest yet.");
+      const have = new Set(((await sb.from("student_levels").select("student_id,strand_id,level").in("student_id", st.map(x => String(x.id))).in("strand_id", allStr).eq("term", term)).data || []).map(x => x.student_id + "|" + x.strand_id));
+      const rows = [];
+      st.forEach(x => Object.entries(bySub).forEach(([sub, keys]) => { const lv = fresh.filter(y => String(y.student_id) === String(x.id) && keys.includes(y.crit) && y.level != null).map(y => y.level);
+        if (!lv.length) return; const avg = Math.round(lv.reduce((a, b) => a + b, 0) / lv.length);
+        strandsOf(sub).forEach(str => { if (over || !have.has(String(x.id) + "|" + str)) rows.push({ student_id: String(x.id), strand_id: str, term, level: avg }); }); }));
+      if (!rows.length) return alert(over ? "There are no SAT scores for the linked subjects yet." : "Every strand already has a level for this term. Tick “Replace levels already given” to overwrite them.");
+      if (!confirm(`Add ${rows.length} level${rows.length === 1 ? "" : "s"} to TwigNest for ${(C.terms || [])[+term] || "this term"}?`)) return;
+      m.textContent = "Adding…"; const { error } = await sb.from("student_levels").upsert(rows); m.textContent = error ? "Not added: " + error.message : `Added ${rows.length} level${rows.length === 1 ? "" : "s"} to TwigNest ✓`; };
   };
   draw();
 }
