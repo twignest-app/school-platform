@@ -13,6 +13,7 @@
    <a class="tile" href="observations.html" style="text-decoration:none;color:inherit;border-color:var(--lilac)"><h3>Formal observations</h3><p class="muted">Full lessons on the six-point MOE scale.</p><span class="soon" style="background:var(--plum);color:#fff">Open</span></a>
    <a class="tile" id="tileSef" href="sef.html" style="text-decoration:none;color:inherit;border-color:var(--sage)"><h3>SEF evidence</h3><p class="muted">Self-evaluation evidence for all six performance standards, built from your observations.</p><span class="soon" style="background:var(--sage);color:#fff">Open</span></a>
    <a class="tile" id="tileStaff" href="staff.html" style="text-decoration:none;color:inherit"><h3>Staff</h3><p class="muted">Roles, access and your school code.</p><span class="soon">Open</span></a>
+   <a class="tile" id="tileCriteria" href="criteria.html" style="text-decoration:none;color:inherit;border-color:var(--sage)"><h3>Our observation statements</h3><p class="muted">Add your school’s own “What went well” and “Next steps” wording to the MOE criteria.</p><span class="soon">Open</span></a>
    <a class="tile" id="tileSettings" href="settings.html" style="text-decoration:none;color:inherit"><h3>School settings</h3><p class="muted">Your school’s phases, used to group SEF evidence.</p><span class="soon">Open</span></a>
    <a class="tile" href="appraisals.html" style="text-decoration:none;color:inherit;border-color:var(--lilac)"><h3>Appraisals</h3><p class="muted">Termly or yearly reviews built from the teacher’s record.</p><span class="soon" style="background:var(--plum);color:#fff">Open</span></a>
   </div>
@@ -56,7 +57,7 @@ async function load(){
  $("hello").textContent="Welcome, "+(staff.full_name||"").split(" ")[0];
  $("schoolLine").textContent=(school?.name||"")+(staff.job_title?" · "+staff.job_title:"");
  const lead=["school_admin","leader"].includes(staff.role);
- if(!lead){$("tileSef").classList.add("hide");$("tileSettings").classList.add("hide");}
+ if(!lead){$("tileSef").classList.add("hide");$("tileSettings").classList.add("hide");$("tileCriteria").classList.add("hide");}
  if(staff.role!=="school_admin")$("tileStaff").classList.add("hide");
  if(staff.role==="school_admin"&&staff.active){$("adminBox").classList.remove("hide");$("joinCode").textContent=school.join_code;loadPendingStaff(staff.school_id);}
  if(isOwner){$("platformBox").classList.remove("hide");loadPendingSchools();loadDemos();}

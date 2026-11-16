@@ -104,7 +104,7 @@ async function init(){
   sb.from("indicators").select("*").contains("used_in",["formal_observation"]).order("sort"),
   sb.from("statements").select("*").order("sort")]);
  if(t.error)return showMsg($("msg"),"Teachers couldn’t load: "+friendly(t.error),"err");
- teachers=t.data||[];inds=i.data||[];stmts=s.data||[];
+ teachers=t.data||[];inds=i.data||[];stmts=(s.data||[]).filter(x=>!x.school_id||String(x.school_id)===String(ctx.school.id));
  if(i.error||s.error)showMsg($("msg"),"The MOE criteria couldn’t load: "+friendly(i.error||s.error),"err");
  if(!teachers.length)showMsg($("msg"),"No current teachers found for "+ctx.school.name+". Add teachers on the Teachers page first.","info");
  $("teacher").innerHTML='<option value="">Choose a teacher…</option>'+teachers.map(x=>`<option value="${x.id}">${esc(x.full_name)}</option>`).join("");

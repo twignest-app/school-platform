@@ -1,18 +1,28 @@
-// GrowNest · Observation criteria (GrowNest owner only)
-let inds = [], stmts = [], also = [], cur = null, curLevel = 4, tab = "lesson";
+// GrowNest · Observation criteria
+// The GrowNest owner edits the criteria every school uses. School admins and leaders add their own school's statements.
+let inds = [], stmts = [], also = [], cur = null, curLevel = 4, tab = "lesson", OWNER = false, MYSCHOOL = null, SCHOOLNAME = "";
+const mineRow = s => OWNER ? !s.school_id : String(s.school_id || "") === String(MYSCHOOL);   // rows this person can change
+const shown = s => OWNER ? !s.school_id : (!s.school_id || String(s.school_id) === String(MYSCHOOL));   // rows to list on this page
 const KIND = {strength: "What went well", development: "Next steps"};
 
 async function init(){
   const ctx = await requireStaff(); if (!ctx) return;
   headerButtons([["app.html","Dashboard"]]);
   const {data: owner} = await sb.rpc("is_platform_admin");
-  if (!owner) { $("main").innerHTML = '<div class="card narrow"><h2>Owner only</h2><p>This page is only available to the GrowNest owner.</p></div>'; return; }
+  OWNER = !!owner && qsMode() !== "school"; MYSCHOOL = ctx.school && ctx.school.id; SCHOOLNAME = (ctx.school && ctx.school.name) || "your school";
+  if (!OWNER && !["school_admin", "leader"].includes(ctx.staff.role)) { $("main").innerHTML = '<div class="card narrow"><h2>School leaders only</h2><p>Ask your school admin or a leader to add your school’s own statements.</p></div>'; return; }
+  if (!OWNER) { // school leaders: only their school's extra statements
+    document.querySelector(".ctabs").classList.add("hide");
+    const h = document.querySelector("h1"); h.textContent = "Our observation statements";
+    h.nextElementSibling.textContent = `Add your own “What went well” and “Next steps” statements for ${SCHOOLNAME}. They show on your observation forms next to the GrowNest statements. Other schools don’t see them.`;
+  } else if (owner) { const p = document.querySelector("h1").nextElementSibling; p.innerHTML = 'GrowNest owner. Changes apply to every school straight away. <a href="criteria.html?mode=school">Edit only your own school’s statements instead</a>'; }
   await loadAll(); render();
 }
+function qsMode(){ return new URLSearchParams(location.search).get("mode"); }
 async function loadAll(){
   const [i, s, a] = await Promise.all([sb.from("indicators").select("*").order("sort"), sb.from("statements").select("*").order("sort"), sb.from("also_seen_options").select("*").order("sort")]);
   if (i.error || s.error) return showMsg($("msg"), friendly(i.error || s.error), "err");
-  inds = i.data || []; stmts = s.data || []; also = a.data || [];
+  inds = i.data || []; stmts = (s.data || []).filter(shown); also = a.data || [];
   if (!cur) cur = (inds.find(x => x.used_in.includes("formal_observation")) || inds[0] || {}).code;
 }
 function render(){
@@ -23,13 +33,14 @@ function render(){
   $("side").innerHTML = list.map(x => `<button type="button" data-cur="${x.code}" aria-selected="${x.code === cur}"><b>${esc(x.code)}</b> ${esc(x.title)}</button>`).join("");
   const ind = inds.find(x => x.code === cur); if (!ind) { $("panel").innerHTML = ""; return; }
   const lesson = ind.used_in.includes("formal_observation");
-  let html = `<div class="card"><h2>${esc(ind.code)} · edit wording</h2>
+  let html = !OWNER ? `<div class="card"><h2>${esc(ind.code)} · ${esc(ind.title)}${ind.moe_ref ? ` <span class="lchip">MOE ${esc(ind.moe_ref)}</span>` : ""}</h2><p class="muted" style="margin:0">${esc(ind.look_fors || "")}</p></div>` : `<div class="card"><h2>${esc(ind.code)} · edit wording</h2>
     <label class="f">Title<input id="iTitle" value="${esc(ind.title)}"></label>
     <label class="f">MOE reference<input id="iMoe" value="${esc(ind.moe_ref || "")}" placeholder="e.g. 3.1.3"></label>
     <label class="f">Look-fors (shown under the title on the form)<textarea id="iLook" rows="3">${esc(ind.look_fors || "")}</textarea></label>
     <label class="f">Title (Arabic)<input id="iTitleAr" dir="rtl" value="${esc(ind.title_ar || "")}"></label>
     <label class="f">Look-fors (Arabic)<textarea id="iLookAr" dir="rtl" rows="3">${esc(ind.look_fors_ar || "")}</textarea></label>
     <button class="btn primary small" id="saveInd">Save wording</button> <span class="muted" id="indSt" style="font-size:.85rem"></span></div>`;
+  if (!OWNER) html = html.replace('<span class="muted" id="indSt" style="font-size:.85rem"></span></div>', "");
   if (lesson) {
     html += `<div class="card" style="margin-top:16px"><h2>Feedback statements</h2>
       <p class="muted" style="margin-top:-6px">Choose a level to see and edit its statements. Edited or removed statements are retired, so past observations keep the wording they were given.</p>
@@ -40,8 +51,9 @@ function render(){
   $("panel").innerHTML = html;
 }
 function kindBlock(ind, kind){
-  const rows = stmts.filter(s => s.indicator_code === ind.code && s.level === curLevel && s.kind === kind && s.active !== false).sort((a, b) => a.sort - b.sort);
-  return `<div><h3>${KIND[kind]}</h3>${rows.map((s, i) => `<div class="srow"><div style="flex:1;display:flex;flex-direction:column;gap:4px"><textarea data-sid="${s.id}" rows="3">${esc(s.text)}</textarea><textarea data-sidar="${s.id}" dir="rtl" rows="3" placeholder="Arabic wording">${esc(s.text_ar || "")}</textarea></div>
+  const all = stmts.filter(s => s.indicator_code === ind.code && s.level === curLevel && s.kind === kind && s.active !== false).sort((a, b) => a.sort - b.sort);
+  const rows = all.filter(mineRow), fixed = all.filter(s => !mineRow(s));
+  return `<div><h3>${KIND[kind]}</h3>${fixed.length ? `<p class="muted" style="font-size:.82rem;margin:0 0 4px">From GrowNest (the same for every school):</p>${fixed.map(s => `<div class="ckp"><i></i>${esc(s.text)}</div>`).join("")}<p class="muted" style="font-size:.82rem;margin:10px 0 4px">${esc(SCHOOLNAME)}’s own statements:</p>` : ""}${rows.map((s, i) => `<div class="srow"><div style="flex:1;display:flex;flex-direction:column;gap:4px"><textarea data-sid="${s.id}" rows="3">${esc(s.text)}</textarea><textarea data-sidar="${s.id}" dir="rtl" rows="3" placeholder="Arabic wording">${esc(s.text_ar || "")}</textarea></div>
     <div class="sbtns"><button type="button" title="Move up" data-up="${s.id}" ${i === 0 ? "disabled" : ""}>↑</button><button type="button" title="Move down" data-down="${s.id}" ${i === rows.length - 1 ? "disabled" : ""}>↓</button><button type="button" title="Save" data-savest="${s.id}">Save</button><button type="button" title="Remove" data-rm="${s.id}" class="rm">Remove</button></div></div>`).join("") || '<p class="muted">No statements at this level yet.</p>'}
     <div class="srow"><div style="flex:1;display:flex;flex-direction:column;gap:4px"><textarea data-new="${kind}" rows="2" placeholder="Add a new statement…"></textarea><textarea data-newar="${kind}" dir="rtl" rows="2" placeholder="Arabic wording (optional)"></textarea></div><div class="sbtns"><button type="button" data-add="${kind}">Add</button></div></div></div>`;
 }
@@ -82,15 +94,16 @@ document.addEventListener("click", async e => {
     if (!text) return showMsg($("msg"), "A statement can’t be empty. Use Remove instead.", "err");
     if (text === old.text && textAr === (old.text_ar || null)) return;
     if (text === old.text) { if (await done(sb.from("statements").update({text_ar: textAr}).eq("id", old.id), "Arabic wording saved.")) { try { sessionStorage.removeItem("gn_ar_db"); } catch (_) {} await loadAll(); render(); } return; }
-    if (await done(sb.from("statements").insert({indicator_code: old.indicator_code, level: old.level, kind: old.kind, text, text_ar: textAr, sort: old.sort}))
+    if (await done(sb.from("statements").insert(Object.assign({indicator_code: old.indicator_code, level: old.level, kind: old.kind, text, text_ar: textAr, sort: old.sort}, old.school_id ? {school_id: old.school_id} : {})))
       && await done(sb.from("statements").update({active: false}).eq("id", old.id), "Statement updated.")) { await loadAll(); render(); } return; }
   if (b.dataset.rm) { if (!confirm("Remove this statement from the form? Past observations keep it.")) return;
     if (await done(sb.from("statements").update({active: false}).eq("id", b.dataset.rm), "Statement removed.")) { await loadAll(); render(); } return; }
   if (b.dataset.add) { const kind = b.dataset.add, ta = document.querySelector(`textarea[data-new="${kind}"]`), text = ta.value.trim(), textAr = (document.querySelector(`textarea[data-newar="${kind}"]`).value || "").trim() || null; if (!text) return;
     const n = stmts.filter(s => s.indicator_code === ind.code && s.level === curLevel && s.kind === kind && s.active !== false).length;
-    if (await done(sb.from("statements").insert({indicator_code: ind.code, level: curLevel, kind, text, text_ar: textAr, sort: n + 1}), "Statement added.")) { await loadAll(); render(); } return; }
+    const row = {indicator_code: ind.code, level: curLevel, kind, text, text_ar: textAr, sort: n + 1}; if (!OWNER) row.school_id = MYSCHOOL;
+    if (await done(sb.from("statements").insert(row), OWNER ? "Statement added for every school." : `Statement added for ${SCHOOLNAME}.`)) { await loadAll(); render(); } return; }
   if (b.dataset.up || b.dataset.down) { const id = b.dataset.up || b.dataset.down, s0 = stmts.find(s => s.id === id);
-    const rows = stmts.filter(s => s.indicator_code === s0.indicator_code && s.level === s0.level && s.kind === s0.kind && s.active !== false).sort((a, c) => a.sort - c.sort);
+    const rows = stmts.filter(s => s.indicator_code === s0.indicator_code && s.level === s0.level && s.kind === s0.kind && s.active !== false && mineRow(s)).sort((a, c) => a.sort - c.sort);
     const i = rows.findIndex(s => s.id === id), j = b.dataset.up ? i - 1 : i + 1; if (j < 0 || j >= rows.length) return;
     [rows[i], rows[j]] = [rows[j], rows[i]];
     for (let k = 0; k < rows.length; k++) await sb.from("statements").update({sort: k + 1}).eq("id", rows[k].id);

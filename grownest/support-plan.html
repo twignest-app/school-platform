@@ -50,7 +50,7 @@ async function init(){
   headerButtons([["app.html", "Dashboard"], ["observations.html", "Observations"]]);
   const pid = qs.get("id"), oid = qs.get("obs");
   const [i, s] = await Promise.all([sb.from("indicators").select("*").contains("used_in", ["formal_observation"]).order("sort"), sb.from("statements").select("*").order("sort")]);
-  inds = i.data || []; stmts = s.data || [];
+  inds = i.data || []; stmts = (s.data || []).filter(x => !x.school_id || String(x.school_id) === String(ctx.school.id));
   if (pid) { const { data, error } = await sb.from("gn_support_plans").select("*").eq("id", pid).maybeSingle(); if (error || !data) return fail(error ? friendly(error) : "This support plan could not be found."); plan = data; }
   else if (oid) { const { data } = await sb.from("gn_support_plans").select("*").eq("observation_id", oid).maybeSingle(); if (data) plan = data; }
   const obsId = plan ? plan.observation_id : oid;
