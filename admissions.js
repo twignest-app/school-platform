@@ -10,7 +10,8 @@ const fmtD = d => d ? new Date(String(d).length === 10 ? d + "T12:00:00" : d).to
 const ST = { new: ["New", "part"], reviewing: ["Being reviewed", "part"], assessment: ["Assessment booked", "part"], offered: ["Offer sent", "ok"], accepted: ["Accepted: ready to enrol", "ok"], enrolled: ["Enrolled", "ok"], waitlist: ["Waiting list", "none"], declined: ["Declined", "warn"], withdrawn: ["Withdrawn", "none"] };
 const OPEN = ["new", "reviewing", "assessment", "offered", "accepted"];
 
-let me, school, C = {}, setupId, year, canEdit = false, apps = [], classes = [], ui = { st: "open", grade: "" };
+let FEES = "N", me, school, C = {}, setupId, year, canEdit = false, apps = [], classes = [], ui = { st: "open", grade: "" };
+const feeItems = g => (((C.fees || {}).items) || []).map(f => ({ id: f.id, label: f.label, amount: Number((f.amounts || {})[g] || 0) })).filter(f => f.amount > 0);
 const gName = id => ((C.grades || []).find(g => String(g.id) === String(id)) || {}).name || "";
 const mail = id => sb.functions.invoke("nestopia-mail", { body: { action: "admission", id } }).catch(() => {});
 function fail(t){ app.innerHTML = `<div class="card"><div class="msg">${esc(t)}</div></div>`; }
@@ -24,7 +25,7 @@ async function start(){
   const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single(); school = s;
   if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
   if (window.hubInit) hubInit("admissions");
-  const lv = (await NestAccess.mine(sb)).admissions || "N"; if (lv === "N") return; canEdit = lv === "E";
+  const MY = await NestAccess.mine(sb), lv = MY.admissions || "N"; if (lv === "N") return; canEdit = lv === "E"; FEES = MY.fees || "N";
   const set = await sb.from("school_setups").select("id,year,config").eq("school_id", school.id).order("updated_at", { ascending: false }).limit(1);
   if (set.data && set.data[0]) { setupId = set.data[0].id; C = set.data[0].config || {}; year = set.data[0].year; }
   let cq = sb.from("classes").select("id,name,grade_id").eq("school_id", school.id); if (year) cq = cq.eq("year", year);
@@ -113,13 +114,18 @@ function enrolDialog(a){
     ${a.status === "offered" ? `<p class="okmsg" style="background:var(--amber-soft);color:var(--amber)">The family hasn’t accepted the offer in Nestopia yet. Enrol only if they told you they accept.</p>` : ""}
     <label class="f">Name on the school record<input type="text" id="en" value="${esc(a.child.name || "")}" required></label>
     <label class="f">Class<select id="ec" required><option value="">Choose…</option>${cl.length ? `<optgroup label="${esc(gName(g))}">${cl.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</optgroup>` : ""}${other.length ? `<optgroup label="Other classes">${other.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</optgroup>` : ""}</select></label>
+    ${FEES === "E" && feeItems(g).length ? `<div class="box"><h3>💳 First invoice (optional)</h3><div class="checks">${feeItems(g).map(f => `<label><input type="checkbox" data-fi="${esc(f.id)}"> ${esc(f.label)}: ${esc(((C.fees || {}).currency) || "AED")} ${Number(f.amount).toLocaleString("en-GB")}</label>`).join("")}</div>
+      <div class="two" style="margin-top:6px"><label class="f">Title<input type="text" id="fit" value="Registration and fees"></label><label class="f">Due date<input type="date" id="fid"></label></div></div>` : ""}
     <p class="note" style="margin:0">This adds the student to the class, copies their health notes into the medical record and the parents into family contacts, makes the parent portal invitation and emails it to the family.</p>
     <div class="row" style="justify-content:flex-end"><button class="btn ghost" value="cancel" formnovalidate>Cancel</button><button class="btn" value="ok" id="eb">Enrol</button></div></form>`;
   dlg.showModal(); dlg.onchange = null; dlg.onclick = null;
   dlg.querySelector("form").onsubmit = async e => { if (!e.submitter || e.submitter.value !== "ok") return; e.preventDefault(); document.getElementById("eb").disabled = true;
-    const { error } = await sb.rpc("admissions_enrol", { p_id: a.id, p_class: document.getElementById("ec").value, p_name: document.getElementById("en").value });
+    const picked = [...dlg.querySelectorAll("[data-fi]:checked")].map(x => feeItems(g).find(f => f.id === x.dataset.fi)).filter(Boolean), fit = (document.getElementById("fit") || {}).value, fid = (document.getElementById("fid") || {}).value;
+    const { data: newSid, error } = await sb.rpc("admissions_enrol", { p_id: a.id, p_class: document.getElementById("ec").value, p_name: document.getElementById("en").value });
     if (error) { document.getElementById("eb").disabled = false; return alert(error.message); }
     try { await sb.rpc("parent_make_codes"); } catch (_) {}
+    if (picked.length && newSid) { const { error: fe } = await sb.rpc("fees_create", { p_students: [String(newSid)], p_title: (fit || "Registration and fees").trim(), p_items: picked.map(f => ({ label: f.label, amount: f.amount })), p_due: fid || null, p_discounts: {} });
+      if (fe) alert("The child is enrolled, but the invoice wasn’t made: " + fe.message); }
     mail(a.id); dlg.close(); toast("Enrolled. The family has been emailed their parent portal invitation."); await load(); detail(a.id); };
 }
 function settings(){
