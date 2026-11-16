@@ -59,6 +59,7 @@ h3.strand{font-size:16px;font-weight:600;margin:18px 0 6px;color:var(--ink)}
 .sec{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
 .sec b{display:block;font-size:16px;color:var(--ink)}
 @media (max-width:640px){.obj{grid-template-columns:1fr}.sec{text-align:left}}
+.tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;margin:2px 4px 2px 0;text-decoration:none}.tag.sod{background:var(--plum-soft);color:var(--plum)}
 </style>
 </head>
 <body>
@@ -81,7 +82,7 @@ document.title = "Planning · " + PLATFORM;
 document.getElementById("brand").textContent = PLATFORM;
 
 const DEF_OS = [{ code: "s", kind: "secure" }, { code: "n", kind: "notyet" }, { code: "e", kind: "exceed" }];
-let C, classes = [], studs = [], TG = {}, ST = {}, school;
+let C, classes = [], studs = [], TG = {}, ST = {}, school, UNITS = {};
 let ui = { term: "all", pick: null, filter: "" };
 
 function fail(text){ app.innerHTML = `<div class="card"><div class="msg">${esc(text)}</div><p style="margin-top:14px"><a class="btn ghost" href="./">← Back to ${esc(PLATFORM)}</a></p></div>`; }
@@ -106,7 +107,7 @@ async function start(){
   school = s;
   if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
   if (!(school.modules || []).includes("planning")) return fail("Planning isn’t switched on for your school yet.");
-  if (!["school_lead", "coordinator"].includes(p.role)) return fail("The curriculum coverage map is for school leaders. Teachers will get their own view soon.");
+  if (!["school_lead", "coordinator"].includes(p.role)) { location.href = "units.html"; return; }   // teachers plan in Units and lessons
   app.innerHTML = `<p class="note">Checking every objective… this can take a few seconds.</p>`;
   try { await load(); } catch (e) { return fail("The coverage map couldn’t load: " + (e.message || e)); }
   render();
@@ -125,6 +126,7 @@ async function load(){
   const sIds = new Set(studs.map(x => x.id));
   TG = {}; ST = {};
   (await fetchAll("taught", "class_id,obj_id")).forEach(x => { if (cIds.has(x.class_id)) (TG[x.class_id] = TG[x.class_id] || new Set()).add(x.obj_id); });
+  UNITS = {}; try { (await fetchAll("unit_plans", "id,title,grade_id,objectives")).forEach(u => (u.objectives || []).forEach(o => (UNITS[o] = UNITS[o] || []).push(u))); } catch (_) {}   // the unit planner
   (await fetchAll("objective_status", "student_id,obj_id,status")).forEach(x => { if (sIds.has(x.student_id)) (ST[x.obj_id] = ST[x.obj_id] || []).push([x.student_id, x.status]); });
 }
 
@@ -159,9 +161,9 @@ function cellData(grade, subject){
 
 function render(){
   const grades = C.grades || [], subjects = C.subjects || [];
-  let total = 0, assessed = 0, notTaught = 0;
+  let total = 0, assessed = 0, notTaught = 0, plannedN = 0;
   grades.forEach(g => subjects.forEach(sj => { const gc = classes.filter(cl => cl.grade_id === g.id);
-    objectives(g, sj).forEach(({ o }) => { total++; const s = statusOf(o, gc); if (s.marks) assessed++; if (!s.taughtIn.length) notTaught++; }); }));
+    objectives(g, sj).forEach(({ o }) => { total++; const s = statusOf(o, gc); if (s.marks) assessed++; if (!s.taughtIn.length) notTaught++; if ((UNITS[o.id] || []).some(u => String(u.grade_id) === String(g.id))) plannedN++; }); }));
   let overallPairs = 0, overallTaught = 0;
   grades.forEach(g => subjects.forEach(sj => { const gc = classes.filter(cl => cl.grade_id === g.id);
     objectives(g, sj).forEach(({ o }) => { overallPairs += gc.length; overallTaught += statusOf(o, gc).taughtIn.length; }); }));
@@ -171,7 +173,8 @@ function render(){
       <div class="metric"><span>Objectives to cover</span><b>${total}</b></div>
       <div class="metric"><span>Taught</span><b>${pct(overallTaught, overallPairs)}%</b></div>
       <div class="metric"><span>Assessed</span><b>${pct(assessed, total)}%</b></div>
-      <div class="metric"><span>Not taught in any class yet</span><b>${notTaught}</b></div></div>
+      <div class="metric"><span>Not taught in any class yet</span><b>${notTaught}</b></div>
+      <div class="metric"><span>Planned in a unit</span><b>${pct(plannedN, total)}%</b><a href="units.html" class="note">Units and lessons →</a></div></div>
     <div class="card"><h2>Coverage by grade and subject</h2>
       <p class="note">Each box shows how much of that grade’s curriculum has been taught across its classes. Click a box to see every objective.</p>
       ${grades.length && subjects.length ? `<div class="tablewrap"><table class="grid"><tr><th>Grade</th>${subjects.map(sj => `<th>${esc(sj.name)}</th>`).join("")}</tr>
@@ -197,16 +200,17 @@ function detail(){
   const rows = objectives(g, sj).map(x => Object.assign(x, statusOf(x.o, gc)));
   const LABEL = { n: "Not taught yet", p: "Taught in some classes", t: "Taught", a: "Assessed" };
   const n = k => rows.filter(r => r.kind === k).length;
-  const shown = rows.filter(r => !ui.filter || r.kind === ui.filter);
+  rows.forEach(r => r.units = (UNITS[r.o.id] || []).filter(u => String(u.grade_id) === String(g.id)));
+  const shown = rows.filter(r => !ui.filter || (ui.filter === "np" ? !r.units.length : r.kind === ui.filter));
   const strands = [...new Set(shown.map(r => r.strand))];
   const box = document.getElementById("detail");
   box.innerHTML = `<div class="card"><div class="phead" style="margin-bottom:6px"><div><h2 style="margin:0">${esc(g.name)} · ${esc(sj.name)}</h2>
       <p class="note" style="margin:0">${gc.length} class${gc.length === 1 ? "" : "es"}: ${esc(gc.map(c => c.name).join(", "))}</p></div>
       <div class="row"><button type="button" class="btn ghost small" id="csv">Download CSV</button><button type="button" class="btn ghost small" id="close">Close</button></div></div>
-    <div class="chips">${[["", "All " + rows.length], ["n", "Not taught yet " + n("n")], ["p", "Some classes " + n("p")], ["t", "Taught " + n("t")], ["a", "Assessed " + n("a")]]
+    <div class="chips">${[["", "All " + rows.length], ["n", "Not taught yet " + n("n")], ["p", "Some classes " + n("p")], ["t", "Taught " + n("t")], ["a", "Assessed " + n("a")], ["np", "Not in a unit " + rows.filter(r => !r.units.length).length]]
       .map(([k, l]) => `<button type="button" class="chip" data-f="${k}" aria-pressed="${ui.filter === k}">${l}</button>`).join("")}</div>
     ${strands.map(st => `<h3 class="strand">${esc(st)}</h3>${shown.filter(r => r.strand === st).map(r => `<div class="obj"><span class="st ${r.kind}">${LABEL[r.kind]}</span>
-        <div>${esc(r.o.text)}<small>${esc(r.term)}${gc.length > 1 ? ` · taught in ${r.taughtIn.length} of ${gc.length} classes${r.taughtIn.length && r.taughtIn.length < gc.length ? " (" + esc(r.taughtIn.map(c => c.name).join(", ")) + ")" : ""}` : ""}</small></div>
+        <div>${esc(r.o.text)}${r.units.map(u => ` <a class="tag sod" href="units.html#unit=${esc(u.id)}">📘 ${esc(u.title)}</a>`).join("")}<small>${esc(r.term)}${gc.length > 1 ? ` · taught in ${r.taughtIn.length} of ${gc.length} classes${r.taughtIn.length && r.taughtIn.length < gc.length ? " (" + esc(r.taughtIn.map(c => c.name).join(", ")) + ")" : ""}` : ""}</small></div>
         <div class="sec">${r.marks ? `<b>${pct(r.secure, r.marks)}%</b>secure (${r.marks} marked)` : ""}</div></div>`).join("")}`).join("") || `<p class="note">No objectives in this group.</p>`}</div>`;
   box.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { ui.filter = b.dataset.f; detail(); });
   document.getElementById("close").onclick = () => { ui.pick = null; render(); };

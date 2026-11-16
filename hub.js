@@ -29,6 +29,8 @@
     ["attendance", "Attendance", "attendance.html", null],
     ["behaviour", "Behaviour", "behaviour.html", "behaviour"],
     ["planning", "Planning", "planning.html", "planning"],
+    ["sub", "Curriculum coverage", "planning.html", "planning", false, "planning"],
+    ["units", "Units and lessons", "units.html", "planning", false, "planning"],
     ["grownest", "GrowNest", "grownest/app.html", "grownest"],
     ["twignest", "TwigNest", "twignest/", "twignest"],
     ["sub", "My classes", "twignest/#sheets", "twignest", false, "twignest"],
