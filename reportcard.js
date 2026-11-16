@@ -7,7 +7,7 @@
     title: "Student Progress Report", titleAr: "تقرير تقدّم الطالب", nameAr: "", logo: "",
     color: "#33405A", accent: "#7BB3E6", bilingual: true,
     show: { arabicName: true, studentNumber: true, teachers: true, issued: true, nextTerm: true, attendance: true, late: true, stars: true, key: true, signatures: true, parentAck: true },
-    levelStyle: "bar", levelNames: [], subjects: {},
+    levelStyle: "bar", levelNames: [], subjects: {}, commentMode: "strand", commentModes: {},
     sig: [{ role: "Class teacher", name: "" }, { role: "Principal", name: "" }],
     footer: "Shared with families on the Nestopia Parent Portal",
     termInfo: {}, parents: "publish", published: {}
@@ -23,6 +23,9 @@
     if (isNaN(n)) return "#EEF3FA"; const r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255, f = x => Math.round(x * a + 255 * (1 - a));
     return "#" + [f(r), f(g), f(b)].map(x => x.toString(16).padStart(2, "0")).join(""); };
 
+  // what teachers write for a subject: one comment per strand, or one comment for the whole subject
+  const modeOf = (S, sub) => (S.commentModes || {})[sub.id] || S.commentMode || "strand";
+  const units = (card, sub) => modeOf(settings(card), sub) === "subject" ? [{ id: "subj:" + sub.id, name: sub.name, whole: true }] : (sub.strands || []);
   /* d = { card, scale, subjects, termName, termIndex, year, school, student:{name,arabic,number,cls}, teachers:[], att:{n,in,late}, stars, cm(strandId) → {level,text} } */
   function render(d) {
     const S = settings(d.card), col = S.color || DEF.color, acc = S.accent || DEF.accent, soft = mix(acc, .16), line = "#D9E0EA";
@@ -77,14 +80,20 @@
     let any = false;
     (d.subjects || []).forEach(sub => {
       const how = (S.subjects || {})[sub.id] || "table"; if (how === "hide") return;
-      const items = (sub.strands || []).map(stx => [stx, d.cm(stx.id)]).filter(([, c]) => c && (c.text || c.level != null)); if (!items.length) return;
+      const has = c => c && (c.text || (c.level != null && c.level !== ""));
+      let items = units(S, sub).map(stx => [stx, d.cm(stx.id)]).filter(([, c]) => has(c));
+      // one comment per subject, but only strand comments written so far: show those rather than nothing
+      if (!items.length && modeOf(S, sub) === "subject") items = (sub.strands || []).map(stx => [stx, d.cm(stx.id)]).filter(([, c]) => has(c));
+      if (!items.length) return; const whole = items.length === 1 && items[0][0].whole;
       any = true; const rtl = sub.lang === "ar" ? ' dir="rtl" lang="ar"' : "";
       if (how === "box") { flush();
-        items.forEach(([stx, c]) => { const title = items.length === 1 ? sub.name : sub.name + " · " + stx.name;
+        items.forEach(([stx, c]) => { const title = items.length === 1 || stx.whole ? sub.name : sub.name + " · " + stx.name;
           h += `<div style="border:1px solid ${line};border-radius:12px;padding:12px 14px;margin-top:12px;line-height:1.5;page-break-inside:avoid">
             <div style="font-family:Poppins,Arial,sans-serif;font-size:14px;font-weight:700;color:${col};margin-bottom:5px">${esc(title)}${c.level != null && c.level !== "" && S.levelStyle !== "hide" ? ` <span style="font-family:'Nunito Sans',Arial,sans-serif;font-size:11px;font-weight:800;border-radius:20px;padding:2px 9px;background:${soft};color:${col};margin-left:6px">${esc(lab(c.level))}${lvName(+c.level) ? " · " + esc(lvName(+c.level)) : ""}</span>` : ""}</div>
             <div${rtl} style="white-space:pre-line">${esc(c.text || "")}</div></div>`; });
         return; }
+      if (whole) { const c = items[0][1];
+        table += `<tr style="page-break-inside:avoid"><td style="${cell};font-family:Poppins,Arial,sans-serif;font-weight:600;color:${col};font-size:13px;background:${soft}">${esc(sub.name)}</td>${S.levelStyle === "hide" ? "" : `<td style="${cell}">${meter(c.level)}</td>`}<td style="${cell};white-space:pre-line"${rtl}>${esc(c.text || "")}</td></tr>`; return; }
       table += `<tr style="page-break-inside:avoid"><td colspan="${S.levelStyle === "hide" ? 2 : 3}" style="background:${soft};font-family:Poppins,Arial,sans-serif;font-weight:600;color:${col};font-size:13px;padding:6px 9px">${esc(sub.name)}</td></tr>` +
         items.map(([stx, c]) => `<tr style="page-break-inside:avoid"><td style="${cell};font-weight:800"${rtl}>${esc(stx.name)}</td>${S.levelStyle === "hide" ? "" : `<td style="${cell}">${meter(c.level)}</td>`}<td style="${cell};white-space:pre-line"${rtl}>${esc(c.text || "")}</td></tr>`).join("");
     });
@@ -116,5 +125,5 @@
       <script>window.onload = () => setTimeout(() => window.print(), 600);<\/script></body></html>`);
     w.document.close();
   }
-  window.ReportCard = { render, settings, printPage, DEF, esc, fmtDate };
+  window.ReportCard = { render, settings, printPage, DEF, esc, fmtDate, units, modeOf };
 })();

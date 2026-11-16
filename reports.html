@@ -118,7 +118,7 @@ input[type=color]{width:48px;height:36px;border:1px solid var(--line);border-rad
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="hub.js?v=19"></script>
-<script src="reportcard.js?v=1"></script>
+<script src="reportcard.js?v=2"></script>
 <script>
 /* Keep this the same as in index.html */
 const PLATFORM = "Nestopia";
@@ -132,7 +132,8 @@ let setupId = null, checker = false, rcs = {}, staff = [], starsBy = {}, me, sch
 const cls = id => classes.find(c => String(c.id) === String(id)) || {};
 function fail(t){ app.innerHTML = `<div class="card"><div class="msg">${esc(t)}</div></div>`; }
 async function fetchAll(q){ const out = []; for (let f = 0; ; f += 1000) { const { data, error } = await q().range(f, f + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; } return out; }
-const strandsFor = c => (C.subjects || []).flatMap(sb => sb.strands.map(st => [sb, st]));
+// the comments each student needs: every strand, or one per subject (Template settings → Comments)
+const strandsFor = c => (C.subjects || []).filter(sb => ((ReportCard.settings(C.card).subjects || {})[sb.id] || "table") !== "hide").flatMap(sb => ReportCard.units(C.card, sb).map(st => [sb, st]));
 
 (async function start(){
   const { data: { session } } = await sb.auth.getSession(); if (!session) { location.href = "./"; return; }
@@ -264,7 +265,11 @@ async function openCard(sid, order){
   const ACT = { ready: "marked it ready for checking", check: "checked it", back: "sent it back to the teacher", send: "sent it to parents", reopen: "took it back from parents" };
   const stepper = [["Teacher", info.stage !== "draft"]].concat(S.map((x, k) => [x.name, d >= k + 1 && info.stage !== "draft"])).concat([["Parents", info.stage === "sent"]]);
   const editor = () => (C.subjects || []).map(sub => { const ar = sub.lang === "ar" ? ' dir="rtl" lang="ar"' : "";
-    return `<h3 class="strand" style="margin-top:14px;color:var(--plum)">${esc(sub.name)}</h3>` + (sub.strands || []).map(st => { const c = cmOf(s.id, st.id, t) || {};
+    if ((cardSet().subjects || {})[sub.id] === "hide") return "";
+    const whole = ReportCard.modeOf(cardSet(), sub) === "subject", olds = whole ? (sub.strands || []).map(st => cmOf(s.id, st.id, t)).filter(c => c && c.text) : [];
+    return `<h3 class="strand" style="margin-top:14px;color:var(--plum)">${esc(sub.name)}${whole ? ' <span class="note" style="font-weight:600">· one comment for the subject</span>' : ""}</h3>`
+      + (whole && olds.length && !(cmOf(s.id, "subj:" + sub.id, t) || {}).text ? `<p class="note" style="margin:0 0 4px">Strand comments from TwigNest (for reference): ${olds.map(c => esc(c.text)).join(" · ")}</p>` : "")
+      + ReportCard.units(C.card, sub).map(st => { const c = cmOf(s.id, st.id, t) || {};
       return `<div style="display:grid;grid-template-columns:minmax(120px,170px) 130px 1fr;gap:10px;align-items:start;padding:8px 0;border-bottom:1px solid var(--line)">
         <b style="font-size:14px"${ar}>${esc(st.name)}</b>
         <select data-lv="${esc(st.id)}" aria-label="${esc(st.name)} level"><option value="">No level</option>${scale.map((x, i) => `<option value="${i}" ${String(c.level) === String(i) && c.level != null && c.level !== "" ? "selected" : ""}>${esc(x)}${(cardSet().levelNames || [])[i] ? " · " + esc(cardSet().levelNames[i]) : ""}</option>`).join("")}</select>
@@ -407,8 +412,11 @@ function templatePane(){
       <label class="f">How to show each level<select data-k="levelStyle">${[["bar", "Level, progress bar and name"], ["number", "Level and name"], ["name", "Name only"], ["hide", "Don’t show levels (comments only)"]].map(([v, l]) => `<option value="${v}" ${S.levelStyle === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
       <p class="note" style="margin:8px 0 4px">Optional name for each level, shown on the report card and in the key:</p>
       <div class="f2">${scale.map((x, i) => `<label class="f">Level ${esc(x)}<input type="text" data-lvname="${i}" value="${esc((S.levelNames || [])[i] || "")}" placeholder="e.g. Secure"></label>`).join("")}</div></fieldset>
+    <fieldset><legend>Comments</legend><p class="note" style="margin-top:0">How teachers write report comments. You can change it for single subjects below.</p>
+      <div class="checks" style="flex-direction:column;align-items:flex-start;gap:6px"><label><input type="radio" name="cmode" data-k="commentMode" value="strand" ${S.commentMode !== "subject" ? "checked" : ""}> One comment and level for <b>each strand</b> (e.g. Reading, Writing)</label>
+        <label><input type="radio" name="cmode" data-k="commentMode" value="subject" ${S.commentMode === "subject" ? "checked" : ""}> One comment and level for <b>each subject</b> (e.g. English)</label></div></fieldset>
     <fieldset><legend>Subjects</legend><p class="note" style="margin-top:0">In the TwigNest order. “Comment box” suits a class teacher’s comment, learner skills or goals.</p>
-      ${(C.subjects || []).map(sub => `<div class="row" style="justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--line)"><b>${esc(sub.name)}</b><select data-sub="${esc(sub.id)}">${[["table", "In the table"], ["box", "Comment box"], ["hide", "Don’t show"]].map(([v, l]) => `<option value="${v}" ${((S.subjects || {})[sub.id] || "table") === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>`).join("")}</fieldset>
+      ${(C.subjects || []).map(sub => `<div class="row" style="justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--line)"><b>${esc(sub.name)}</b><span class="row"><select data-cmode="${esc(sub.id)}" aria-label="${esc(sub.name)} comments">${[["", "Comments: school setting"], ["strand", "A comment per strand"], ["subject", "One comment for the subject"]].map(([v, l]) => `<option value="${v}" ${((S.commentModes || {})[sub.id] || "") === v ? "selected" : ""}>${l}</option>`).join("")}</select><select data-sub="${esc(sub.id)}">${[["table", "In the table"], ["box", "Comment box"], ["hide", "Don’t show"]].map(([v, l]) => `<option value="${v}" ${((S.subjects || {})[sub.id] || "table") === v ? "selected" : ""}>${l}</option>`).join("")}</select></span></div>`).join("")}</fieldset>
     <fieldset><legend>Signature lines</legend><p class="note" style="margin-top:0">Leave the name empty on a teacher line to use the class teacher’s name.</p>
       ${[0, 1, 2].map(i => `<div class="f2" style="margin-bottom:6px"><label class="f">Role<input type="text" data-sig="${i}|role" value="${esc((S.sig[i] || {}).role || "")}" placeholder="${i === 2 ? "e.g. Head of Primary" : ""}"></label><label class="f">Name<input type="text" data-sig="${i}|name" value="${esc((S.sig[i] || {}).name || "")}"></label></div>`).join("")}</fieldset>
     <fieldset><legend>Dates for each term</legend>${C.terms.map((t, k) => { const x = (S.termInfo || {})[k] || {}; return `<div class="f2" style="margin-bottom:6px"><label class="f">${esc(t)} · issued<input type="date" data-term="${k}|issued" value="${esc(x.issued || "")}"></label><label class="f">${esc(t)} · next term starts<input type="date" data-term="${k}|next" value="${esc(x.next || "")}"></label></div>`; }).join("")}</fieldset>
@@ -436,10 +444,11 @@ function templatePane(){
   f.addEventListener("input", e => { const t = e.target;
     if (t.dataset.stepname) { W.steps[+t.dataset.stepname].name = t.value.trim(); msg.textContent = "Not saved yet"; return; }
     if (t.dataset.steppp) { const [k, id] = t.dataset.steppp.split("|"), pp = new Set(W.steps[+k].people || []); t.checked ? pp.add(id) : pp.delete(id); W.steps[+k].people = [...pp]; msg.textContent = "Not saved yet"; t.closest(".box").querySelector("p.note").textContent = `Who does this check (${pp.size} chosen):`; return; }
-    if (t.dataset.k) W[t.dataset.k] = t.type === "checkbox" ? t.checked : t.value;
+    if (t.dataset.k && !(t.type === "radio" && !t.checked)) W[t.dataset.k] = t.type === "checkbox" ? t.checked : t.value;
     if (t.dataset.show) W.show[t.dataset.show] = t.checked;
     if (t.dataset.lvname) { W.levelNames = (W.levelNames || []).slice(); W.levelNames[+t.dataset.lvname] = t.value.trim(); }
     if (t.dataset.sub) { W.subjects = Object.assign({}, W.subjects); W.subjects[t.dataset.sub] = t.value; }
+    if (t.dataset.cmode) { W.commentModes = Object.assign({}, W.commentModes); if (t.value) W.commentModes[t.dataset.cmode] = t.value; else delete W.commentModes[t.dataset.cmode]; }
     if (t.dataset.sig) { const [i, k] = t.dataset.sig.split("|"); W.sig = [0, 1, 2].map(n => Object.assign({ role: "", name: "" }, W.sig[n] || {})); W.sig[+i][k] = t.value; }
     if (t.dataset.term) { const [k, x] = t.dataset.term.split("|"); W.termInfo = Object.assign({}, W.termInfo); W.termInfo[k] = Object.assign({}, W.termInfo[k], { [x]: t.value }); }
     if (t.id !== "logo") paint(); });
