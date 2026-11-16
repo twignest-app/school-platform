@@ -266,6 +266,7 @@ function lessonDialog(l){
       <label class="f">Date<input type="date" name="date" value="${esc(l.lesson_date || "")}"${can ? "" : " disabled"}></label></div>
     <div><p class="note" style="margin:0 0 4px"><b>Objectives for this lesson</b> (from the unit)</p>
       ${uo.length ? `<div id="lobj"></div>` : `<p class="note">Add objectives to the unit first.</p>`}</div>
+    <details class="box" id="needs"><summary style="cursor:pointer"><b>🧩 Students with support plans</b> <span class="note" id="needsN">(checking…)</span></summary><div id="needsBox" style="margin-top:8px"></div></details>
     <div class="secs">${LESSON_FIELDS.map(([k, lab]) => `<label class="f">${lab}<textarea rows="2" dir="auto" name="f_${k}"${can ? "" : " disabled"}>${esc((l.fields || {})[k] || "")}</textarea></label>`).join("")}</div>
     ${isNew ? "" : `<div class="box"><h3>✔ Taught</h3><p class="note" style="margin:0 0 6px">Tick each class once it has had this lesson. Its objectives are then ticked as taught for that class in TwigNest and on Curriculum coverage.</p>
       <div class="checks">${gc.map(c => `<label><input type="checkbox" name="tc" value="${esc(c.id)}" ${done.has(String(c.id)) ? "checked" : ""}${canTeach(c.id) ? "" : " disabled"}> ${esc(c.name)}</label>`).join("") || '<span class="note">No classes in this grade yet.</span>'}</div></div>`}
@@ -306,6 +307,17 @@ function lessonDialog(l){
       }
       dlg.close(); toast(isNew ? "Lesson added. Open it again to mark classes as taught." : "Lesson saved."); openUnit(u.id);
     } catch (err) { btn.disabled = false; alert("This wasn’t saved: " + (err.message || err)); } };
+  loadNeeds(u).then(list => { const n = dlg.querySelector("#needsN"), box = dlg.querySelector("#needsBox"); if (!n) return;
+    if (list === null) { dlg.querySelector("#needs").hidden = true; return; }
+    n.textContent = list.length ? `(${list.length} in your classes)` : "(none in your classes)";
+    box.innerHTML = list.length ? list.map((x, i) => `<div class="crow" style="align-items:flex-start"><div style="flex:1"><b>${esc(x.name)}</b> <span class="note">${esc(x.cls)}</span> ${(x.cats || []).map(c => `<span class="tag sod">${esc(c)}</span>`).join(" ")}
+        ${x.plans.map(p => `<div class="note" style="margin-top:4px"><b>${esc((p.kind || "plan").toUpperCase())}${p.title ? " · " + esc(p.title) : ""}</b>${p.strategies ? `<br>Strategies: ${esc(p.strategies)}` : ""}</div>`).join("")}
+        ${x.targets.length ? `<ul style="margin:4px 0 0 18px;padding:0;font-size:14px">${x.targets.map(t => `<li>${t.area ? `<b>${esc(t.area)}:</b> ` : ""}${esc(t.target || "")}${t.strategy ? ` <span class="note">(${esc(t.strategy)})</span>` : ""}</li>`).join("")}</ul>` : ""}</div>
+        ${can ? `<button type="button" class="btn ghost small" data-addneed="${i}">Add to Support</button>` : ""}</div>`).join("")
+      : `<p class="note" style="margin:0">No students in your classes have an active IEP or support plan.</p>`;
+    box.querySelectorAll("[data-addneed]").forEach(b => b.onclick = () => { const x = list[+b.dataset.addneed], ta = f.f_support;
+      const line = `${x.name}: ` + (x.targets.length ? x.targets.map(t => (t.strategy || t.target)).filter(Boolean).join("; ") : (x.plans[0] && x.plans[0].strategies) || "follow support plan");
+      ta.value = (ta.value ? ta.value.trim() + "\n" : "") + line; b.textContent = "Added ✓"; b.disabled = true; }); });
   const nk = dlg.querySelector("#nlK"); if (nk) nk.onchange = () => { dlg.querySelector("#nlDw").hidden = nk.value === "material"; };
   const ng = dlg.querySelector("#nlGo"); if (ng) ng.onclick = async () => {
     const cls = [...dlg.querySelectorAll(".nlC:checked")].map(x => x.value), k = nk.value, t = dlg.querySelector("#nlT").value.trim(), body = dlg.querySelector("#nlB").value.trim();
@@ -318,6 +330,26 @@ function lessonDialog(l){
   const dl = dlg.querySelector("#delL"); if (dl) dl.onclick = async () => { if (!confirm("Delete this lesson? Objectives already ticked as taught stay ticked.")) return;
     const { error } = await sb.from("lesson_plans").delete().eq("id", l.id); if (error) return alert(error.message); dlg.close(); openUnit(u.id); };
   dlg.showModal();
+}
+
+/* ---------- IEPs and support plans for the students this teacher teaches (from Inclusion) ---------- */
+async function loadNeeds(u){
+  if (ui.needs && ui.needs.unit === u.id) return ui.needs.list;
+  try {
+    const cl = gradeClasses(u.grade_id).filter(c => lead || myClassIds.has(String(c.id))); if (!cl.length) return [];
+    const st = ((await sb.from("students").select("id,full_name,class_id,archived").in("class_id", cl.map(c => c.id))).data || []).filter(x => !x.archived);
+    if (!st.length) return [];
+    const ids = st.map(x => String(x.id));
+    const [reg, pl] = await Promise.all([sb.from("inclusion_students").select("student_id,categories,active").in("student_id", ids),
+      sb.from("inclusion_plans").select("id,student_id,kind,title,strategies,status").in("student_id", ids).eq("status", "active")]);
+    if (reg.error && pl.error) return null;   // Inclusion isn't set up or not shared with teachers
+    const plans = pl.data || [], tg = plans.length ? ((await sb.from("inclusion_targets").select("plan_id,area,target,strategy,position").in("plan_id", plans.map(p => p.id)).order("position")).data || []) : [];
+    const onReg = new Map((reg.data || []).filter(r => r.active !== false).map(r => [String(r.student_id), r.categories || []]));
+    const list = st.filter(x => onReg.has(String(x.id)) || plans.some(p => String(p.student_id) === String(x.id))).map(x => {
+      const ps = plans.filter(p => String(p.student_id) === String(x.id));
+      return { name: x.full_name, cls: (classes.find(c => String(c.id) === String(x.class_id)) || {}).name || "", cats: onReg.get(String(x.id)) || [], plans: ps, targets: tg.filter(t => ps.some(p => p.id === t.plan_id)) }; });
+    ui.needs = { unit: u.id, list }; return list;
+  } catch (_) { return null; }
 }
 
 /* ---------- share a unit with parents ---------- */
