@@ -58,6 +58,8 @@
       const m = await sb.from("staff_cover").select("id").eq("day", t).eq("cover_id", p.id); if (!m.error && (m.data || []).length) note(place, "🧑‍🏫", `You are covering ${m.data.length} lesson${m.data.length === 1 ? "" : "s"} today.`, "leave.html#mine", "See the cover work");
       const w = await sb.from("staff_cover").select("id").eq("absent_id", p.id).gte("day", t).is("work", null); if (!w.error && (w.data || []).length) note(place, "📋", `Add cover work for ${w.data.length} lesson${w.data.length === 1 ? "" : "s"} while you’re away.`, "leave.html#mine", "Add cover work");
     })());
+    // access requests (leaders)
+    if (p.role === "school_lead") jobs.push((async () => { const r = await sb.from("access_requests").select("id", { count: "exact", head: true }).eq("status", "pending"); if (!r.error && r.count) note(place, "🔑", `${r.count} request${r.count === 1 ? "" : "s"} for access waiting for you.`, "access.html#requests", "Answer"); })());
     // Nestlings: students' posts waiting for approval in my classes
     jobs.push((async () => {
       const r = await sb.from("nestling_posts").select("class_id").eq("status", "pending"); if (r.error) return;

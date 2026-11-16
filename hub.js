@@ -14,6 +14,7 @@
     calendar: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
     timetable: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11M15 9v11M3 14.5h18"/>',
     pickup: '<circle cx="8" cy="7" r="3"/><circle cx="16.5" cy="9" r="2.3"/><path d="M2.5 20a5.5 5.5 0 0 1 11 0M13 20a3.6 3.6 0 0 1 7.5 0"/>',
+    access: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0"/><rect x="15" y="11" width="6" height="5" rx="1"/><path d="M16.5 11V9.5a1.5 1.5 0 0 1 3 0V11"/>',
     leave: '<circle cx="12" cy="7" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/><path d="M17 4l4 4M21 4l-4 4"/>',
     trips: '<path d="M4 16V8a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v8"/><path d="M3 16h18v2H3zM4 11h16"/><circle cx="7.5" cy="19.5" r="1.5"/><circle cx="16.5" cy="19.5" r="1.5"/>',
     inclusion: '<path d="M12 20s-7-4.3-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.7-7 10-7 10z"/>',
@@ -35,6 +36,7 @@
     ["planning", "Planning", "planning.html", "planning"],
     ["sub", "Curriculum coverage", "planning.html", "planning", false, "planning"],
     ["units", "Units and lessons", "units.html", "planning", false, "planning"],
+    ["timetable", "Timetable", "timetable.html", null],
     ["grownest", "GrowNest", "grownest/app.html", "grownest"],
     ["twignest", "TwigNest", "twignest/", "twignest"],
     ["sub", "My classes", "twignest/#sheets", "twignest", false, "twignest"],
@@ -53,6 +55,7 @@
     ["nestlings", "Nestlings", "nestlings-admin.html", null],
     ["conferences", "Parent conferences", "conferences.html", "conferences"],
     ["label", ""],
+    ["access", "Staff and access", "access.html", null],
     ["settings", "Settings", "settings.html", null]
   ];
   const CSS = `
@@ -142,7 +145,16 @@
       const { data: s } = await sbc.from("schools").select("modules,status").eq("id", p.school_id).single();
       if (!s || s.status !== "active") return;
       const on = s.modules || [], lead = ["school_lead", "coordinator", "admin"].includes(p.role);
-      const items = NAV.filter(n => n[0] === "label" || !n[3] || on.includes(n[3]));
+      // job-based access: hide what this person's job has no access to (see access.js and Staff and access)
+      let LV = null, viewAs = null;
+      try {
+        if (!window.NestAccess) await new Promise(ok => { const sc = document.createElement("script"); sc.src = "/access.js?v=1"; sc.onload = ok; sc.onerror = ok; document.head.appendChild(sc); });
+        if (window.NestAccess) { LV = await NestAccess.mine(sbc); try { viewAs = lead ? JSON.parse(sessionStorage.getItem("nest_viewas") || "null") : null; } catch (_) {} }
+      } catch (_) { LV = null; }
+      const menuLV = viewAs && viewAs.levels ? viewAs.levels : LV;
+      const areaOf = n => window.NestAccess ? (NestAccess.areaOfNav(n[0] === "sub" ? n[5] : n[0]) || (n[5] ? NestAccess.areaOfNav(n[5]) : null)) : null;
+      const allowed = n => !menuLV || n[0] === "label" || !areaOf(n) || (menuLV[areaOf(n)] || "N") !== "N";
+      const items = NAV.filter(n => (n[0] === "label" || !n[3] || on.includes(n[3])) && allowed(n));
       // drop empty group labels
       const list = items.filter((n, k) => n[0] !== "label" || (items[k + 1] && items[k + 1][0] !== "label"));
       if (!document.getElementById("hubcss")) { const st = document.createElement("style"); st.id = "hubcss"; st.textContent = CSS; document.head.appendChild(st); }
@@ -155,6 +167,22 @@
       side.querySelectorAll("a.soon").forEach(a => a.addEventListener("click", e => { e.preventDefault(); alert(a.textContent.replace("Soon", "").trim() + " is coming soon to the School hub."); }));
       const box = document.createElement("div"); box.className = "hubmain";
       main.parentNode.insertBefore(wrap, main); wrap.append(side, box); box.append(main);
+      if (viewAs) { const vb = document.createElement("div"); vb.style.cssText = "background:#FBF0DC;color:#7A4E0B;padding:10px 16px;font-weight:700;display:flex;gap:10px;align-items:center;flex-wrap:wrap";
+        vb.innerHTML = `👀 You are seeing the menu as ${String(viewAs.name || "").replace(/[<>&"]/g, "")} (${String(viewAs.jobName || "").replace(/[<>&"]/g, "")}). The pages still show your own data. <button type="button" style="font:inherit;border:1px solid #7A4E0B;background:#fff;border-radius:99px;padding:4px 12px;cursor:pointer">Stop</button>`;
+        vb.querySelector("button").onclick = () => { sessionStorage.removeItem("nest_viewas"); location.href = "access.html"; }; box.prepend(vb); }
+      // a page this person has no access to: offer to ask for it instead of a dead end
+      const myArea = window.NestAccess ? NestAccess.areaOfNav(active) : null;
+      if (LV && myArea && (LV[myArea] || "N") === "N") {
+        const A = NestAccess.AREAS.find(a => a[0] === myArea), nb = document.createElement("main");
+        nb.innerHTML = `<div class="card" style="max-width:620px;margin:40px auto;text-align:center"><p style="font-size:44px;margin:0">🔒</p><h2>You don’t have access to ${A[1]} yet</h2><p class="note">If you need it for your work, ask and a school leader will get a message.</p>
+          <p><textarea id="axn" rows="2" placeholder="Why do you need it? (optional)" style="width:100%;max-width:440px"></textarea></p><p><button class="btn" id="axb">Ask for access</button></p><p class="note" id="axm"></p></div>`;
+        main.style.display = "none"; box.append(nb);
+        nb.querySelector("#axb").onclick = async () => { const b = nb.querySelector("#axb"); b.disabled = true;
+          const { data, error } = await sbc.from("access_requests").insert({ school_id: String(p.school_id), user_id: session.user.id, area: myArea, note: nb.querySelector("#axn").value.trim() || null }).select("id").single();
+          if (error) { b.disabled = false; nb.querySelector("#axm").textContent = "That didn’t go: " + error.message; return; }
+          sbc.functions.invoke("nestopia-mail", { body: { action: "access", id: data.id, kind: "request" } }).catch(() => {});
+          nb.querySelector("#axm").textContent = "Sent. You’ll get an email when a school leader answers."; };
+      }
       const shade = document.createElement("div"); shade.className = "hubshade"; document.body.append(shade);
       const hdr = document.querySelector("header");
       if (hdr && !hdr.querySelector(".hubtoggle")) {

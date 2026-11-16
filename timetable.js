@@ -33,7 +33,7 @@ async function start(){
   const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single(); school = s;
   if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
   if (window.hubInit) hubInit("timetable");
-  lead = ["school_lead", "coordinator", "admin"].includes(p.role);
+  lead = window.NestAccess ? ((await NestAccess.mine(sb))["timetable"] === "E") : ["school_lead", "coordinator", "admin"].includes(p.role);   // Edit on timetable in the access grid
   const set = await sb.from("school_setups").select("id,year,config").eq("school_id", school.id).order("updated_at", { ascending: false }).limit(1);
   if (set.data && set.data[0]) { setupId = set.data[0].id; C = set.data[0].config || {}; year = set.data[0].year; }
   let cq = sb.from("classes").select("id,name,grade_id").eq("school_id", school.id); if (year) cq = cq.eq("year", year);

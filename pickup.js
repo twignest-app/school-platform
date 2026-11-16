@@ -33,7 +33,7 @@ async function start(){
   const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single(); school = s;
   if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
   if (window.hubInit) hubInit("pickup");
-  lead = ["school_lead", "coordinator", "admin"].includes(p.role);
+  lead = window.NestAccess ? ((await NestAccess.mine(sb))["desk"] === "E") : ["school_lead", "coordinator", "admin"].includes(p.role);   // Edit on desk in the access grid
   classes = ((await sb.from("classes").select("id,name,grade_id").eq("school_id", school.id)).data || []).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
   const ids = classes.map(c => c.id);
   studs = ids.length ? (await fetchAll(() => sb.from("students").select("id,full_name,class_id").in("class_id", ids).eq("archived", false))).sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))) : [];
