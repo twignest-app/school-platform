@@ -329,7 +329,7 @@ function deskAct(sid, kind, reqId){
   dlg.innerHTML = `<form class="dlg"><h2>${kind === "arrive" ? "🕘 Arrived late" : "🚪 Leaving early"} · ${esc(s.full_name)}</h2>
     ${rq ? `<p class="note" style="margin-top:0">📨 ${esc(rq.parent_name || "A parent")}: ${rq.kind === "late" ? "running late" + (rq.at_time ? ", about " + esc(t5(rq.at_time)) : "") : "pickup at " + esc(t5(rq.at_time)) + " by " + esc(rq.collector || "")}${rq.reason ? " · " + esc(rq.reason) : ""}</p>` : ""}
     ${kind === "arrive" ? `<div class="two"><label class="f">Arrived at <input type="time" name="t" value="${now}"></label><label class="f">Reason <select name="r"><option value="">–</option>${REASONS.late.map(r => `<option ${r === lr ? "selected" : ""}>${r}</option>`).join("")}</select></label></div><label class="f">Details (optional) <input name="d" value="${esc(rq && !lr ? rq.reason || "" : "")}"></label><label class="f" style="flex-direction:row;gap:8px;align-items:center"><input type="checkbox" name="mail" checked style="width:auto"> ✉️ Email the late slip to the class teacher</label><label class="f" style="flex-direction:row;gap:8px;align-items:center;font-weight:400"><input type="checkbox" name="slip" style="width:auto"> 🖨️ Also print a slip</label>`
-      : `<div class="two"><label class="f">Leaving at <input type="time" name="t" value="${now}"></label><label class="f">Reason <input name="r" value="${esc(rq ? rq.reason || "" : "")}" placeholder="For example: unwell, appointment"></label></div><label class="f">Collected by <input name="c" required value="${esc(rq ? rq.collector || "" : "")}" placeholder="Name and relation, e.g. Huda Ali (aunt)"></label><p class="lock">Check the adult collecting is on the child’s list of contacts.</p>`}
+      : `<div class="two"><label class="f">Leaving at <input type="time" name="t" value="${now}"></label><label class="f">Reason <input name="r" value="${esc(rq ? rq.reason || "" : "")}" placeholder="For example: unwell, appointment"></label></div><label class="f">Collected by <input name="c" required value="${esc(rq ? rq.collector || "" : "")}" placeholder="Name and relation, e.g. Huda Ali (aunt)"></label><div id="pkbox"><p class="lock">Check the adult collecting is on the child’s list of contacts.</p></div>`}
     <div class="row" style="justify-content:flex-end"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn">Save</button></div></form>`;
   const f = dlg.querySelector("form"); dlg.querySelector("[data-x]").onclick = () => dlg.close();
   f.onsubmit = async e => { e.preventDefault();
@@ -341,6 +341,19 @@ function deskAct(sid, kind, reqId){
     const slip = kind === "arrive" && f.slip && f.slip.checked, mail = kind === "arrive" && f.mail && f.mail.checked;
     dlg.close(); await loadMarks(); if (slip) lateSlip(s.id); if (mail) emailSlip(s.id, true); else toast(kind === "arrive" ? "Marked late. The teacher can see it on the register." : "Leaving early recorded."); if (window.nestAttDue) nestAttDue(true); deskPane(); };
   dlg.showModal();
+  if (kind !== "arrive") pickupBox(s, f);
+}
+// who can collect this child (from Pick-up and contacts), with photos; anyone who must not collect is shown in red
+async function pickupBox(s, f){
+  const box = document.getElementById("pkbox"); if (!box) return;
+  const r = await sb.from("pickup_people").select("*").eq("student_id", String(s.id)).in("kind", ["collector", "blocked"]); if (r.error) return;
+  const L = r.data || [], ok = L.filter(p => p.kind === "collector"), no = L.filter(p => p.kind === "blocked");
+  const url = async path => { if (!path) return null; const { data } = await sb.storage.from("pickup-docs").createSignedUrl(path, 3600); return data ? data.signedUrl : null; };
+  box.innerHTML = `${no.length ? `<p class="msg" style="margin:0 0 8px">⛔ Must NOT collect: <b>${esc(no.map(p => p.name + (p.relation ? " (" + p.relation + ")" : "")).join(", "))}</b>. Don’t release the child to them; tell a school leader.</p>` : ""}
+    ${ok.length ? `<p style="margin:0 0 6px;font-weight:700">Allowed to collect (tap to choose):</p><div class="row">${ok.map(p => `<button type="button" class="btn ghost small" data-pk="${esc(p.name + (p.relation ? " (" + p.relation + ")" : ""))}" style="display:flex;gap:8px;align-items:center"><span data-pkph="${esc(p.photo_path || "")}" style="width:40px;height:40px;border-radius:8px;overflow:hidden;background:var(--bg);display:inline-flex;align-items:center;justify-content:center">🚗</span><span style="text-align:left">${esc(p.name)}${p.relation ? `<br><small>${esc(p.relation)}${p.verified_at ? " · ✓ ID" : ""}</small>` : p.verified_at ? "<br><small>✓ ID</small>" : ""}</span></button>`).join("")}</div>`
+      : `<p class="lock">No one is listed yet in Pick-up and contacts. Check with a parent by phone before releasing the child.</p>`}`;
+  box.querySelectorAll("[data-pk]").forEach(b => b.onclick = () => { f.c.value = b.dataset.pk; });
+  box.querySelectorAll("[data-pkph]").forEach(async el => { const u = await url(el.dataset.pkph); if (u) el.innerHTML = `<img src="${u}" alt="" style="width:40px;height:40px;object-fit:cover">`; });
 }
 
 /* ---------- Live updates for the register and the front desk ---------- */

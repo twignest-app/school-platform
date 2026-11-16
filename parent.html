@@ -369,10 +369,67 @@ async function meetings(){
 // ---------- More: calendar, school information, my account ----------
 async function more(){
   const p = document.getElementById("pane"); sub.o = sub.o || "info";
-  p.innerHTML = `<div class="tabs" role="tablist"><button class="tab" aria-selected="${sub.o === "info"}" data-o="info">📁 School information · معلومات المدرسة</button>${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "trips"}" data-o="trips">🎒 Trips and forms · الرحلات والنماذج</button>`}<button class="tab" aria-selected="${sub.o === "tt"}" data-o="tt">🕘 Timetable · الجدول</button>${(view.show || {}).calendar !== false ? `<button class="tab" aria-selected="${sub.o === "calendar"}" data-o="calendar">📅 Calendar · التقويم</button>` : ""}${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "account"}" data-o="account">👤 My account · حسابي</button>`}</div><div id="pane2"></div>`;
+  p.innerHTML = `<div class="tabs" role="tablist"><button class="tab" aria-selected="${sub.o === "info"}" data-o="info">📁 School information · معلومات المدرسة</button>${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "trips"}" data-o="trips">🎒 Trips and forms · الرحلات والنماذج</button>`}<button class="tab" aria-selected="${sub.o === "tt"}" data-o="tt">🕘 Timetable · الجدول</button>${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "pk"}" data-o="pk">👪 Pick-up and contacts · الاستلام وجهات الاتصال</button>`}${(view.show || {}).calendar !== false ? `<button class="tab" aria-selected="${sub.o === "calendar"}" data-o="calendar">📅 Calendar · التقويم</button>` : ""}${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "account"}" data-o="account">👤 My account · حسابي</button>`}</div><div id="pane2"></div>`;
   p.querySelectorAll("[data-o]").forEach(b => b.onclick = () => { sub.o = b.dataset.o; show(cur); });
   const inner = document.getElementById("pane2"); inner.id = "pane"; p.id = "paneOuter";
-  if (sub.o === "calendar") calendar(); else if (sub.o === "account") account(); else if (sub.o === "trips") await tripsTab(); else if (sub.o === "tt") await ttTab(); else await schoolInfo();
+  if (sub.o === "calendar") calendar(); else if (sub.o === "account") account(); else if (sub.o === "trips") await tripsTab(); else if (sub.o === "tt") await ttTab(); else if (sub.o === "pk") await pickupTab(); else await schoolInfo();
+}
+// ---------- Pick-up and contacts ----------
+const pkUrl = {};
+async function pkSigned(path){ if (!path) return null; if (pkUrl[path]) return pkUrl[path]; try { const { data } = await sb.storage.from("pickup-docs").createSignedUrl(path, 3600); return pkUrl[path] = data ? data.signedUrl : null; } catch (_) { return null; } }
+async function pkShrink(file){
+  if (!/^image\//.test(file.type)) throw new Error(L("Please choose a photo.", "يُرجى اختيار صورة."));
+  const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = URL.createObjectURL(file); });
+  const k = Math.min(1, 1200 / Math.max(img.width, img.height)), c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); return await new Promise(ok => c.toBlob(ok, "image/jpeg", .85));
+}
+async function pickupTab(){
+  const p = document.getElementById("pane"); let d = null;
+  try { const r = await sb.rpc("parent_pickup", { p_student: String(cur) }); if (r.error) throw r.error; d = r.data; } catch (e) { p.innerHTML = `<div class="card">${msg(e.message || "")}</div>`; return; }
+  const first = (view.name || "").split(" ")[0], P = d.people || [];
+  const K = { collector: ["🚗", L(`Allowed to collect ${first}`, `المسموح لهم باستلام ${first}`), L("Adults who can pick up from school. Add a photo of them and of their ID; the school checks the ID once.", "البالغون المسموح لهم بالاستلام من المدرسة. أضف صورتهم وصورة الهوية، وستتحقق المدرسة منها مرة واحدة."), "t-mint"],
+    emergency: ["📞", L("Emergency contacts", "جهات الاتصال في الطوارئ"), L("Who we call if we can’t reach you.", "من نتصل به إذا لم نستطع الوصول إليك."), "t-sky"],
+    blocked: ["⛔", L(`Must NOT collect ${first}`, `ممنوع من استلام ${first}`), L("Only if there is a legal or safety reason. The school may ask you for documents.", "فقط عند وجود سبب قانوني أو أمني. قد تطلب المدرسة مستندات.", ""), "t-rose"] };
+  p.innerHTML = Object.entries(K).map(([k, v]) => { const list = P.filter(x => x.kind === k);
+    return `<div class="card tile ${v[3]}"><h2>${v[0]} ${v[1]}</h2><p class="muted" style="margin:0 0 8px">${v[2]}</p>
+      ${list.map(x => `<div class="todo" style="align-items:center"><span class="e" data-pph="${esc(x.photo || "")}" style="width:52px;height:52px;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center">${v[0]}</span>
+        <span style="flex:1"><b>${esc(x.name)}</b><span class="muted">${esc([x.relation, x.phone, x.note].filter(Boolean).join(" · "))}${k === "collector" ? " · " + (x.checked ? "✓ " + L("ID checked by the school", "تحققت المدرسة من الهوية") : x.idp ? L("Waiting for the school to check the ID", "بانتظار تحقق المدرسة من الهوية") : L("Please add a photo of their ID", "يُرجى إضافة صورة الهوية")) : ""}${x.staff ? " · " + L("added by the school", "أضافته المدرسة") : ""}</span></span>
+        ${x.staff ? "" : `<button class="btn ghost small" data-pe="${esc(x.id)}">${L("Edit", "تعديل")}</button>`}</div>`).join("") || `<p style="margin:0 0 8px">${L("No one yet.", "لا أحد بعد.")}</p>`}
+      <p style="margin:8px 0 0"><button class="btn small" data-pa="${k}">+ ${L("Add", "إضافة")}</button></p></div>`; }).join("");
+  applyLang(p);
+  p.querySelectorAll("[data-pph]").forEach(async el => { if (!el.dataset.pph) return; const u = await pkSigned(el.dataset.pph); if (u) el.innerHTML = `<img src="${u}" alt="" style="width:52px;height:52px;object-fit:cover">`; });
+  p.querySelectorAll("[data-pa]").forEach(b => b.onclick = () => pickupEdit(b.dataset.pa, null, d.folder));
+  p.querySelectorAll("[data-pe]").forEach(b => b.onclick = () => { const x = P.find(y => y.id === b.dataset.pe); pickupEdit(x.kind, x, d.folder); });
+}
+function pickupEdit(kind, x, folder){
+  x = x || {}; const dd = document.createElement("div"); dd.className = "drawer"; const many = kids.length > 1 && !x.id;
+  const lbl = t => `style="display:grid;gap:4px;font-weight:700"`;
+  dd.innerHTML = `<div class="in"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${x.id ? L("Edit", "تعديل") : L("Add a person", "إضافة شخص")}</h2><button class="btn ghost small" data-x>✕</button></div>
+    <form id="pkf" style="display:grid;gap:12px;margin-top:12px">
+      <label ${lbl()}>${L("Full name", "الاسم الكامل")}<input type="text" id="pn" required minlength="2" maxlength="100" value="${esc(x.name || "")}"></label>
+      <label ${lbl()}>${L("Relation to the child", "صلة القرابة")}<input type="text" id="pr" maxlength="60" value="${esc(x.relation || "")}" placeholder="${L("e.g. Grandmother, Uncle, Driver", "مثال: الجدة، العم، السائق")}"></label>
+      ${kind !== "blocked" ? `<label ${lbl()}>${L("Phone", "الهاتف")}<input type="tel" id="pp" required maxlength="30" value="${esc(x.phone || "")}"></label>` : ""}
+      ${kind !== "emergency" ? `<label ${lbl()}>${L("Photo of the person", "صورة الشخص")}${x.photo ? ` <span class="muted">(${L("saved, choose a new one to change it", "محفوظة، اختر صورة جديدة للتغيير")})</span>` : ""}<input type="file" id="pf" accept="image/*" capture="environment"></label>` : ""}
+      ${kind === "collector" ? `<label ${lbl()}>${L("Photo of their ID (Emirates ID or passport)", "صورة الهوية (الهوية الإماراتية أو جواز السفر)")}${x.idp ? ` <span class="muted">(${L("saved", "محفوظة")})</span>` : ""}<input type="file" id="pi" accept="image/*" capture="environment"><span class="muted" style="font-weight:400">${L("Only you and school leaders can see this.", "لا يراها إلا أنت وإدارة المدرسة.")}</span></label>` : ""}
+      ${kind === "blocked" ? `<label ${lbl()}>${L("Reason (for the school)", "السبب (للمدرسة)")}<input type="text" id="pnt" maxlength="200" value="${esc(x.note || "")}"></label>` : ""}
+      ${many ? `<label style="display:flex;gap:8px;align-items:center;font-weight:700"><input type="checkbox" id="pall" checked style="width:auto"> ${L("Add for all my children at this school", "إضافة لجميع أبنائي في هذه المدرسة")}</label>` : ""}
+      <div id="pke"></div>
+      <button class="btn" type="submit">${L("Save", "حفظ")}</button>
+      ${x.id && kind !== "blocked" ? `<button class="btn ghost" type="button" id="pdel">${L("Remove this person", "حذف هذا الشخص")}</button>` : ""}</form></div>`;
+  document.body.appendChild(dd); applyLang(dd);
+  dd.onclick = e => { if (e.target === dd || e.target.closest("[data-x]")) dd.remove(); };
+  const del = dd.querySelector("#pdel"); if (del) del.onclick = async () => { if (!confirm(L("Remove this person?", "حذف هذا الشخص؟"))) return; const { error } = await sb.rpc("parent_pickup_remove", { p_id: x.id }); if (error) return alert(error.message); dd.remove(); pickupTab(); };
+  dd.querySelector("#pkf").onsubmit = async e => { e.preventDefault(); const bt = e.target.querySelector("button[type=submit]"); bt.disabled = true;
+    const g = id => { const el = dd.querySelector(id); return el ? el.value : null; };
+    try {
+      const up = async (sel, pre) => { const el = dd.querySelector(sel), f = el && el.files[0]; if (!f) return null; if (f.size > 25 * 1024 * 1024) throw new Error(L("That photo is too big.", "الصورة كبيرة جدًا."));
+        const path = `${folder}/${pre}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}.jpg`; const { error } = await sb.storage.from("pickup-docs").upload(path, await pkShrink(f), { contentType: "image/jpeg" }); if (error) throw error; return path; };
+      const photo = (await up("#pf", "p-")) || x.photo || null, idp = (await up("#pi", "id-")) || x.idp || null;
+      const { error } = await sb.rpc("parent_pickup_save", { p_student: String(cur), p_id: x.id || null, p_kind: kind, p_name: g("#pn"), p_relation: g("#pr"), p_phone: g("#pp"), p_photo: photo, p_idp: idp, p_note: g("#pnt"), p_all: !!(dd.querySelector("#pall") || {}).checked });
+      if (error) throw error;
+      dd.remove(); pickupTab();
+    } catch (er) { bt.disabled = false; dd.querySelector("#pke").innerHTML = msg(er.message || String(er)); }
+  };
 }
 // ---------- Class timetable ----------
 async function ttTab(){
