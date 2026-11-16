@@ -131,7 +131,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const app = document.getElementById("app"), who = document.getElementById("who"), dlg = document.getElementById("dlg");
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2600); };
-const CATS = { event: "📌 School event", holiday: "🌴 Holiday", assessment: "📝 Assessment", parents: "👪 Parents", meeting: "👥 Staff meeting", trip: "🚌 Trip", inclusion: "💜 Inclusion", grownest: "🌱 GrowNest" };
+const CATS = { event: "📌 School event", holiday: "🌴 Holiday", assessment: "📝 Assessment", parents: "👪 Parents", meeting: "👥 Staff meeting", trip: "🚌 Trip", away: "🧳 Staff away", inclusion: "💜 Inclusion", grownest: "🌱 GrowNest" };
 const ymd = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 let me, school, lead = false, grades = [], evs = [], month = new Date(), show = new Set(Object.keys(CATS));
 function fail(t){ app.innerHTML = `<div class="card"><div class="msg">${esc(t)}</div></div>`; }
@@ -171,6 +171,9 @@ async function load(){
   // trips and events sent to parents (from Trips and forms)
   { const tr = await safe(() => sb.from("trips").select("id,title,trip_date,end_date,leave_time,place").eq("school_id", String(school.id)).eq("status", "sent").lte("trip_date", ymd(to)).gte("trip_date", ymd(from)), {});
     (tr.data || []).forEach(x => evs.push({ cat: "trip", title: x.title, start: x.trip_date, end: x.end_date || x.trip_date, time: x.leave_time, note: x.place, link: "trips.html#trip=" + x.id })); }
+  // staff away (approved leave, no reasons)
+  { const aw = await safe(() => sb.rpc("staff_away", { p_from: ymd(from), p_to: ymd(to) }), {});
+    (aw.data || []).forEach(x => evs.push({ cat: "away", title: (x.name || "Staff") + " away" + (x.part === "am" ? " (morning)" : x.part === "pm" ? " (afternoon)" : ""), start: x.from_date, end: x.to_date, link: "leave.html#away" })); }
   // GrowNest (leaders): observations and teacher support plans ending
   if (mods.includes("grownest") && lead) {
     const ob = await safe(() => sb.from("observations").select("observed_on,type").gte("observed_on", ymd(from)).lte("observed_on", ymd(to)), {});

@@ -50,6 +50,14 @@
       const b = rows.filter(x => x.status === "draft" && x.created_by === p.id && ((x.history || []).slice(-1)[0] || {}).action === "return").length;
       if (b) note(place, "🚌", `${b} trip${b === 1 ? " was" : "s were"} sent back to you with notes.`, "trips.html", "See the notes");
     })());
+    // leave and cover: requests to approve and cover still to arrange (leaders), my cover today, cover work to add
+    jobs.push((async () => {
+      const t = new Date().toISOString().slice(0, 10);
+      if (lead) { const r = await sb.from("staff_leave").select("id", { count: "exact", head: true }).eq("status", "pending"); if (!r.error && r.count) note(place, "🧳", `${r.count} leave request${r.count === 1 ? "" : "s"} waiting for your approval.`, "leave.html#requests", "Open Leave and cover");
+        const c = await sb.from("staff_cover").select("id").eq("day", t).is("cover_id", null); if (!c.error && (c.data || []).length) note(place, "🧑‍🏫", `${c.data.length} lesson${c.data.length === 1 ? "" : "s"} today still need cover.`, "leave.html#cover", "Arrange cover"); }
+      const m = await sb.from("staff_cover").select("id").eq("day", t).eq("cover_id", p.id); if (!m.error && (m.data || []).length) note(place, "🧑‍🏫", `You are covering ${m.data.length} lesson${m.data.length === 1 ? "" : "s"} today.`, "leave.html#mine", "See the cover work");
+      const w = await sb.from("staff_cover").select("id").eq("absent_id", p.id).gte("day", t).is("work", null); if (!w.error && (w.data || []).length) note(place, "📋", `Add cover work for ${w.data.length} lesson${w.data.length === 1 ? "" : "s"} while you’re away.`, "leave.html#mine", "Add cover work");
+    })());
     // Nestlings: students' posts waiting for approval in my classes
     jobs.push((async () => {
       const r = await sb.from("nestling_posts").select("class_id").eq("status", "pending"); if (r.error) return;
@@ -86,6 +94,9 @@
       (async () => { const r = await sb.from("sat_scores").select("unit_id", { count: "exact", head: true }); if (r.error) return; add("Assessment", "SAT scores", r.count || 0, "Rubric levels given this year", "units.html"); })(),
       // teaching
       (async () => { if (!on.includes("grownest")) return; const n = await cnt(sb.from("observations").select("id", { count: "exact", head: true }).gte("observed_on", y0)); if (n != null) add("Teaching", "Observations", n, "This school year, in GrowNest", "grownest/observations.html"); })(),
+      (async () => { const t = new Date().toISOString().slice(0, 10); const aw = await sb.rpc("staff_away", { p_from: t, p_to: t }); if (aw.error) return;
+        const c = await sb.from("staff_cover").select("cover_id").eq("day", t); const open = (c.data || []).filter(x => !x.cover_id).length;
+        add("Teaching", "Staff away today", (aw.data || []).length, open ? `${open} lesson${open === 1 ? "" : "s"} still need cover` : "All cover arranged", "leave.html#cover", open ? "red" : ""); })(),
       // attendance and behaviour
       (async () => { const r = await sb.from("attendance_marks").select("status").eq("school_id", sid).gte("day", d0); if (r.error) return; const m = r.data || [], n = m.length, a = m.filter(x => x.status === "present" || x.status === "late").length;
         add("Care", "Attendance, last 7 days", n ? Math.round(a / n * 100) + "%" : "–", n ? `${n - a} absence${n - a === 1 ? "" : "s"} recorded` : "No registers yet", "attendance.html", n && a / n < .95 ? "amber" : ""); })(),
