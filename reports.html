@@ -128,7 +128,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const app = document.getElementById("app"), who = document.getElementById("who"), dlg = document.getElementById("dlg");
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2800); };
-let setupId = null, starsBy = {}, me, school, lead = false, C = null, year = null, classes = [], myClassIds = [], studs = [], cms = [], teachers = {}, ui = { tab: "cards", term: 0, cls: null, incl: "approved" };
+let setupId = null, checker = false, rcs = {}, staff = [], starsBy = {}, me, school, lead = false, C = null, year = null, classes = [], myClassIds = [], studs = [], cms = [], teachers = {}, ui = { tab: "cards", term: 0, cls: null, incl: "approved" };
 const cls = id => classes.find(c => String(c.id) === String(id)) || {};
 function fail(t){ app.innerHTML = `<div class="card"><div class="msg">${esc(t)}</div></div>`; }
 async function fetchAll(q){ const out = []; for (let f = 0; ; f += 1000) { const { data, error } = await q().range(f, f + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; } return out; }
@@ -154,7 +154,8 @@ const strandsFor = c => (C.subjects || []).flatMap(sb => sb.strands.map(st => [s
   const tids = [...new Set((ct || []).map(x => x.teacher_id))];
   const { data: tp } = tids.length ? await sb.from("profiles").select("id,full_name").in("id", tids) : { data: [] };
   (ct || []).forEach(x => { const n = ((tp || []).find(y => y.id === x.teacher_id) || {}).full_name; if (n) (teachers[x.class_id] = teachers[x.class_id] || new Set()).add(n); });
-  const mine = classes.filter(c => lead || myClassIds.includes(String(c.id)));
+  checker = ((C.card || {}).steps || []).some(x => (x.people || []).includes(String(me.id)));
+  const mine = classes.filter(c => lead || checker || myClassIds.includes(String(c.id)));
   ui.cls = mine[0] ? String(mine[0].id) : null;
   const ids = mine.map(c => c.id);
   studs = ids.length ? await fetchAll(() => sb.from("students").select("id,full_name,arabic_name,student_number,class_id,archived").in("class_id", ids).eq("archived", false).order("full_name")) : [];
@@ -178,29 +179,139 @@ function draw(){
 const statusCount = (list, t) => { const sts = strandsFor(), out = { total: 0, approved: 0, ready: 0, draft: 0, none: 0 };
   list.forEach(s => sts.forEach(([, st]) => { out.total++; const c = cmOf(s.id, st.id, t); if (!c || !c.text) out.none++; else if (c.status === "approved") out.approved++; else if (c.status === "ready") out.ready++; else out.draft++; })); return out; };
 
-function cardsPane(){
-  const pane = document.getElementById("pane"), choices = classes.filter(c => lead || myClassIds.includes(String(c.id)));
+/* ---------- Report card workflow: Draft → Ready for checking → each check → Sent to parents ---------- */
+const steps = () => ((cardSet().steps) || []).filter(x => x && x.name);
+const rcOf = (sid, t) => rcs[sid + "|" + t] || { stage: "draft", history: [] };
+const done = st => st === "draft" || st === "ready" ? 0 : st === "sent" ? steps().length : +(String(st).split(":")[1] || 0);
+function stageName(st){ const S = steps();
+  if (st === "draft") return ["Draft · with the teacher", "none"]; if (st === "ready") return [S.length ? `Waiting for ${S[0].name}` : "Ready to send", "part"];
+  if (st === "sent") return ["Sent to parents", "ok"]; const d = done(st);
+  return [d >= S.length ? "Checked · ready to send" : `Checked by ${S[d - 1] ? S[d - 1].name : "checker"} · waiting for ${S[d].name}`, d >= S.length ? "ok" : "part"]; }
+function myRoles(s){ const r = new Set(); if (lead) r.add("lead"); if (myClassIds.includes(String(s.class_id))) r.add("teacher");
+  steps().forEach((x, k) => { if ((x.people || []).includes(String(me.id))) r.add(String(k + 1)); }); return r; }
+function canEdit(s, t){ const st = rcOf(s.id, t).stage, r = myRoles(s); if (st === "sent") return false; if (r.has("lead")) return true;
+  if (st === "draft") return r.has("teacher"); if (st === "ready") return r.has("1"); return r.has(String(done(st) + 1)); }
+function nextActions(s, t){ const st = rcOf(s.id, t).stage, r = myRoles(s), S = steps(), d = done(st), out = [];
+  if (st === "draft" && (r.has("teacher") || r.has("lead"))) out.push(["ready", S.length ? "✅ Ready for checking" : "✅ Finished"]);
+  if (st !== "draft" && st !== "sent" && d < S.length && (r.has(String(d + 1)) || r.has("lead"))) { out.push(["check", `✔ Checked by ${S[d].name}`]); out.push(["back", "↩ Send back to teacher"]); }
+  if (st !== "draft" && st !== "sent" && d >= S.length && (r.has("lead") || (S.length ? r.has(String(S.length)) : r.has("teacher")))) out.push(["send", "📤 Send to parents"]);
+  if (st === "sent" && r.has("lead")) out.push(["reopen", "Take back from parents"]);
+  return out; }
+async function loadCards(list){
+  const ids = list.map(s => String(s.id)); if (!ids.length) return;
+  try { const data = await fetchAll(() => sb.from("report_cards").select("*").in("student_id", ids)); data.forEach(x => rcs[x.student_id + "|" + x.term] = x); } catch (_) {}
+}
+async function reloadComments(list){
+  const ids = list.map(s => s.id); if (!ids.length) return;
+  const fresh = await fetchAll(() => sb.from("report_comments").select("student_id,strand_id,term,text,level,status").in("student_id", ids));
+  cms = cms.filter(c => !ids.some(id => String(id) === String(c.student_id))).concat(fresh);
+}
+async function cardsPane(){
+  const pane = document.getElementById("pane"), choices = classes.filter(c => lead || checker || myClassIds.includes(String(c.id)));
   if (!choices.length) { pane.innerHTML = '<div class="card"><p class="note" style="margin:0">You don’t have a class linked in TwigNest yet.</p></div>'; return; }
   const kids = studs.filter(s => String(s.class_id) === String(ui.cls)), t = ui.term;
+  await loadCards(kids);
+  const stCount = {}; kids.forEach(s => { const k = rcOf(s.id, t).stage; stCount[k] = (stCount[k] || 0) + 1; });
+  const shown = kids.filter(s => !ui.sf || (ui.sf === "mine" ? nextActions(s, t).some(a => a[0] !== "reopen") : rcOf(s.id, t).stage === ui.sf));
+  // one action the user can do for many students at once
+  const bulk = {}; kids.forEach(s => nextActions(s, t).forEach(([a, l]) => { if (a === "check" || a === "send" || a === "ready") (bulk[a] = bulk[a] || { l, list: [] }).list.push(s); }));
+  const S = steps(), filters = [["", `All (${kids.length})`], ["mine", "Waiting for me"], ["draft", "Draft"], ["ready", S.length ? `Waiting for ${S[0].name}` : "Ready"]]
+    .concat(S.map((x, k) => ["checked:" + (k + 1), `Checked by ${x.name}`])).concat([["sent", "Sent"]]);
   pane.innerHTML = `<div class="card"><div class="row" style="margin-bottom:12px"><select id="rc" aria-label="Class">${choices.map(c => `<option value="${esc(c.id)}" ${String(c.id) === String(ui.cls) ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select>
-      <select id="inc" aria-label="Which comments"><option value="approved" ${ui.incl === "approved" ? "selected" : ""}>Approved comments only</option><option value="ready" ${ui.incl === "ready" ? "selected" : ""}>Approved and ready comments</option><option value="all" ${ui.incl === "all" ? "selected" : ""}>All comments (drafts too)</option></select>
-      <button class="btn" id="wordAll">⬇ Word: report cards for the class</button><button class="btn ghost" id="pdfAll">🖨 Print or PDF: whole class</button></div>
-    ${pubBar()}
-    <div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Comments approved</th><th></th></tr>${kids.map(s => { const n = statusCount([s], t), cl = n.approved === n.total ? "ok" : n.approved ? "part" : "none";
-      return `<tr><td><b>${esc(s.full_name)}</b>${s.arabic_name ? ` <span class="note" dir="rtl" lang="ar">${esc(s.arabic_name)}</span>` : ""}</td><td><span class="cnt ${cl}">${n.approved} of ${n.total}</span>${n.ready ? ` <span class="note">· ${n.ready} ready to check</span>` : ""}${n.none ? ` <span class="note">· ${n.none} not written</span>` : ""}</td>
-        <td style="text-align:right"><button class="btn ghost small" data-prev="${esc(s.id)}">Preview</button> <button class="btn ghost small" data-pdf="${esc(s.id)}">🖨 PDF</button> <button class="btn ghost small" data-one="${esc(s.id)}">⬇ Word</button></td></tr>`; }).join("")}</table></div>
-    <p class="note" style="margin:10px 0 0">Each report card has the student’s details, attendance this school year, and every subject with its level and comment. Comments are written and checked in TwigNest.</p></div>`;
+      <button class="btn ghost" id="pdfAll">🖨 Print or PDF: whole class</button><button class="btn ghost" id="wordAll">⬇ Word: whole class</button></div>
+    <div class="row" style="margin-bottom:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)"><b style="font-size:14px">How report cards move:</b>
+      <span class="note">Teacher writes → Ready for checking → ${S.length ? S.map(x => "Checked by " + esc(x.name)).join(" → ") + " → " : ""}Sent to parents</span>
+      ${lead ? `<button class="btn ghost small" style="margin-left:auto" data-gotab="template">Change the checking steps</button>` : ""}</div>
+    <div class="chips">${filters.map(([k, l]) => `<button class="chip" aria-pressed="${(ui.sf || "") === k}" data-sf="${k}">${esc(l)}${k && k !== "mine" && stCount[k] ? ` · ${stCount[k]}` : ""}</button>`).join("")}</div>
+    ${Object.keys(bulk).length ? `<div class="row" style="margin-bottom:10px">${Object.entries(bulk).map(([a, x]) => `<button class="btn small ${a === "send" ? "" : "ghost"}" data-bulk="${a}">${esc(x.l)}: ${x.list.length} student${x.list.length === 1 ? "" : "s"}</button>`).join("")}</div>` : ""}
+    <div class="tablewrap"><table class="reg"><tr><th>Student</th><th>Comments</th><th>Stage</th><th></th></tr>${shown.map(s => { const n = statusCount([s], t), w = n.total - n.none, [sl, sc] = stageName(rcOf(s.id, t).stage);
+      return `<tr><td><b>${esc(s.full_name)}</b>${s.arabic_name ? ` <span class="note" dir="rtl" lang="ar">${esc(s.arabic_name)}</span>` : ""}</td><td><span class="cnt ${w === n.total ? "ok" : w ? "part" : "none"}">${w} of ${n.total}</span> <span class="note">written</span></td>
+        <td><span class="cnt ${sc}">${esc(sl)}</span></td>
+        <td style="text-align:right;white-space:nowrap"><button class="btn small" data-open="${esc(s.id)}">${canEdit(s, t) ? "✏️ Open and edit" : "Open"}</button> <button class="btn ghost small" data-pdf="${esc(s.id)}">🖨 PDF</button></td></tr>`; }).join("") || `<tr><td colspan="4" class="note">No report cards here.</td></tr>`}</table></div>
+    <p class="note" style="margin:10px 0 0">Open a report card to write or fix comments and levels, save it as a PDF, and move it to the next step. Changes also show in TwigNest.</p></div>`;
   document.getElementById("rc").onchange = e => { ui.cls = e.target.value; cardsPane(); };
-  document.getElementById("inc").onchange = e => { ui.incl = e.target.value; };
   document.getElementById("wordAll").onclick = () => makeWord(kids);
   document.getElementById("pdfAll").onclick = () => makePdf(kids);
+  pane.querySelectorAll("[data-sf]").forEach(b => b.onclick = () => { ui.sf = b.dataset.sf; cardsPane(); });
+  pane.querySelectorAll("[data-gotab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.gotab; draw(); });
   pane.querySelectorAll("[data-pdf]").forEach(b => b.onclick = () => makePdf(kids.filter(s => String(s.id) === b.dataset.pdf)));
-  const pb = document.getElementById("pubBtn"); if (pb) pb.onclick = () => publish(!isPub(ui.term, ui.cls));
-  pane.querySelectorAll("[data-one]").forEach(b => b.onclick = () => makeWord(kids.filter(s => String(s.id) === b.dataset.one)));
-  pane.querySelectorAll("[data-prev]").forEach(b => b.onclick = async () => { const s = kids.find(x => String(x.id) === b.dataset.prev), att = await attendance([s]); await loadStars([s]);
-    dlg.className = "wide"; dlg.innerHTML = `<div class="dlg"><div class="row" style="justify-content:space-between"><h2>Preview · what parents will see</h2><div class="row"><button class="btn ghost small" data-p>🖨 Print or PDF</button><button class="btn ghost small" data-x>Close</button></div></div><div class="prev">${cardHtml(s, att[s.id])}</div></div>`;
-    dlg.querySelector("[data-x]").onclick = () => dlg.close(); dlg.querySelector("[data-p]").onclick = () => makePdf([s]); dlg.showModal(); });
+  pane.querySelectorAll("[data-open]").forEach(b => b.onclick = () => openCard(b.dataset.open, shown.map(s => String(s.id))));
+  pane.querySelectorAll("[data-bulk]").forEach(b => b.onclick = async () => { const x = bulk[b.dataset.bulk];
+    if (!confirm(`${x.l} for ${x.list.length} student${x.list.length === 1 ? "" : "s"}?${b.dataset.bulk === "send" ? "\n\nParents will be able to see these report cards straight away." : ""}`)) return;
+    b.disabled = true; let ok = 0, bad = [];
+    if (b.dataset.bulk === "send") { const att = await attendance(x.list); await loadStars(x.list); await reloadComments(x.list);
+      for (const s of x.list) { const e = await move(s, b.dataset.bulk, null, snapshot(s, att[s.id]), true); e ? bad.push(s.full_name + ": " + e) : ok++; } }
+    else for (const s of x.list) { const e = await move(s, b.dataset.bulk, null, null, true); e ? bad.push(s.full_name + ": " + e) : ok++; }
+    toast(`${ok} report card${ok === 1 ? "" : "s"} updated.`); if (bad.length) alert("Some weren’t changed:\n" + bad.join("\n")); cardsPane(); });
 }
+function snapshot(s, att){ const t = ui.term;
+  return { comments: cms.filter(c => String(c.student_id) === String(s.id) && String(c.term) === String(t) && keep(c)).map(c => ({ strand: c.strand_id, level: c.level, text: c.text })),
+    att: att || null, stars: starsBy[s.id] ?? 0, teachers: [...(teachers[s.class_id] || [])] }; }
+async function move(s, action, note, snap, quiet){
+  const { data, error } = await sb.rpc("rc_move", { p_student: String(s.id), p_term: +ui.term, p_action: action, p_note: note || null, p_snapshot: snap || null });
+  if (error) { if (!quiet) alert(error.message); return error.message; }
+  const k = s.id + "|" + ui.term, cur = rcs[k] || { history: [] };
+  rcs[k] = Object.assign({}, cur, { stage: data, history: (cur.history || []).concat([{ action, by: me.full_name, at: new Date().toISOString(), note }]) });
+  if (action === "send") cms.forEach(c => { if (String(c.student_id) === String(s.id) && String(c.term) === String(ui.term) && c.text) c.status = "approved"; });
+  return null;
+}
+
+/* The report card editor: comments and levels are typed straight into the card */
+async function openCard(sid, order){
+  const s = studs.find(x => String(x.id) === String(sid)); if (!s) return;
+  const t = ui.term, att = (await attendance([s]))[s.id]; await loadStars([s]); await reloadComments([s]); await loadCards([s]);
+  const edit = canEdit(s, t), info = rcOf(s.id, t), S = steps(), d = done(info.stage), scale = C.scale || [], pos = order.indexOf(String(sid));
+  const ACT = { ready: "marked it ready for checking", check: "checked it", back: "sent it back to the teacher", send: "sent it to parents", reopen: "took it back from parents" };
+  const stepper = [["Teacher", info.stage !== "draft"]].concat(S.map((x, k) => [x.name, d >= k + 1 && info.stage !== "draft"])).concat([["Parents", info.stage === "sent"]]);
+  const editor = () => (C.subjects || []).map(sub => { const ar = sub.lang === "ar" ? ' dir="rtl" lang="ar"' : "";
+    return `<h3 class="strand" style="margin-top:14px;color:var(--plum)">${esc(sub.name)}</h3>` + (sub.strands || []).map(st => { const c = cmOf(s.id, st.id, t) || {};
+      return `<div style="display:grid;grid-template-columns:minmax(120px,170px) 130px 1fr;gap:10px;align-items:start;padding:8px 0;border-bottom:1px solid var(--line)">
+        <b style="font-size:14px"${ar}>${esc(st.name)}</b>
+        <select data-lv="${esc(st.id)}" aria-label="${esc(st.name)} level"><option value="">No level</option>${scale.map((x, i) => `<option value="${i}" ${String(c.level) === String(i) && c.level != null && c.level !== "" ? "selected" : ""}>${esc(x)}${(cardSet().levelNames || [])[i] ? " · " + esc(cardSet().levelNames[i]) : ""}</option>`).join("")}</select>
+        <textarea data-tx="${esc(st.id)}"${ar} rows="3" aria-label="${esc(st.name)} comment" maxlength="${(C.reports && C.reports.limit) || 2000}" placeholder="Write the comment…">${esc(c.text || "")}</textarea></div>`; }).join(""); }).join("");
+  dlg.className = "wide";
+  dlg.innerHTML = `<div class="dlg">
+    <div class="row" style="justify-content:space-between"><h2>${esc(s.full_name)} · ${esc(C.terms[t])}</h2>
+      <div class="row"><button class="btn ghost small" data-nav="-1" ${pos <= 0 ? "disabled" : ""}>‹ Previous</button><button class="btn ghost small" data-nav="1" ${pos < 0 || pos >= order.length - 1 ? "disabled" : ""}>Next ›</button><button class="btn ghost small" data-x>Close</button></div></div>
+    <div class="row" style="gap:4px">${stepper.map(([n, ok], k) => `${k ? '<span class="note">→</span>' : ""}<span class="cnt ${ok ? "ok" : "none"}">${ok ? "✔ " : ""}${esc(n)}</span>`).join("")}</div>
+    ${(info.history || []).length ? `<details><summary class="note" style="cursor:pointer">History (${info.history.length})</summary><ul class="note" style="margin:6px 0 0;padding-left:18px">${info.history.map(h => `<li>${esc(h.by || "Someone")} ${esc(ACT[h.action] || h.action)} · ${new Date(h.at).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}${h.note ? ` · “${esc(h.note)}”` : ""}</li>`).join("")}</ul></details>` : ""}
+    ${(() => { const back = (info.history || []).filter(h => h.action === "back").pop(); return info.stage === "draft" && back && back.note ? `<div class="msg" style="margin:0">Sent back by ${esc(back.by || "the checker")}: ${esc(back.note)}</div>` : ""; })()}
+    <div class="tabs" role="tablist" style="margin:0"><button class="tab" role="tab" aria-selected="${edit}" data-v="edit" ${edit ? "" : "disabled"}>✏️ Edit comments</button><button class="tab" role="tab" aria-selected="${!edit}" data-v="card">📄 Report card</button>
+      <span class="note" id="svmsg" style="margin-left:auto;align-self:center">${edit ? "Changes save automatically." : info.stage === "sent" ? "Sent to parents, so it can’t be changed." : "You can’t change this report card at this step."}</span></div>
+    <div id="ed" class="prev" style="background:var(--card);color:var(--ink);max-height:56vh" ${edit ? "" : "hidden"}>${editor()}</div>
+    <div id="cv" class="prev" style="max-height:56vh" ${edit ? "hidden" : ""}></div>
+    <div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:12px">
+      <div class="row"><button class="btn ghost" data-pdf1>🖨 Save as PDF</button><button class="btn ghost" data-word1>⬇ Word</button></div>
+      <div class="row">${nextActions(s, t).map(([a, l]) => `<button class="btn ${a === "back" || a === "reopen" ? "ghost" : ""}" data-act="${a}">${esc(l)}</button>`).join("")}</div></div></div>`;
+  const cv = dlg.querySelector("#cv"), ed = dlg.querySelector("#ed"), msg = dlg.querySelector("#svmsg");
+  const paintCard = () => cv.innerHTML = cardHtml(s, att);
+  paintCard();
+  dlg.querySelectorAll("[data-v]").forEach(b => b.onclick = () => { dlg.querySelectorAll("[data-v]").forEach(x => x.setAttribute("aria-selected", x === b)); const card = b.dataset.v === "card"; cv.hidden = !card; ed.hidden = card; if (card) paintCard(); });
+  let pending = Promise.resolve();
+  const save = stid => { const tx = ed.querySelector(`[data-tx="${CSS.escape(stid)}"]`).value, lvRaw = ed.querySelector(`[data-lv="${CSS.escape(stid)}"]`).value, lv = lvRaw === "" ? null : +lvRaw;
+    const c = cmOf(s.id, stid, t); if (c && (c.text || "") === tx && String(c.level ?? "") === String(lv ?? "")) return;
+    msg.textContent = "Saving…";
+    pending = pending.then(async () => { const { error } = await sb.rpc("rc_save", { p_student: String(s.id), p_term: +t, p_strand: stid, p_text: tx, p_level: lv });
+      if (error) { msg.textContent = "Not saved: " + error.message; return; }
+      if (c) Object.assign(c, { text: tx, level: lv }); else cms.push({ student_id: s.id, strand_id: stid, term: String(t), text: tx, level: lv, status: "draft" });
+      msg.textContent = "Saved ✓"; }); return pending; };
+  ed.addEventListener("change", e => { const id = e.target.dataset.tx || e.target.dataset.lv; if (id) save(id); });
+  ed.addEventListener("input", e => { const id = e.target.dataset.tx; if (!id) return; clearTimeout(e.target._t); msg.textContent = "Typing…"; e.target._t = setTimeout(() => save(id), 1200); });
+  const flush = async () => { ed.querySelectorAll("[data-tx]").forEach(x => { if (x._t) { clearTimeout(x._t); x._t = null; save(x.dataset.tx); } }); await pending; };
+  dlg.querySelector("[data-x]").onclick = async () => { await flush(); dlg.close(); };
+  dlg.querySelectorAll("[data-nav]").forEach(b => b.onclick = async () => { await flush(); openCard(order[pos + +b.dataset.nav], order); });
+  dlg.querySelector("[data-pdf1]").onclick = async () => { await flush(); makePdf([s]); };
+  dlg.querySelector("[data-word1]").onclick = async () => { await flush(); makeWord([s]); };
+  dlg.querySelectorAll("[data-act]").forEach(b => b.onclick = async () => { await flush(); const a = b.dataset.act; let note = null;
+    if (a === "back") { note = prompt("What should the teacher change? (They will see this note.)"); if (note === null) return; }
+    if (a === "send" && !confirm(`Send ${s.full_name}’s ${C.terms[t]} report card to parents?\n\nThey will see it on the Parent Portal straight away.`)) return;
+    if (a === "reopen" && !confirm("Take this report card back? Parents won’t see it until it is sent again.")) return;
+    b.disabled = true; const e = await move(s, a, note, a === "send" ? snapshot(s, att) : null); b.disabled = false;
+    if (!e) { toast(a === "send" ? "Sent to parents." : "Done."); openCard(sid, order); } });
+  if (!dlg.open) dlg.showModal();
+  dlg.onclose = () => { if (ui.tab === "cards") cardsPane(); };
+}
+
 function progressPane(){
   const pane = document.getElementById("pane"), t = ui.term, list = classes.filter(c => lead || myClassIds.includes(String(c.id)));
   pane.innerHTML = `<div class="card"><h2>How far each class has got · ${esc(C.terms[t])}</h2><div class="tablewrap"><table class="reg"><tr><th>Class</th><th>Teachers</th><th>Approved</th><th>Ready to check</th><th>Draft</th><th>Not written</th></tr>
@@ -218,7 +329,7 @@ async function attendance(list){
     (data || []).forEach(m => { const a = out[m.student_id] = out[m.student_id] || { n: 0, in: 0, late: 0 }; a.n++; if (m.status === "present" || m.status === "late") a.in++; if (m.status === "late") a.late++; });
   } catch (_) {} return out;
 }
-const keep = c => c && c.text && (ui.incl === "all" || c.status === "approved" || (ui.incl === "ready" && c.status === "ready"));
+const keep = c => c && (c.text || (c.level != null && c.level !== ""));
 function cardData(s, att){
   const t = ui.term, c = cls(s.class_id);
   return { card: C.card, scale: C.scale || [], subjects: C.subjects || [], termName: C.terms[t], termIndex: t, year, school: school.name,
@@ -301,16 +412,30 @@ function templatePane(){
     <fieldset><legend>Signature lines</legend><p class="note" style="margin-top:0">Leave the name empty on a teacher line to use the class teacher’s name.</p>
       ${[0, 1, 2].map(i => `<div class="f2" style="margin-bottom:6px"><label class="f">Role<input type="text" data-sig="${i}|role" value="${esc((S.sig[i] || {}).role || "")}" placeholder="${i === 2 ? "e.g. Head of Primary" : ""}"></label><label class="f">Name<input type="text" data-sig="${i}|name" value="${esc((S.sig[i] || {}).name || "")}"></label></div>`).join("")}</fieldset>
     <fieldset><legend>Dates for each term</legend>${C.terms.map((t, k) => { const x = (S.termInfo || {})[k] || {}; return `<div class="f2" style="margin-bottom:6px"><label class="f">${esc(t)} · issued<input type="date" data-term="${k}|issued" value="${esc(x.issued || "")}"></label><label class="f">${esc(t)} · next term starts<input type="date" data-term="${k}|next" value="${esc(x.next || "")}"></label></div>`; }).join("")}</fieldset>
-    <fieldset><legend>Parent Portal</legend><label class="f">Parents see report cards<select data-k="parents"><option value="publish" ${S.parents !== "approved" ? "selected" : ""}>Only after a leader publishes them (recommended)</option><option value="approved" ${S.parents === "approved" ? "selected" : ""}>As soon as each comment is approved</option></select></label></fieldset>
+    <fieldset><legend>Checking steps before parents see it</legend><p class="note" style="margin-top:0">After the teacher marks a report card ready, it goes through these checks in order, then it can be sent to parents. Choose who does each check. School leaders can always do every step.</p>
+      <div id="stepsBox"></div><button class="btn ghost small" type="button" id="addStep">+ Add a step</button></fieldset>
     <div class="row" style="position:sticky;bottom:0;background:var(--bg);padding:10px 0"><button class="btn" type="submit">Save template</button><span class="note" id="tmsg"></span></div>
   </form><div class="live" aria-label="Preview"><div id="tprev"></div></div></div>`;
   const W = JSON.parse(JSON.stringify(S)), f = document.getElementById("tf"), msg = document.getElementById("tmsg");
+  if (!Array.isArray(W.steps)) W.steps = [{ name: "Grade leader", people: [] }, { name: "STL", people: [] }];
+  const drawSteps = async () => {
+    if (!staff.length) { const { data } = await sb.from("profiles").select("id,full_name,role,active").eq("school_id", school.id); staff = (data || []).filter(x => x.active !== false && x.full_name).sort((a, b) => a.full_name.localeCompare(b.full_name)); }
+    document.getElementById("stepsBox").innerHTML = W.steps.map((x, k) => `<div class="box" style="margin-bottom:10px"><div class="row"><b>Step ${k + 1}</b><label class="f" style="flex:1">Name, shown as “Checked by …”<input type="text" data-stepname="${k}" value="${esc(x.name || "")}" placeholder="e.g. Grade leader"></label>
+        <button class="btn ghost small" type="button" data-stepdel="${k}">Remove</button></div>
+        <p class="note" style="margin:8px 0 4px">Who does this check (${(x.people || []).length} chosen):</p>
+        <div class="checks" style="max-height:150px;overflow:auto">${staff.map(p => `<label><input type="checkbox" data-steppp="${k}|${esc(p.id)}" ${(x.people || []).includes(String(p.id)) ? "checked" : ""}> ${esc(p.full_name)}</label>`).join("")}</div></div>`).join("") || '<p class="note">No checking steps: the class teacher can send report cards to parents straight away.</p>';
+    document.getElementById("addStep").disabled = W.steps.length >= 4; };
+  drawSteps();
+  document.getElementById("addStep").onclick = () => { W.steps.push({ name: "", people: [] }); drawSteps(); msg.textContent = "Not saved yet"; };
+  document.getElementById("stepsBox").addEventListener("click", e => { const d = e.target.dataset.stepdel; if (d == null) return; W.steps.splice(+d, 1); drawSteps(); msg.textContent = "Not saved yet"; });
   let att = {};
   const paint = () => { const prevCard = C.card; C.card = W; let h;
     try { h = sample ? cardHtml(sample, att[sample.id]) : "<p class='note'>Add students in TwigNest to see a preview.</p>"; } finally { C.card = prevCard; }
     document.getElementById("tprev").innerHTML = h; msg.textContent = "Not saved yet"; };
   (async () => { if (sample) { att = await attendance([sample]); await loadStars([sample]); } paint(); msg.textContent = ""; })();
   f.addEventListener("input", e => { const t = e.target;
+    if (t.dataset.stepname) { W.steps[+t.dataset.stepname].name = t.value.trim(); msg.textContent = "Not saved yet"; return; }
+    if (t.dataset.steppp) { const [k, id] = t.dataset.steppp.split("|"), pp = new Set(W.steps[+k].people || []); t.checked ? pp.add(id) : pp.delete(id); W.steps[+k].people = [...pp]; msg.textContent = "Not saved yet"; t.closest(".box").querySelector("p.note").textContent = `Who does this check (${pp.size} chosen):`; return; }
     if (t.dataset.k) W[t.dataset.k] = t.type === "checkbox" ? t.checked : t.value;
     if (t.dataset.show) W.show[t.dataset.show] = t.checked;
     if (t.dataset.lvname) { W.levelNames = (W.levelNames || []).slice(); W.levelNames[+t.dataset.lvname] = t.value.trim(); }
@@ -325,9 +450,12 @@ function templatePane(){
       cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height); const d = cv.toDataURL("image/png"); URL.revokeObjectURL(url);
       if (d.length > 200000) return alert("That logo is too detailed. Please choose a smaller or simpler image."); W.logo = d; paint(); };
     img.onerror = () => alert("That file couldn’t be opened as an image."); img.src = url; };
-  f.onsubmit = async e => { e.preventDefault(); const btn = f.querySelector('[type="submit"]'); btn.disabled = true;
+  f.onsubmit = async e => { e.preventDefault(); const btn = f.querySelector('[type="submit"]');
+    W.steps = W.steps.filter(x => x.name || (x.people || []).length);
+    const bad = W.steps.find(x => !x.name || !(x.people || []).length); if (bad) { drawSteps(); return alert("Each checking step needs a name and at least one person."); }
+    btn.disabled = true;
     const ok = await saveCard(c => { const keepPub = c.published || {}; const out = JSON.parse(JSON.stringify(W)); out.published = keepPub; return out; });
-    btn.disabled = false; if (ok) { msg.textContent = "Saved"; toast("Template saved for every report card."); } };
+    btn.disabled = false; if (ok) { msg.textContent = "Saved"; toast("Template saved for every report card."); checker = ((C.card || {}).steps || []).some(x => (x.people || []).includes(String(me.id))); } };
 }
 </script>
 </body>

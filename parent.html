@@ -405,12 +405,14 @@ async function reports(){
   if (!window.ReportCard) return reportsOld();
   const { data: R, error } = await sb.rpc("parent_report_card", { p_student: sid });
   if (error) return reportsOld();           // older database: show the previous report view
-  const vis = (R.visible || []).filter(k => (R.comments || []).some(c => String(c.term) === String(k)));
+  const snaps = R.snapshots || {};
+  const vis = (R.visible || []).filter(k => snaps[k] || (R.comments || []).some(c => String(c.term) === String(k)));
   if (!vis.length) { p.innerHTML = '<div class="card"><p class="muted" style="margin:0">No report card has been shared yet this year.<span class="ar" dir="rtl" lang="ar">لم تتم مشاركة أي تقرير بعد.</span></p></div>'; return; }
   if (term == null || !vis.includes(term)) term = vis[vis.length - 1];
+  const sn = snaps[term];   // a sent report card: exactly what the school checked and sent
   const html = ReportCard.render({ card: R.card, scale: R.scale || [], subjects: R.subjects || [], termName: (R.terms || [])[term], termIndex: term, year: R.year, school: R.school,
-    student: R.student || {}, teachers: R.teachers || [], att: R.att, stars: R.stars, ack: (R.acks || {})[term],
-    cm: stid => (R.comments || []).find(c => c.strand === stid && String(c.term) === String(term)) || null });
+    student: R.student || {}, teachers: sn ? sn.teachers || R.teachers || [] : R.teachers || [], att: sn && sn.att ? sn.att : R.att, stars: sn && sn.stars != null ? sn.stars : R.stars, ack: (R.acks || {})[term],
+    cm: stid => sn ? (sn.comments || []).find(c => c.strand === stid) || null : (R.comments || []).find(c => c.strand === stid && String(c.term) === String(term)) || null });
   const seen = (R.acks || {})[term];
   p.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">📄 Report card · بطاقة التقرير</h2>
       <div class="row">${vis.map(k => `<button class="tab" aria-selected="${k === term}" data-term="${k}">${esc((R.terms || [])[k])}</button>`).join("")}<button class="btn ghost small" id="repPdf">🖨 Save as PDF · حفظ</button></div></div>
