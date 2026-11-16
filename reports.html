@@ -266,6 +266,11 @@ async function move(s, action, note, snap, quiet){
 async function openCard(sid, order){
   const s = studs.find(x => String(x.id) === String(sid)); if (!s) return;
   const t = ui.term, att = (await attendance([s]))[s.id]; await loadStars([s]); await reloadComments([s]); await loadCards([s]);
+  // SAT scores from Units and lessons, shown next to the matching subject to help write the comment
+  const SAT = { gen: [] }; try { const r = await sb.from("sat_scores").select("crit,level,unit_plans(title,rubric)").eq("student_id", String(s.id));
+    (r.data || []).forEach(x => { const u = x.unit_plans || {}, c = (u.rubric || []).find(y => y.key === x.crit); if (!c || x.level == null) return;
+      (c.subject ? (SAT[c.subject] = SAT[c.subject] || []) : SAT.gen).push({ unit: u.title, name: c.name, lv: (C.scale || [])[x.level] ?? x.level }); }); } catch (_) {}
+  const satChips = list => (list || []).map(x => `<span class="cnt part" title="${esc(x.unit)}: ${esc(x.name)}">SAT · ${esc(x.name.length > 34 ? x.name.slice(0, 32) + "…" : x.name)}: <b>${esc(x.lv)}</b></span>`).join(" ");
   const edit = canEdit(s, t), info = rcOf(s.id, t), S = steps(), d = done(info.stage), scale = C.scale || [], pos = order.indexOf(String(sid));
   const ACT = { ready: "marked it ready for checking", check: "checked it", back: "sent it back to the teacher", send: "sent it to parents", reopen: "took it back from parents" };
   const stepper = [["Teacher", info.stage !== "draft"]].concat(S.map((x, k) => [x.name, d >= k + 1 && info.stage !== "draft"])).concat([["Parents", info.stage === "sent"]]);
@@ -273,7 +278,7 @@ async function openCard(sid, order){
   const editor = () => subsFor(s).map(sub => { const lock = onlySpec && !mine.has(String(sub.id)) ? " disabled" : ""; const ar = sub.lang === "ar" ? ' dir="rtl" lang="ar"' : "";
     if ((cardSet().subjects || {})[sub.id] === "hide") return "";
     const whole = ReportCard.modeOf(cardSet(), sub) === "subject", olds = whole ? (sub.strands || []).map(st => cmOf(s.id, st.id, t)).filter(c => c && c.text) : [];
-    return `<h3 class="strand" style="margin-top:14px;color:var(--plum)">${esc(sub.name)}${whole ? ' <span class="note" style="font-weight:600">· one comment for the subject</span>' : ""}</h3>`
+    return `${(SAT[sub.id] || []).length ? `<div style="margin-top:12px">${satChips(SAT[sub.id])}</div>` : ""}<h3 class="strand" style="margin-top:14px;color:var(--plum)">${esc(sub.name)}${whole ? ' <span class="note" style="font-weight:600">· one comment for the subject</span>' : ""}</h3>`
       + (whole && olds.length && !(cmOf(s.id, "subj:" + sub.id, t) || {}).text ? `<p class="note" style="margin:0 0 4px">Strand comments from TwigNest (for reference): ${olds.map(c => esc(c.text)).join(" · ")}</p>` : "")
       + ReportCard.units(C.card, sub).map(st => { const c = cmOf(s.id, st.id, t) || {};
       return `<div style="display:grid;grid-template-columns:minmax(120px,170px) 130px 1fr;gap:10px;align-items:start;padding:8px 0;border-bottom:1px solid var(--line)">
@@ -289,7 +294,7 @@ async function openCard(sid, order){
     ${(() => { const back = (info.history || []).filter(h => h.action === "back").pop(); return info.stage === "draft" && back && back.note ? `<div class="msg" style="margin:0">Sent back by ${esc(back.by || "the checker")}: ${esc(back.note)}</div>` : ""; })()}
     <div class="tabs" role="tablist" style="margin:0"><button class="tab" role="tab" aria-selected="${edit}" data-v="edit" ${edit ? "" : "disabled"}>✏️ Edit comments</button><button class="tab" role="tab" aria-selected="${!edit}" data-v="card">📄 Report card</button>
       <span class="note" id="svmsg" style="margin-left:auto;align-self:center">${edit ? "Changes save automatically." : info.stage === "sent" ? "Sent to parents, so it can’t be changed." : "You can’t change this report card at this step."}</span></div>
-    <div id="ed" class="prev" style="background:var(--card);color:var(--ink);max-height:56vh" ${edit ? "" : "hidden"}>${editor()}</div>
+    <div id="ed" class="prev" style="background:var(--card);color:var(--ink);max-height:56vh" ${edit ? "" : "hidden"}>${SAT.gen.length ? `<p class="note" style="margin:0 0 6px"><b>SAT results</b> (from Units and lessons)</p><div>${satChips(SAT.gen)}</div>` : ""}${editor()}</div>
     <div id="cv" class="prev" style="max-height:56vh" ${edit ? "hidden" : ""}></div>
     <div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:12px">
       <div class="row"><button class="btn ghost" data-pdf1>🖨 Save as PDF</button><button class="btn ghost" data-word1>⬇ Word</button></div>

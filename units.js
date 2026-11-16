@@ -147,12 +147,16 @@ function drawUnit(){
     <div class="bar" style="margin:8px 0 12px"><i class="a" style="width:${objs.length ? fully / objs.length * 100 : 0}%"></i></div>
     <div id="olist"></div></div>
 
+  <div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">SAT rubric and scores</h2>${gradeClasses(u.grade_id).some(c => canTeach(c.id)) ? `<button class="btn" id="scoreSat">✏️ Score the SAT</button>` : ""}</div>
+    <p class="note" style="margin:6px 0 10px">List the criteria of this unit’s Summative Assessment Task. Link a criterion to a subject to show its score next to that subject on the report card, or leave it general (for example ATL skills).</p>
+    <div id="rubric"></div></div>
+
   <div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Lessons</h2>${lead || teachesGrade(u.grade_id) ? `<button class="btn" id="newL">+ Add lesson</button>` : ""}</div>
     ${lessons.length ? `<div style="margin-top:10px">${lessons.map(l => { const tc = LT.filter(x => x.lesson_id === l.id).map(x => (classes.find(c => String(c.id) === String(x.class_id)) || {}).name).filter(Boolean);
       return `<button class="lrow" data-les="${esc(l.id)}"><span class="ld">${l.lesson_date ? fmtD(l.lesson_date) : "No date"}</span><b>${esc(l.title)}</b><span class="note">${(l.objectives || []).length} objective${(l.objectives || []).length === 1 ? "" : "s"}</span>
         <span class="row" style="gap:4px;margin-left:auto">${tc.length ? tc.map(n => `<span class="cnt ok">✔ ${esc(n)}</span>`).join("") : '<span class="cnt none">Not taught yet</span>'}</span></button>`; }).join("")}</div>`
       : `<p class="note">No lessons yet. Add lessons to plan the unit week by week. When a lesson is taught, mark it and its objectives count as taught for that class.</p>`}</div>`;
-  drawObjectives();
+  drawObjectives(); drawRubric();
   // unit details save automatically
   let tmr; const saveU = patch => { Object.assign(u, patch); document.getElementById("svm").textContent = "Saving…"; clearTimeout(tmr);
     tmr = setTimeout(async () => { const { error } = await sb.from("unit_plans").update(patch.__all ? { title: u.title, start_date: u.start_date || null, end_date: u.end_date || null, subjects: u.subjects, sections: u.sections, objectives: u.objectives } : patch).eq("id", u.id);
@@ -161,6 +165,15 @@ function drawUnit(){
   app.querySelectorAll("[data-u]").forEach(x => x.addEventListener("input", () => saveU({ __all: 1, [x.dataset.u]: x.value || null })));
   app.querySelectorAll("[data-sec]").forEach(x => x.addEventListener("input", () => { u.sections = Object.assign({}, u.sections, { [x.dataset.sec]: x.value }); saveU({ __all: 1 }); }));
   app.querySelectorAll("[data-subj]").forEach(x => x.addEventListener("change", () => { const set = new Set(u.subjects || []); x.checked ? set.add(x.dataset.subj) : set.delete(x.dataset.subj); u.subjects = [...set]; saveU({ __all: 1 }); drawObjectives(); }));
+  const rb = document.getElementById("rubric");
+  const saveR = () => { document.getElementById("svm").textContent = "Saving…"; clearTimeout(tmr);
+    tmr = setTimeout(async () => { const { error } = await sb.from("unit_plans").update({ rubric: u.rubric }).eq("id", u.id); document.getElementById("svm").textContent = error ? "Not saved: " + error.message : "Saved ✓"; }, 600); };
+  rb.addEventListener("input", e => { const i = e.target.dataset.rn; if (i == null) return; u.rubric[+i].name = e.target.value; saveR(); });
+  rb.addEventListener("change", e => { const i = e.target.dataset.rs; if (i == null) return; u.rubric[+i].subject = e.target.value || null; saveR(); });
+  rb.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
+    if (b.id === "addCrit") { u.rubric = (u.rubric || []).concat([{ key: "k" + Date.now().toString(36), name: "", subject: null }]); saveR(); drawRubric(); rb.querySelector(`[data-rn="${u.rubric.length - 1}"]`).focus(); }
+    if (b.dataset.rdel != null && confirm("Remove this criterion? Scores already given for it are kept but no longer shown.")) { u.rubric.splice(+b.dataset.rdel, 1); saveR(); drawRubric(); } });
+  const ss = document.getElementById("scoreSat"); if (ss) ss.onclick = () => scoreDialog(u);
   const ol = document.getElementById("olist");
   ol.addEventListener("change", e => { if (e.target.id !== "addObj" || !e.target.value) return; const set = new Set(u.objectives || []); set.add(e.target.value); u.objectives = [...set]; saveU({ __all: 1 }); drawObjectives(); });
   ol.addEventListener("click", e => { const b = e.target.closest("[data-rmobj]"); if (!b) return; u.objectives = (u.objectives || []).filter(x => x !== b.dataset.rmobj); saveU({ __all: 1 }); drawObjectives(); });
@@ -171,6 +184,41 @@ function drawUnit(){
   const nl = document.getElementById("newL"); if (nl) nl.onclick = () => lessonDialog(null);
   app.querySelectorAll("[data-les]").forEach(b => b.onclick = () => lessonDialog(lessons.find(l => l.id === b.dataset.les)));
   app.querySelectorAll("[data-rv]").forEach(b => b.onclick = () => review(b.dataset.rv));
+}
+function drawRubric(){
+  const u = ui.unit, ed = canEdit(u), subs = (window.NestSubjects ? NestSubjects.forGrade(C.subjects, u.grade_id) : C.subjects || []).filter(sb => !(u.subjects || []).length || (u.subjects || []).includes(sb.id));
+  const r = u.rubric || [];
+  document.getElementById("rubric").innerHTML = (r.length ? r.map((c, i) => `<div class="row srow"><input type="text" data-rn="${i}" value="${esc(c.name)}" placeholder="Criterion, e.g. Explains how communities work together" style="flex:2;min-width:220px"${ed ? "" : " disabled"}>
+      <select data-rs="${i}" style="flex:1;min-width:160px"${ed ? "" : " disabled"}><option value="">General (not one subject)</option>${subs.map(sb => `<option value="${esc(sb.id)}" ${c.subject === sb.id ? "selected" : ""}>${esc(sb.name)}</option>`).join("")}</select>
+      ${ed ? `<button type="button" class="btn ghost small" data-rdel="${i}">Remove</button>` : ""}</div>`).join("") : `<p class="note" style="margin:0">No criteria yet.</p>`)
+    + (ed ? `<p style="margin:10px 0 0"><button type="button" class="btn ghost small" id="addCrit">+ Add a criterion</button></p>` : "");
+}
+async function scoreDialog(u){
+  const crit = (u.rubric || []).filter(c => c.name && c.name.trim()), mineC = gradeClasses(u.grade_id).filter(c => canTeach(c.id));
+  if (!crit.length) return alert("Add the rubric criteria first, then score the SAT.");
+  const scale = C.scale || [], names = ((C.card || {}).levelNames) || [];
+  let cid = String(mineC[0].id);
+  dlg.className = "wide";
+  const draw = async () => {
+    dlg.innerHTML = `<div class="dlg"><div class="row" style="justify-content:space-between"><h2>Score the SAT · ${esc(u.title)}</h2><button type="button" class="btn ghost small" data-x>Close</button></div>
+      <div class="row"><label class="note" for="sc"><b>Class</b></label><select id="sc">${mineC.map(c => `<option value="${esc(c.id)}" ${String(c.id) === cid ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select><span class="note" id="scm">Scores save as you choose them.</span></div>
+      <div id="sgrid"><p class="note">Loading…</p></div></div>`;
+    dlg.querySelector("[data-x]").onclick = () => dlg.close();
+    dlg.querySelector("#sc").onchange = e => { cid = e.target.value; draw(); };
+    if (!dlg.open) dlg.showModal();
+    const st = ((await sb.from("students").select("id,full_name,archived").eq("class_id", cid).order("full_name")).data || []).filter(x => !x.archived);
+    const sc = st.length ? (await sb.from("sat_scores").select("student_id,crit,level").eq("unit_id", u.id).in("student_id", st.map(x => String(x.id)))).data || [] : [];
+    const val = (sid, k) => { const x = sc.find(y => String(y.student_id) === String(sid) && y.crit === k); return x ? x.level : null; };
+    const subName = id => ((C.subjects || []).find(x => x.id === id) || {}).name || "General";
+    dlg.querySelector("#sgrid").innerHTML = st.length ? `<div class="tablewrap" style="max-height:60vh;overflow:auto"><table class="reg"><tr><th>Student</th>${crit.map(c => `<th title="${esc(c.name)}">${esc(c.name.length > 40 ? c.name.slice(0, 38) + "…" : c.name)}<br><span class="note" style="font-weight:600">${esc(subName(c.subject))}</span></th>`).join("")}</tr>
+      ${st.map(x => `<tr><td><b>${esc(x.full_name)}</b></td>${crit.map(c => `<td><select data-sc="${esc(x.id)}|${esc(c.key)}" aria-label="${esc(x.full_name)}, ${esc(c.name)}"><option value="">–</option>${scale.map((lv, i) => `<option value="${i}" ${String(val(x.id, c.key)) === String(i) ? "selected" : ""}>${esc(lv)}${names[i] ? " · " + esc(names[i]) : ""}</option>`).join("")}</select></td>`).join("")}</tr>`).join("")}</table></div>`
+      : `<p class="note">No students in this class yet.</p>`;
+    dlg.querySelector("#sgrid").onchange = async e => { const k = e.target.dataset.sc; if (!k) return; const [sid, crk] = k.split("|"), m = dlg.querySelector("#scm"); m.textContent = "Saving…";
+      const q = e.target.value === "" ? sb.from("sat_scores").delete().eq("unit_id", u.id).eq("student_id", sid).eq("crit", crk)
+        : sb.from("sat_scores").upsert({ unit_id: u.id, student_id: sid, crit: crk, level: +e.target.value, updated_at: new Date().toISOString() });
+      const { error } = await q; m.textContent = error ? "Not saved: " + error.message : "Saved ✓"; };
+  };
+  draw();
 }
 // one drop-down of objectives, grouped by subject and strand
 function objSelect(id, list, placeholder){
