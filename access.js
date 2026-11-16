@@ -26,7 +26,7 @@
     ["evidence", "Evidence packs", "Build evidence packs", ["evidence"]],
     ["admissions", "Admissions", "Review applications, make offers and enrol", ["admissions"]],
     ["fees", "Fees and payments", "Create invoices and record payments", ["fees"]],
-    ["settings", "School settings and access", "Change school settings and who can do what", ["access"]]];
+    ["settings", "School settings and access", "Change school settings and who can do what", ["access", "newyear"]]];
   const g = s => Object.fromEntries(AREAS.map((a, i) => [a[0], s[i]]));
   // order of letters = order of AREAS above
   const DEFAULT = {

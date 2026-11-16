@@ -612,6 +612,17 @@ async function messages(open){
     if (er) return alert(er.message); sb.functions.invoke("nestopia-mail", { body: { action: "pmsg", id: tid } }).catch(() => {}); messages(tid); };
 }
 // Report cards: the school's own template (reportcard.js), published terms and approved comments only
+// report cards from earlier school years (kept when the school started a new year)
+async function pastReports(sid){
+  const box = document.getElementById("pastR"); if (!box || PREVIEW) return; let L = [];
+  try { const r = await sb.rpc("parent_past_reports", { p_student: sid }); L = r.data || []; } catch (_) { return; }
+  if (!L.length) return;
+  const html = d => { const sn = d.snapshot || {}, subs = window.NestSubjects ? NestSubjects.forStudent(d.subjects || [], d.student || {}, (d.student || {}).grade) : (d.subjects || []);
+    return ReportCard.render({ card: d.card || {}, scale: d.scale || [], subjects: subs, termName: (d.terms || [])[d.term], termIndex: d.term, year: d.year, school: d.school, student: d.student || {},
+      teachers: sn.teachers || [], att: sn.att, stars: sn.stars, ack: null, cm: stid => (sn.comments || []).find(c => c.strand === stid) || null }); };
+  box.innerHTML = `<div class="card"><h2 style="margin:0 0 8px">📚 Earlier years · السنوات السابقة</h2><div class="row">${L.map((d, i) => `<button class="btn ghost small" data-past="${i}">${esc(d.year || "")} · ${esc((d.terms || [])[d.term] || "")}</button>`).join("")}</div></div>`;
+  box.querySelectorAll("[data-past]").forEach(b => b.onclick = () => { const d = L[+b.dataset.past]; ReportCard.printPage([html(d)], `${(d.student || {}).name || "Report card"} - ${d.year} ${(d.terms || [])[d.term] || ""}`); });
+}
 async function reports(){
   const p = document.getElementById("pane"), sid = String(PREVIEW || cur);
   if (!window.ReportCard) return reportsOld();
@@ -619,7 +630,7 @@ async function reports(){
   if (error) return reportsOld();           // older database: show the previous report view
   const snaps = R.snapshots || {};
   const vis = (R.visible || []).filter(k => snaps[k] || (R.comments || []).some(c => String(c.term) === String(k)));
-  if (!vis.length) { p.innerHTML = '<div class="card"><p class="muted" style="margin:0">No report card has been shared yet this year.<span class="ar" dir="rtl" lang="ar">لم تتم مشاركة أي تقرير بعد.</span></p></div>'; return; }
+  if (!vis.length) { p.innerHTML = '<div class="card"><p class="muted" style="margin:0">No report card has been shared yet this year.<span class="ar" dir="rtl" lang="ar">لم تتم مشاركة أي تقرير بعد.</span></p></div><div id="pastR"></div>'; pastReports(sid); return; }
   if (term == null || !vis.includes(term)) term = vis[vis.length - 1];
   const sn = snaps[term];   // a sent report card: exactly what the school checked and sent
   const subs = window.NestSubjects ? NestSubjects.forStudent(R.subjects || [], R.student || {}, (R.student || {}).grade) : (R.subjects || []);
@@ -632,6 +643,7 @@ async function reports(){
     <div style="overflow-x:auto;margin-top:12px;background:#E9EEF5;border-radius:14px;padding:12px"><div style="background:#fff;border-radius:8px;padding:22px 24px;min-width:640px;max-width:794px;margin:0 auto">${html}</div></div>
     ${PREVIEW ? "" : `<div class="row" style="margin-top:12px">${seen ? `<span class="muted">✅ You confirmed you’ve seen this report on ${esc(ReportCard.fmtDate(seen))}. · تم التأكيد</span>`
       : `<button class="btn" id="repAck">✅ I’ve read this report · قرأت التقرير</button><span class="muted">Lets the school know you’ve seen it.</span>`}</div>`}</div>`;
+  p.insertAdjacentHTML("beforeend", '<div id="pastR"></div>'); pastReports(sid);
   p.querySelectorAll("[data-term]").forEach(b => b.onclick = () => { term = +b.dataset.term; reports(); });
   document.getElementById("repPdf").onclick = () => ReportCard.printPage([html], `${(R.student || {}).name || "Report card"} - ${(R.terms || [])[term] || ""}`);
   const ak = document.getElementById("repAck"); if (ak) ak.onclick = async () => { ak.disabled = true;
