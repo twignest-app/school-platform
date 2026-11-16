@@ -118,6 +118,7 @@ input[type=color]{width:48px;height:36px;border:1px solid var(--line);border-rad
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="hub.js?v=19"></script>
+<script src="access.js?v=4"></script>
 <script src="subjects.js?v=1"></script>
 <script src="reportcard.js?v=2"></script>
 <script>
@@ -147,7 +148,7 @@ const strandsFor = s => subsFor(s).filter(sb => ((ReportCard.settings(C.card).su
   if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
   if (window.hubInit) hubInit("reports");
   if (!(school.modules || []).includes("twignest")) return fail("Reports use TwigNest, which isn’t switched on for your school.");
-  lead = ["school_lead", "coordinator", "admin"].includes(p.role);
+  lead = ["school_lead", "coordinator", "admin"].includes(p.role) || (window.NestAccess && (await NestAccess.mine(sb))["reports"] === "E" && !["class_teacher", "specialist", "grade_leader"].includes(NestAccess.jobOf(p)));   // or Edit on Report cards in the access grid
   const set = await sb.from("school_setups").select("id,year,config").eq("school_id", school.id).order("updated_at", { ascending: false }).limit(1);
   setupId = set.data && set.data[0] ? set.data[0].id : null; C = set.data && set.data[0] ? set.data[0].config : null; year = set.data && set.data[0] ? set.data[0].year : null;
   if (!C || !C.subjects) return fail("Finish the school setup in TwigNest first.");

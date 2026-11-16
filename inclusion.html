@@ -115,6 +115,7 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="hub.js?v=19"></script>
+<script src="access.js?v=4"></script>
 <script src="inclusion-referrals.js?v=3"></script>
 <script src="inclusion-provision.js?v=2"></script>
 <script>
@@ -169,7 +170,7 @@ async function start(){
   if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
   if (!(school.modules || []).includes("inclusion")) return fail("Inclusion isn’t switched on for your school yet.");
   isLead = p.role === "school_lead" || p.role === "admin";
-  isMgr = isLead || p.role === "coordinator" || !!p.inclusion_lead || !!p.inclusion_head;
+  isMgr = isLead || p.role === "coordinator" || !!p.inclusion_lead || !!p.inclusion_head || (window.NestAccess && (await NestAccess.mine(sb))["inclusion"] === "E" && !["class_teacher", "specialist", "grade_leader"].includes(NestAccess.jobOf(p)));   // or Edit on Inclusion in the access grid
   app.innerHTML = `<p class="note">Loading the inclusion register…</p>`;
   try { await load(); } catch (e) { return fail(/inclusion_/.test(e.message || "") ? "Inclusion needs its database step first. Please run the Inclusion update in Supabase." : "Inclusion couldn’t load: " + (e.message || e)); }
   render();

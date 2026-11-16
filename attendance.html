@@ -118,6 +118,7 @@ input[type=number]{border:1px solid var(--line);background:var(--card);border-ra
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="hub.js?v=19"></script>
+<script src="access.js?v=4"></script>
 <script>
 /* Keep this the same as in index.html */
 const PLATFORM = "Nestopia";
@@ -156,7 +157,7 @@ async function fetchAll(q){ const out = []; for (let f = 0; ; f += 1000) { const
   me = p; who.innerHTML = `<span>${esc(p.full_name || p.email)}</span><a class="btn ghost small" href="./">← ${esc(PLATFORM)}</a>`;
   const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single(); school = s;
   if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
-  lead = ["school_lead", "coordinator", "admin"].includes(p.role) || !!p.wellbeing_team || !!p.inclusion_head;
+  lead = ["school_lead", "coordinator", "admin"].includes(p.role) || !!p.wellbeing_team || !!p.inclusion_head || (window.NestAccess && (await NestAccess.mine(sb))["attendance"] === "E" && !["class_teacher", "specialist", "grade_leader"].includes(NestAccess.jobOf(p)));   // or Edit on Attendance in the access grid
   const set = await sb.from("school_setups").select("year,config").eq("school_id", school.id).order("updated_at", { ascending: false }).limit(1);
   const year = set.data && set.data[0] ? set.data[0].year : null; grades = (set.data && set.data[0] && set.data[0].config && set.data[0].config.grades) || [];
   let cq = sb.from("classes").select("*").eq("school_id", school.id); if (year) cq = cq.eq("year", year);
