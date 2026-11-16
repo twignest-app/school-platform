@@ -12,7 +12,7 @@ const today = () => { const p = Object.fromEntries(new Intl.DateTimeFormat("en-G
 const KINDS = { trip: ["🚌", "Trip"], event: ["🎭", "Event"], activity: ["⚽", "Activity"], form: ["📝", "Consent form"] };
 const STATUS = { draft: ["Draft", "none"], pending: ["Waiting for SLT approval", "part"], sent: ["Sent to parents", "ok"], cancelled: ["Cancelled", "warn"] };
 
-let me, school, C = {}, setupId, year, lead = false, classes = [], myClassIds = new Set(), trips = [], studs = [], staff = {}, R = {};
+let FEES = "N", me, school, C = {}, setupId, year, lead = false, classes = [], myClassIds = new Set(), trips = [], studs = [], staff = {}, R = {};
 let ui = { tab: "up", filter: "all" };
 const T = () => Object.assign({ approval: false }, C.trips || {});
 const gradeName = id => ((C.grades || []).find(g => String(g.id) === String(id)) || {}).name || "";
@@ -33,6 +33,7 @@ async function start(){
   const { data: s } = await sb.from("schools").select("*").eq("id", p.school_id).single(); school = s;
   if (!school || school.status !== "active" || !p.active) return fail("Your school or account isn’t active yet.");
   if (window.hubInit) hubInit("trips");
+  try { if (window.NestAccess) FEES = (await NestAccess.mine(sb)).fees || "N"; } catch (_) {}
   lead = ["school_lead", "coordinator", "admin"].includes(p.role);
   const set = await sb.from("school_setups").select("id,year,config").eq("school_id", school.id).order("updated_at", { ascending: false }).limit(1);
   if (set.data && set.data[0]) { setupId = set.data[0].id; C = set.data[0].config || {}; year = set.data[0].year; }
@@ -165,6 +166,7 @@ async function openTrip(id){
   if (lead && t.status === "pending") btns.push(`<button class="btn" data-a="approve">✅ Approve and send to parents</button><button class="btn ghost" data-a="return">↩️ Send back with a note</button>`);
   if (mine(t) && t.status === "sent" && c.w) btns.push(`<button class="btn ghost" data-a="remind">🔔 Remind ${c.w} waiting</button>`);
   if (live) btns.push(`<button class="btn ghost" data-a="print">🖨️ Print the list</button><button class="btn ghost" data-a="csv">⬇️ Download</button>`);
+  if (FEES === "E" && t.status === "sent" && t.cost && c.y) btns.push(`<button class="btn ghost" data-a="inv">💳 Invoice the ${c.y} going</button>`);
   if (mine(t) && t.status === "sent") btns.push(`<button class="btn ghost" data-a="cancel">✖ Cancel</button>`);
   if (mine(t) && t.status !== "sent") btns.push(`<button class="btn ghost" data-a="del">🗑 Delete</button>`);
   const onDay = t.trip_date && t.trip_date <= d0;
@@ -208,6 +210,11 @@ async function openTrip(id){
       const { data, error } = await sb.functions.invoke("nestopia-mail", { body: { action: "trip", id: t.id, kind: "remind" } });
       if (error || (data && data.error)) { b.disabled = false; return alert("The reminder didn’t go: " + ((data && data.error) || error.message)); }
       toast(`Reminder sent to ${data && data.sent != null ? data.sent : "the"} parent${data && data.sent === 1 ? "" : "s"}.`); await load(); return openTrip(t.id); }
+    if (a === "inv") { const amt = parseFloat(String(t.cost).replace(/[^\d.]/g, "")); if (!amt) return alert("Write the cost as a number (for example AED 45) to make invoices.");
+      const ids = studsOf(t).filter(s => (rr[String(s.id)] || {}).answer === "yes").map(s => String(s.id));
+      if (!confirm(`Create an invoice of ${amt} for each of the ${ids.length} students going? Students who already have one for this trip are skipped. Paying the invoice ticks “paid” here.`)) return;
+      const { data, error } = await sb.rpc("fees_create", { p_students: ids, p_title: t.title, p_items: [{ label: "Trip: " + t.title, amount: amt }], p_due: t.reply_by || t.trip_date || null, p_discounts: {}, p_trip: t.id });
+      if (error) return alert(error.message); toast(`${data} invoice${data === 1 ? "" : "s"} created. They’re in Fees, and parents see them in the portal.`); return; }
     if (a === "print") return printList(t);
     if (a === "csv") return csv(t);
   });

@@ -25,22 +25,23 @@
     ["cover", "Leave approvals and cover", "Approve leave, see reasons, arrange cover", []],
     ["evidence", "Evidence packs", "Build evidence packs", ["evidence"]],
     ["admissions", "Admissions", "Review applications, make offers and enrol", ["admissions"]],
+    ["fees", "Fees and payments", "Create invoices and record payments", ["fees"]],
     ["settings", "School settings and access", "Change school settings and who can do what", ["access"]]];
   const g = s => Object.fromEntries(AREAS.map((a, i) => [a[0], s[i]]));
   // order of letters = order of AREAS above
   const DEFAULT = {
-    principal:      g("EEEEEEEEEEEEEEEEEE"),
-    vice_principal: g("EEEEEEEEEEEEEEEEEE"),
-    head_section:   g("EEEEEEEEEEEEEEEEEV"),
-    coordinator:    g("VVEEEEEEVVEEEEVEVV"),
-    grade_leader:   g("EVVEVEEEVVVEEENVNN"),
-    class_teacher:  g("EVVEVEEEVVVEEENNNN"),
-    specialist:     g("VVVEVEEEVVVEEENNNN"),
-    inclusion:      g("VVVVVVVVEVNENVNEVN"),
-    counsellor:     g("VVVNVNNEVENENNNVNN"),
-    nurse:          g("VVVNVNNNNVNVNNNNNN"),
-    office:         g("EEVNVNNNNVNENVVNEN"),
-    it:             g("NNVNVNNNNNNNNNNNNV")
+    principal:      g("EEEEEEEEEEEEEEEEEEE"),
+    vice_principal: g("EEEEEEEEEEEEEEEEEEE"),
+    head_section:   g("EEEEEEEEEEEEEEEEEVV"),
+    coordinator:    g("VVEEEEEEVVEEEEVEVNV"),
+    grade_leader:   g("EVVEVEEEVVVEEENVNNN"),
+    class_teacher:  g("EVVEVEEEVVVEEENNNNN"),
+    specialist:     g("VVVEVEEEVVVEEENNNNN"),
+    inclusion:      g("VVVVVVVVEVNENVNEVNN"),
+    counsellor:     g("VVVNVNNEVENENNNVNNN"),
+    nurse:          g("VVVNVNNNNVNVNNNNNNN"),
+    office:         g("EEVNVNNNNVNENVVNEEN"),
+    it:             g("NNVNVNNNNNNNNNNNNNV")
   };
   const RANK = { N: 0, V: 1, E: 2 };
   const jobOf = p => p.job || (["school_lead", "admin"].includes(p.role) ? "principal" : p.role === "coordinator" ? "coordinator" : "class_teacher");

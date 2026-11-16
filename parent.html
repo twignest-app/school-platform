@@ -213,9 +213,11 @@ async function todos(){
   const tr = await safe(async () => (await sb.rpc("parent_trips", { p_student: String(cur) })).data || [], []);
   tr.filter(x => x.open && !(x.reply || {}).answer).forEach(x => out.push(["🎒", "Permission slip to sign · نموذج موافقة للتوقيع", x.title + (x.reply_by ? " · " + L("reply by ", "الرد قبل ") + dshort(x.reply_by) : ""), "trips", "t-mint"]));
   window.TRIPS = tr;
+  const fe = await safe(async () => (await sb.rpc("parent_fees", { p_student: String(cur) })).data || {}, {}), d0 = new Date().toISOString().slice(0, 10);
+  (fe.invoices || []).filter(i => Number(i.total) - Number(i.paid) > 0.001 && (!i.due || i.due <= new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10))).forEach(i => out.push(["💳", i.due && i.due < d0 ? "Fees overdue · رسوم متأخرة" : "Fees due soon · رسوم مستحقة قريبًا", `${i.title} · ${fe.currency || "AED"} ${(Number(i.total) - Number(i.paid)).toFixed(2)}`, "fees", "t-peach"]));
   return out;
 }
-const go = to => { if (to === "trips") { sub.o = "trips"; tab = "more"; show(cur); window.scrollTo(0, 0); return; } if (to === "meet") { sub.m = "meet"; tab = "messages"; show(cur); window.scrollTo(0, 0); return; } if (to.startsWith("book:")) location.href = "book.html?c=" + to.slice(5); else { tab = to; show(cur); window.scrollTo(0, 0); } };
+const go = to => { if (to === "fees") { sub.o = "fees"; tab = "more"; show(cur); window.scrollTo(0, 0); return; } if (to === "trips") { sub.o = "trips"; tab = "more"; show(cur); window.scrollTo(0, 0); return; } if (to === "meet") { sub.m = "meet"; tab = "messages"; show(cur); window.scrollTo(0, 0); return; } if (to.startsWith("book:")) location.href = "book.html?c=" + to.slice(5); else { tab = to; show(cur); window.scrollTo(0, 0); } };
 async function bell(){
   const t = await todos(), d = document.createElement("div"); d.className = "drawer";
   d.innerHTML = `<div class="in"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🔔 Notifications · الإشعارات</h2><button class="btn ghost small" data-x>✕</button></div>
@@ -371,10 +373,28 @@ async function meetings(){
 // ---------- More: calendar, school information, my account ----------
 async function more(){
   const p = document.getElementById("pane"); sub.o = sub.o || "info";
-  p.innerHTML = `<div class="tabs" role="tablist"><button class="tab" aria-selected="${sub.o === "info"}" data-o="info">📁 School information · معلومات المدرسة</button>${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "trips"}" data-o="trips">🎒 Trips and forms · الرحلات والنماذج</button>`}<button class="tab" aria-selected="${sub.o === "tt"}" data-o="tt">🕘 Timetable · الجدول</button>${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "pk"}" data-o="pk">👪 Pick-up, contacts and health · الاستلام وجهات الاتصال والصحة</button>`}${(view.show || {}).calendar !== false ? `<button class="tab" aria-selected="${sub.o === "calendar"}" data-o="calendar">📅 Calendar · التقويم</button>` : ""}${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "account"}" data-o="account">👤 My account · حسابي</button>`}</div><div id="pane2"></div>`;
+  p.innerHTML = `<div class="tabs" role="tablist"><button class="tab" aria-selected="${sub.o === "info"}" data-o="info">📁 School information · معلومات المدرسة</button>${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "trips"}" data-o="trips">🎒 Trips and forms · الرحلات والنماذج</button>`}<button class="tab" aria-selected="${sub.o === "tt"}" data-o="tt">🕘 Timetable · الجدول</button>${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "fees"}" data-o="fees">💳 Fees · الرسوم</button>`}${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "pk"}" data-o="pk">👪 Pick-up, contacts and health · الاستلام وجهات الاتصال والصحة</button>`}${(view.show || {}).calendar !== false ? `<button class="tab" aria-selected="${sub.o === "calendar"}" data-o="calendar">📅 Calendar · التقويم</button>` : ""}${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "account"}" data-o="account">👤 My account · حسابي</button>`}</div><div id="pane2"></div>`;
   p.querySelectorAll("[data-o]").forEach(b => b.onclick = () => { sub.o = b.dataset.o; show(cur); });
   const inner = document.getElementById("pane2"); inner.id = "pane"; p.id = "paneOuter";
-  if (sub.o === "calendar") calendar(); else if (sub.o === "account") account(); else if (sub.o === "trips") await tripsTab(); else if (sub.o === "tt") await ttTab(); else if (sub.o === "pk") await pickupTab(); else await schoolInfo();
+  if (sub.o === "calendar") calendar(); else if (sub.o === "account") account(); else if (sub.o === "trips") await tripsTab(); else if (sub.o === "tt") await ttTab(); else if (sub.o === "pk") await pickupTab(); else if (sub.o === "fees") await feesTab(); else await schoolInfo();
+}
+// ---------- Fees ----------
+async function feesTab(){
+  const p = document.getElementById("pane"); let d = null;
+  try { const r = await sb.rpc("parent_fees", { p_student: String(cur) }); if (r.error) throw r.error; d = r.data || {}; } catch (e) { p.innerHTML = `<div class="card">${msg(e.message || "")}</div>`; return; }
+  const cur0 = d.currency || "AED", m = n => `${cur0} ${Number(n || 0).toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, d0 = new Date().toISOString().slice(0, 10);
+  const I = d.invoices || [], bal = I.reduce((a, i) => a + Number(i.total) - Number(i.paid), 0);
+  p.innerHTML = `<div class="card tile ${bal > 0.001 ? "t-peach" : "t-mint"}"><h2>💳 ${L("Fees", "الرسوم")}</h2><p style="font-size:20px;margin:0">${bal > 0.001 ? `${L("Still to pay", "المبلغ المتبقي")}: <b>${m(bal)}</b>` : `✅ ${L("Nothing to pay. Thank you!", "لا توجد مبالغ مستحقة. شكرًا!")}`}</p>
+      ${d.how ? `<div style="background:#fff;border-radius:14px;padding:10px 14px;margin-top:10px;white-space:pre-line"><b>${L("How to pay", "طريقة الدفع")}</b><br>${esc(d.how)}</div>` : ""}</div>
+    ${I.map(i => { const b = Number(i.total) - Number(i.paid), st = b <= 0.001 ? ["✅", L("Paid", "مدفوعة"), "t-mint"] : i.due && i.due < d0 ? ["⚠️", L("Overdue", "متأخرة"), "t-rose"] : Number(i.paid) > 0 ? ["🕐", L("Part paid", "مدفوعة جزئيًا"), "t-butter"] : ["🧾", L("To pay", "للدفع"), "t-sky"];
+      return `<div class="card tile ${st[2]}"><div class="row" style="justify-content:space-between"><b>${esc(i.title)}</b><span>${st[0]} ${st[1]}</span></div>
+        <p class="muted" style="margin:2px 0 8px">${esc(i.number || "")}${i.due ? " · " + L("due", "الاستحقاق") + " " + dshort(i.due) : ""}</p>
+        ${(i.items || []).map(x => `<div class="row" style="justify-content:space-between"><span>${esc(x.label)}</span><span>${m(x.amount)}</span></div>`).join("")}
+        ${Number(i.discount) ? `<div class="row" style="justify-content:space-between"><span>${L("Discount", "خصم")}</span><span>− ${m(i.discount)}</span></div>` : ""}
+        <div class="row" style="justify-content:space-between;border-top:1px solid var(--line);margin-top:6px;padding-top:6px"><b>${L("Total", "الإجمالي")}</b><b>${m(i.total)}</b></div>
+        ${(i.payments || []).map(x => `<div class="row" style="justify-content:space-between" class="muted"><span>✓ ${L("Paid", "دُفع")} ${dshort(x.on)} · ${esc(x.receipt || "")}</span><span>${m(x.amount)}</span></div>`).join("")}
+        ${b > 0.001 ? `<div class="row" style="justify-content:space-between"><b>${L("Balance", "المتبقي")}</b><b>${m(b)}</b></div>` : ""}</div>`; }).join("") || `<div class="card"><p style="margin:0">${L("No invoices yet.", "لا توجد فواتير بعد.")}</p></div>`}`;
+  applyLang(p);
 }
 // ---------- Pick-up and contacts ----------
 const pkUrl = {};
