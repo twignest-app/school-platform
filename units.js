@@ -118,6 +118,7 @@ async function openUnit(id){
   await loadTaught(u.grade_id);
   lessons = await fetchAll(() => sb.from("lesson_plans").select("*").eq("unit_id", u.id).order("lesson_date", { ascending: true, nullsFirst: false }).order("sort"));
   LT = lessons.length ? await fetchAll(() => sb.from("lesson_taught").select("*").in("lesson_id", lessons.map(l => l.id))) : [];
+  ui.shared = undefined; try { const r = await sb.from("unit_info").select("*").eq("plan_id", u.id).maybeSingle(); ui.shared = r.error ? undefined : (r.data || null); } catch (_) {}
   drawUnit();
 }
 function drawUnit(){
@@ -129,7 +130,7 @@ function drawUnit(){
   app.innerHTML = `<p style="margin:0 0 10px"><a href="#" class="note">← All ${esc(gradeName(u.grade_id))} units</a></p>
   <div class="card"><div class="row" style="justify-content:space-between;align-items:flex-start">
       <div style="flex:1;min-width:240px"><label class="f">Unit title<input type="text" data-u="title" value="${esc(u.title)}"${dis} style="font-size:20px;font-weight:700"></label></div>
-      <div class="row">${S.review ? `<span class="cnt ${st[1]}" style="font-size:14px">${st[0]}</span>` : ""}${reviewButtons(u)}<button class="btn ghost small" id="prt">🖨 Print</button>
+      <div class="row">${S.review ? `<span class="cnt ${st[1]}" style="font-size:14px">${st[0]}</span>` : ""}${reviewButtons(u)}${ui.shared !== undefined && (lead || teachesGrade(u.grade_id)) ? `<button class="btn ${ui.shared ? "ghost " : ""}small" id="shareP">${ui.shared ? "👪 Shared with parents" : "👪 Share with parents"}</button>` : ""}<button class="btn ghost small" id="prt">🖨 Print</button>
         ${(lead || (teachesGrade(u.grade_id) && ["draft", "changes"].includes(u.status))) ? `<button class="btn ghost small" id="delU">Delete</button>` : ""}</div></div>
     ${u.status === "changes" && last ? `<div class="msg" style="margin:8px 0 0">Changes requested by ${esc(last.by || "a leader")}: ${esc(last.note)}</div>` : ""}
     ${!ed && u.status === "approved" ? `<p class="note">This unit is approved. Ask a leader to reopen it if it needs changes. You can still add lessons and mark them as taught.</p>` : ""}
@@ -155,7 +156,8 @@ function drawUnit(){
   // unit details save automatically
   let tmr; const saveU = patch => { Object.assign(u, patch); document.getElementById("svm").textContent = "Saving…"; clearTimeout(tmr);
     tmr = setTimeout(async () => { const { error } = await sb.from("unit_plans").update(patch.__all ? { title: u.title, start_date: u.start_date || null, end_date: u.end_date || null, subjects: u.subjects, sections: u.sections, objectives: u.objectives } : patch).eq("id", u.id);
-      document.getElementById("svm").textContent = error ? "Not saved: " + error.message : "Saved ✓"; }, 700); };
+      document.getElementById("svm").textContent = error ? "Not saved: " + error.message : "Saved ✓";
+      if (!error && ui.shared) sb.from("unit_info").update({ starts_on: u.start_date || null, ends_on: u.end_date || null }).eq("id", ui.shared.id).then(() => {}); }, 700); };
   app.querySelectorAll("[data-u]").forEach(x => x.addEventListener("input", () => saveU({ __all: 1, [x.dataset.u]: x.value || null })));
   app.querySelectorAll("[data-sec]").forEach(x => x.addEventListener("input", () => { u.sections = Object.assign({}, u.sections, { [x.dataset.sec]: x.value }); saveU({ __all: 1 }); }));
   app.querySelectorAll("[data-subj]").forEach(x => x.addEventListener("change", () => { const set = new Set(u.subjects || []); x.checked ? set.add(x.dataset.subj) : set.delete(x.dataset.subj); u.subjects = [...set]; saveU({ __all: 1 }); drawObjectives(); }));
@@ -163,6 +165,7 @@ function drawUnit(){
   ol.addEventListener("change", e => { if (e.target.id !== "addObj" || !e.target.value) return; const set = new Set(u.objectives || []); set.add(e.target.value); u.objectives = [...set]; saveU({ __all: 1 }); drawObjectives(); });
   ol.addEventListener("click", e => { const b = e.target.closest("[data-rmobj]"); if (!b) return; u.objectives = (u.objectives || []).filter(x => x !== b.dataset.rmobj); saveU({ __all: 1 }); drawObjectives(); });
   document.getElementById("prt").onclick = () => printUnit(u);
+  const sp = document.getElementById("shareP"); if (sp) sp.onclick = () => shareDialog(u);
   const db = document.getElementById("delU"); if (db) db.onclick = async () => { if (!confirm(`Delete “${u.title}” and its ${lessons.length} lesson${lessons.length === 1 ? "" : "s"}? Objectives already ticked as taught stay ticked.`)) return;
     const { error } = await sb.from("unit_plans").delete().eq("id", u.id); if (error) return alert(error.message); units = units.filter(x => x.id !== u.id); location.hash = ""; };
   const nl = document.getElementById("newL"); if (nl) nl.onclick = () => lessonDialog(null);
@@ -218,6 +221,13 @@ function lessonDialog(l){
     <div class="secs">${LESSON_FIELDS.map(([k, lab]) => `<label class="f">${lab}<textarea rows="2" dir="auto" name="f_${k}"${can ? "" : " disabled"}>${esc((l.fields || {})[k] || "")}</textarea></label>`).join("")}</div>
     ${isNew ? "" : `<div class="box"><h3>✔ Taught</h3><p class="note" style="margin:0 0 6px">Tick each class once it has had this lesson. Its objectives are then ticked as taught for that class in TwigNest and on Curriculum coverage.</p>
       <div class="checks">${gc.map(c => `<label><input type="checkbox" name="tc" value="${esc(c.id)}" ${done.has(String(c.id)) ? "checked" : ""}${canTeach(c.id) ? "" : " disabled"}> ${esc(c.name)}</label>`).join("") || '<span class="note">No classes in this grade yet.</span>'}</div></div>`}
+    ${isNew || !gc.some(c => canTeach(c.id)) ? "" : `<div class="box"><h3>🐣 Send to Nestlings</h3><p class="note" style="margin:0 0 6px">Post homework or a material from this lesson to your classes in Nestlings. Parents see it in the Parent Portal too.</p>
+      <div class="f3"><label class="f">Type<select id="nlK"><option value="homework">Homework</option><option value="revision">Revision</option><option value="material">Material</option></select></label>
+        <label class="f" style="grid-column:span 2">Title<input type="text" id="nlT" value="${esc(l.title)}"></label></div>
+      <label class="f">What students should do<textarea id="nlB" rows="3" dir="auto">${esc((l.fields || {}).homework || (l.fields || {}).resources || "")}</textarea></label>
+      <div class="row"><label class="f" id="nlDw">Due<input type="date" id="nlD" value="${esc(l.lesson_date ? new Date(new Date(l.lesson_date + "T12:00:00").getTime() + 7 * 864e5).toISOString().slice(0, 10) : "")}"></label>
+        <span class="checks">${gc.filter(c => canTeach(c.id)).map(c => `<label><input type="checkbox" class="nlC" value="${esc(c.id)}" checked> ${esc(c.name)}</label>`).join("")}</span>
+        <button type="button" class="btn small" id="nlGo" style="margin-left:auto">Send to Nestlings</button></div></div>`}
     <div class="row" style="justify-content:space-between">${!isNew && can ? `<button type="button" class="btn ghost" id="delL">Delete lesson</button>` : "<span></span>"}<button class="btn">${isNew ? "Add lesson" : "Save"}</button></div></form>`;
   const f = dlg.querySelector("#lf");
   let lo = (l.objectives || []).filter(x => uo.includes(x));
@@ -248,8 +258,47 @@ function lessonDialog(l){
       }
       dlg.close(); toast(isNew ? "Lesson added. Open it again to mark classes as taught." : "Lesson saved."); openUnit(u.id);
     } catch (err) { btn.disabled = false; alert("This wasn’t saved: " + (err.message || err)); } };
+  const nk = dlg.querySelector("#nlK"); if (nk) nk.onchange = () => { dlg.querySelector("#nlDw").hidden = nk.value === "material"; };
+  const ng = dlg.querySelector("#nlGo"); if (ng) ng.onclick = async () => {
+    const cls = [...dlg.querySelectorAll(".nlC:checked")].map(x => x.value), k = nk.value, t = dlg.querySelector("#nlT").value.trim(), body = dlg.querySelector("#nlB").value.trim();
+    if (!cls.length) return alert("Choose at least one class."); if (!t) return alert("Add a title.");
+    ng.disabled = true;
+    const rows = cls.map(cid => ({ class_id: cid, kind: k === "material" ? "material" : "homework", sub_kind: k === "material" ? null : k, title: t, body: body || null, on_date: k === "material" ? null : (dlg.querySelector("#nlD").value || null) }));
+    const { error } = await sb.from("nestling_items").insert(rows); ng.disabled = false;
+    if (error) return alert("This wasn’t sent: " + error.message);
+    toast(`Sent to Nestlings for ${cls.length} class${cls.length === 1 ? "" : "es"}.`); ng.textContent = "Sent ✓"; };
   const dl = dlg.querySelector("#delL"); if (dl) dl.onclick = async () => { if (!confirm("Delete this lesson? Objectives already ticked as taught stay ticked.")) return;
     const { error } = await sb.from("lesson_plans").delete().eq("id", l.id); if (error) return alert(error.message); dlg.close(); openUnit(u.id); };
+  dlg.showModal();
+}
+
+/* ---------- share a unit with parents ---------- */
+function shareDialog(u){
+  const sec = u.sections || {}, sh = ui.shared, linesTxt = sec.lines || "";
+  dlg.className = "wide";
+  dlg.innerHTML = `<form class="dlg" id="shf"><div class="row" style="justify-content:space-between"><h2>👪 Share this unit with parents</h2><button type="button" class="btn ghost small" data-x>Close</button></div>
+    <p class="note" style="margin:0">Parents of ${esc(gradeName(u.grade_id))} see this in the Parent Portal under <b>Learning → This unit</b>. It comes from your unit plan, so check it reads well for families.</p>
+    <div class="f3"><label class="f" style="grid-column:span 3">Unit title<input type="text" name="t" value="${esc(sh ? sh.title : u.title)}" required></label></div>
+    <label class="f">Transdisciplinary theme<input type="text" name="th" dir="auto" value="${esc(sh ? sh.theme || "" : sec.theme || "")}"></label>
+    <label class="f">Central idea<textarea name="c" rows="2" dir="auto">${esc(sh ? sh.central_idea || "" : sec.central || "")}</textarea></label>
+    <label class="f">We will find out about (lines of inquiry)<textarea name="i" rows="3" dir="auto">${esc(sh ? sh.inquiry || "" : linesTxt)}</textarea></label>
+    <label class="f">Talk about it at home (questions and ideas for families)<textarea name="h" rows="3" dir="auto" placeholder="For example: Ask your child who helps in our community, and how.">${esc(sh ? sh.talk_home || "" : sec.parent_home || "")}</textarea></label>
+    <label class="f">Words to use (optional)<input type="text" name="v" dir="auto" value="${esc(sh ? sh.vocabulary || "" : sec.parent_words || "")}"></label>
+    <p class="note" style="margin:0">Dates: ${u.start_date ? fmtD(u.start_date) + (u.end_date ? " – " + fmtD(u.end_date) : "") : "add the unit’s start and end dates so parents see it at the right time"}.</p>
+    <div class="row" style="justify-content:space-between">${sh ? `<button type="button" class="btn ghost" id="unshare">Stop sharing</button>` : "<span></span>"}<button class="btn">${sh ? "Update for parents" : "Share with parents"}</button></div></form>`;
+  const f = dlg.querySelector("#shf");
+  dlg.querySelector("[data-x]").onclick = () => dlg.close();
+  f.onsubmit = async e => { e.preventDefault();
+    const row = { plan_id: u.id, school_id: String(school.id), grade_id: String(u.grade_id), title: f.t.value.trim() || u.title, theme: f.th.value.trim() || null, central_idea: f.c.value.trim() || null,
+      inquiry: f.i.value.trim() || null, talk_home: f.h.value.trim() || null, vocabulary: f.v.value.trim() || null, starts_on: u.start_date || null, ends_on: u.end_date || null, updated_at: new Date().toISOString() };
+    const r = sh ? await sb.from("unit_info").update(row).eq("id", sh.id).select().single() : await sb.from("unit_info").insert(row).select().single();
+    if (r.error) return alert("This wasn’t shared: " + r.error.message);
+    // keep the family wording with the unit plan too
+    u.sections = Object.assign({}, u.sections, { parent_home: row.talk_home || "", parent_words: row.vocabulary || "" });
+    await sb.from("unit_plans").update({ sections: u.sections }).eq("id", u.id);
+    ui.shared = r.data; dlg.close(); toast(sh ? "Updated for parents." : "Shared. Parents of this grade can see it."); drawUnit(); };
+  const un = dlg.querySelector("#unshare"); if (un) un.onclick = async () => { if (!confirm("Stop showing this unit to parents?")) return;
+    const { error } = await sb.from("unit_info").delete().eq("id", sh.id); if (error) return alert(error.message); ui.shared = null; dlg.close(); toast("Parents no longer see this unit."); drawUnit(); };
   dlg.showModal();
 }
 
