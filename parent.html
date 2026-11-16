@@ -40,6 +40,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px so
 .kidb .a{font-size:22px}.kidb[aria-pressed="true"]{border-color:var(--plum);background:var(--plum-soft)}
 .hbtn{font:inherit;font-weight:800;border:2px solid var(--line);background:var(--card);border-radius:99px;padding:6px 12px;cursor:pointer;color:var(--plum);position:relative}
 .hbtn .dot{position:absolute;top:-6px;right:-6px}
+.dot[hidden]{display:none}
 .hello{border-radius:24px;padding:20px 22px;margin-bottom:14px;background:linear-gradient(135deg,var(--lav),var(--sky));display:flex;gap:16px;align-items:center}
 .hello .av{font-size:60px;line-height:1}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
@@ -209,9 +210,12 @@ async function todos(){
   const mt = await safe(async () => (await sb.rpc("parent_meetings", { p_student: String(cur) })).data || [], []);
   mt.filter(m => m.status === "offered").forEach(m => out.push(["🗓️", "Choose a meeting time · اختر موعد الاجتماع", m.with, "meet", "t-lav"]));
   window.MEETS = mt;
+  const tr = await safe(async () => (await sb.rpc("parent_trips", { p_student: String(cur) })).data || [], []);
+  tr.filter(x => x.open && !(x.reply || {}).answer).forEach(x => out.push(["🎒", "Permission slip to sign · نموذج موافقة للتوقيع", x.title + (x.reply_by ? " · " + L("reply by ", "الرد قبل ") + dshort(x.reply_by) : ""), "trips", "t-mint"]));
+  window.TRIPS = tr;
   return out;
 }
-const go = to => { if (to === "meet") { sub.m = "meet"; tab = "messages"; show(cur); window.scrollTo(0, 0); return; } if (to.startsWith("book:")) location.href = "book.html?c=" + to.slice(5); else { tab = to; show(cur); window.scrollTo(0, 0); } };
+const go = to => { if (to === "trips") { sub.o = "trips"; tab = "more"; show(cur); window.scrollTo(0, 0); return; } if (to === "meet") { sub.m = "meet"; tab = "messages"; show(cur); window.scrollTo(0, 0); return; } if (to.startsWith("book:")) location.href = "book.html?c=" + to.slice(5); else { tab = to; show(cur); window.scrollTo(0, 0); } };
 async function bell(){
   const t = await todos(), d = document.createElement("div"); d.className = "drawer";
   d.innerHTML = `<div class="in"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🔔 Notifications · الإشعارات</h2><button class="btn ghost small" data-x>✕</button></div>
@@ -246,7 +250,7 @@ async function home(){
   let today = {}; try { const r = await sb.rpc("parent_today", { p_student: String(PREVIEW || cur) }); today = r.data || {}; } catch (_) {}
   let latest = null; if (!PREVIEW) try { const r = await sb.rpc("parent_news", { p_student: String(cur) }); latest = (r.data || [])[0]; } catch (_) {}
   const t = PREVIEW ? [] : await todos(), now0 = new Date().toISOString();
-  const ev = [...(window.MEETS || []).filter(m => m.status === "confirmed" && m.chosen >= now0).map(m => ({ start: m.chosen.slice(0, 10), title: "🗓️ " + L("Meeting with ", "اجتماع مع ") + m.with + " · " + new Date(m.chosen).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) })), ...(view.events || [])].sort((a, b) => a.start.localeCompare(b.start)).slice(0, 3);
+  const ev = [...(window.MEETS || []).filter(m => m.status === "confirmed" && m.chosen >= now0).map(m => ({ start: m.chosen.slice(0, 10), title: "🗓️ " + L("Meeting with ", "اجتماع مع ") + m.with + " · " + new Date(m.chosen).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) })), ...(window.TRIPS || []).filter(x => x.status === "sent" && x.date && x.date >= now0.slice(0, 10) && (x.reply || {}).answer !== "no").map(x => ({ start: x.date, title: "🎒 " + x.title })), ...(view.events || [])].sort((a, b) => a.start.localeCompare(b.start)).slice(0, 3);
   const mark = today.mark, MK = { present: ["✅", "is in school today · في المدرسة اليوم", "t-mint"], late: ["🕘", today.arrived ? `arrived late today, at ${today.arrived} · وصل متأخرًا اليوم الساعة ${today.arrived}` : "arrived late today · وصل متأخرًا اليوم", "t-peach"], absent: ["🏠", "isn’t in school today · ليس في المدرسة اليوم", "t-rose"], excused: ["🏠", "has an authorised absence today · غياب بعذر اليوم", "t-sky"] };
   p.innerHTML = `<div class="hello"><span class="av">${avs[cur] || "🌟"}</span><div><p class="muted" style="margin:0">${hr0 < 12 ? "Good morning · صباح الخير" : "Good afternoon · مساء الخير"}</p><h1 style="margin:0">${esc(view.name || "")}</h1><p class="muted" style="margin:2px 0 0">${esc([view.class, view.school].filter(Boolean).join(" · "))}</p></div></div>
     ${!PREVIEW ? `<div class="quick no-print"><button class="t-peach" data-go="attendance" data-focus="arf"><span>🕘</span>Running late · سيتأخر اليوم</button><button class="t-mint" data-go="attendance" data-focus="arf"><span>🚪</span>Early pickup · خروج مبكر</button><button class="t-sky" data-go="attendance"><span>📨</span>Report an absence · إبلاغ عن غياب</button><button class="t-rose" data-go="messages"><span>💬</span>Message the teacher · راسل المعلم</button><button class="t-lav" data-go="meet"><span>🗓️</span>Request a meeting · طلب اجتماع</button><button class="t-peach" data-go="more"><span>📁</span>School information · معلومات المدرسة</button></div>` : ""}
@@ -365,10 +369,59 @@ async function meetings(){
 // ---------- More: calendar, school information, my account ----------
 async function more(){
   const p = document.getElementById("pane"); sub.o = sub.o || "info";
-  p.innerHTML = `<div class="tabs" role="tablist"><button class="tab" aria-selected="${sub.o === "info"}" data-o="info">📁 School information · معلومات المدرسة</button>${(view.show || {}).calendar !== false ? `<button class="tab" aria-selected="${sub.o === "calendar"}" data-o="calendar">📅 Calendar · التقويم</button>` : ""}${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "account"}" data-o="account">👤 My account · حسابي</button>`}</div><div id="pane2"></div>`;
+  p.innerHTML = `<div class="tabs" role="tablist"><button class="tab" aria-selected="${sub.o === "info"}" data-o="info">📁 School information · معلومات المدرسة</button>${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "trips"}" data-o="trips">🎒 Trips and forms · الرحلات والنماذج</button>`}${(view.show || {}).calendar !== false ? `<button class="tab" aria-selected="${sub.o === "calendar"}" data-o="calendar">📅 Calendar · التقويم</button>` : ""}${PREVIEW ? "" : `<button class="tab" aria-selected="${sub.o === "account"}" data-o="account">👤 My account · حسابي</button>`}</div><div id="pane2"></div>`;
   p.querySelectorAll("[data-o]").forEach(b => b.onclick = () => { sub.o = b.dataset.o; show(cur); });
   const inner = document.getElementById("pane2"); inner.id = "pane"; p.id = "paneOuter";
-  if (sub.o === "calendar") calendar(); else if (sub.o === "account") account(); else await schoolInfo();
+  if (sub.o === "calendar") calendar(); else if (sub.o === "account") account(); else if (sub.o === "trips") await tripsTab(); else await schoolInfo();
+}
+// ---------- Trips and permission slips ----------
+async function tripsTab(){
+  const p = document.getElementById("pane"); let list = [];
+  try { const r = await sb.rpc("parent_trips", { p_student: String(cur) }); if (r.error) throw r.error; list = r.data || []; } catch (e) { p.innerHTML = `<div class="card">${msg(e.message || "Couldn’t load trips.")}</div>`; return; }
+  window.TRIPS = list;
+  const first = (view.name || "").split(" ")[0], d0 = new Date().toISOString().slice(0, 10);
+  const K = { trip: "🚌", event: "🎭", activity: "⚽", form: "📝" };
+  const card = x => { const r = x.reply || {}, ans = r.answer;
+    return `<div class="card tile ${x.status === "cancelled" ? "t-rose" : ans === "yes" ? "t-mint" : ans === "no" ? "t-peach" : "t-butter"}">
+      <h2>${K[x.kind] || "🚌"} ${esc(x.title)}</h2>
+      ${x.status === "cancelled" ? `<p style="margin:0 0 8px"><b>✖ This has been cancelled. · تم الإلغاء</b></p>` : ""}
+      <p style="margin:0">📅 <b>${x.date ? dshort(x.date) : ""}</b>${x.leave ? ` · 🕘 ${esc(x.leave)}${x.back ? "–" + esc(x.back) : ""}` : ""}${x.place ? ` · 📍 ${esc(x.place)}` : ""}</p>
+      ${x.details ? `<p style="margin:8px 0 0;white-space:pre-line">${esc(x.details)}</p>` : ""}
+      ${x.bring ? `<p style="margin:8px 0 0;white-space:pre-line">🎒 <b>${L("Bring or wear:", "يُرجى إحضار أو ارتداء:")}</b> ${esc(x.bring)}</p>` : ""}
+      ${x.cost ? `<p style="margin:8px 0 0">💳 <b>${L("Cost:", "التكلفة:")}</b> ${esc(x.cost)}${x.pay_note ? " · " + esc(x.pay_note) : ""}${ans === "yes" ? (r.paid ? ` · <b>✓ ${L("Paid", "تم الدفع")}</b>` : ` · <span class="muted">${L("Not paid yet", "لم يُدفع بعد")}</span>`) : ""}</p>` : ""}
+      ${x.from ? `<p class="muted" style="margin:6px 0 0">${L("From", "من")} ${esc(x.from)}</p>` : ""}
+      ${ans ? `<p style="margin:12px 0 0;font-size:17px">${ans === "yes" ? `✅ <b>${esc(first)}</b> ${L("is going", "سيشارك")}` : `❌ <b>${esc(first)}</b> ${L("is not going", "لن يشارك")}`}</p>
+        <p class="muted" style="margin:2px 0 0">${r.paper ? L("Recorded by the school from a paper slip", "سجّلته المدرسة من نموذج ورقي") : `${L("Signed by", "وقّع")} ${esc(r.name || "")}${r.at ? " · " + dshort(String(r.at).slice(0, 10)) : ""}`}${r.note ? ` · 📝 ${esc(r.note)}` : ""}</p>
+        ${x.open ? `<p style="margin:8px 0 0"><button class="btn ghost small" data-chg="${esc(x.id)}">${L("Change my answer", "تغيير إجابتي")}</button></p>` : ""}`
+      : x.open ? `<p style="margin:12px 0 0"><button class="btn" data-sign="${esc(x.id)}">✍️ ${L("Reply and sign", "الرد والتوقيع")}</button>${x.reply_by ? ` <span class="muted">${L("Please reply by", "يُرجى الرد قبل")} ${dshort(x.reply_by)}</span>` : ""}</p>`
+      : x.status === "sent" ? `<p class="muted" style="margin:12px 0 0">${L("Replies are closed. Please message the teacher if you need to.", "انتهى وقت الرد. يُرجى مراسلة المعلم عند الحاجة.")}</p>` : ""}
+    </div>`; };
+  const up = list.filter(x => (x.end || x.date || d0) >= d0), past = list.filter(x => (x.end || x.date || d0) < d0).reverse();
+  p.innerHTML = `${up.length ? `<div class="grid2">${up.map(card).join("")}</div>` : `<div class="card"><p style="margin:0">✨ ${L("No trips or forms right now.", "لا توجد رحلات أو نماذج حاليًا.")}</p></div>`}
+    ${past.length ? `<h2 style="margin:18px 0 8px;font-size:18px">${L("Recent", "السابقة")}</h2><div class="grid2">${past.map(card).join("")}</div>` : ""}`;
+  p.querySelectorAll("[data-sign],[data-chg]").forEach(b => b.onclick = () => signTrip(list.find(x => x.id === (b.dataset.sign || b.dataset.chg))));
+}
+function signTrip(x){
+  const r = x.reply || {}, first = (view.name || "").split(" ")[0], d = document.createElement("div"); d.className = "drawer";
+  d.innerHTML = `<div class="in"><div class="row" style="justify-content:space-between"><h2 style="margin:0">✍️ ${esc(x.title)}</h2><button class="btn ghost small" data-x>✕</button></div>
+    <form id="tsf" style="display:grid;gap:12px;margin-top:12px">
+      <label style="display:flex;gap:10px;align-items:flex-start;font-weight:700"><input type="radio" name="ta" value="yes" ${r.answer === "yes" ? "checked" : ""} required style="margin-top:5px;width:auto;flex:none">
+        <span>✅ ${L(`I give permission for ${first} to take part in “${x.title}”${x.date ? " on " + dshort(x.date) : ""}.`, `أوافق على مشاركة ${first} في «${x.title}»${x.date ? " يوم " + dshort(x.date) : ""}.`)}</span></label>
+      <label style="display:flex;gap:10px;align-items:flex-start;font-weight:700"><input type="radio" name="ta" value="no" ${r.answer === "no" ? "checked" : ""} style="margin-top:5px;width:auto;flex:none">
+        <span>❌ ${L(`${first} will not take part.`, `لن يشارك ${first}.`)}</span></label>
+      ${x.ask_medical ? `<label style="display:grid;gap:4px;font-weight:700">${L("Anything we should know for the day? (medical needs, allergies, food)", "هل هناك ما يجب أن نعرفه لهذا اليوم؟ (احتياجات طبية، حساسية، طعام)")}<textarea id="tsn" rows="2">${esc(r.note || "")}</textarea></label>` : ""}
+      ${x.ask_phone ? `<label style="display:grid;gap:4px;font-weight:700">${L("Phone number to call on the day", "رقم هاتف للتواصل في ذلك اليوم")}<input type="tel" id="tsp" value="${esc(r.phone || "")}" maxlength="30"></label>` : ""}
+      <label style="display:grid;gap:4px;font-weight:700">${L("Type your full name to sign", "اكتب اسمك الكامل للتوقيع")}<input type="text" id="tsg" required minlength="2" maxlength="80" value="${esc(r.paper ? "" : r.name || "")}"></label>
+      <div id="tse"></div>
+      <button class="btn" type="submit">${L("Send my reply", "إرسال الرد")}</button></form></div>`;
+  document.body.appendChild(d); applyLang(d);
+  d.onclick = e => { if (e.target === d || e.target.closest("[data-x]")) d.remove(); };
+  d.querySelector("#tsf").onsubmit = async e => { e.preventDefault(); const bt = e.target.querySelector("button[type=submit]"); bt.disabled = true;
+    const g = id => { const el = d.querySelector(id); return el ? el.value : null; };
+    const { error } = await sb.rpc("parent_trip_answer", { p_trip: x.id, p_student: String(cur), p_answer: d.querySelector("input[name=ta]:checked").value, p_name: g("#tsg"), p_note: g("#tsn"), p_phone: g("#tsp") });
+    if (error) { bt.disabled = false; d.querySelector("#tse").innerHTML = msg(error.message); return; }
+    d.remove(); tripsTab(); todos().then(t => { const b = document.getElementById("bellN"); if (b) { b.hidden = !t.length; b.textContent = t.length; } });
+  };
 }
 async function schoolInfo(){
   const p = document.getElementById("pane"); let d = {};

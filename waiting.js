@@ -42,6 +42,14 @@
       if (mc.home.length) { const cl = await sb.from("classes").select("grade_id").in("id", mc.home); const g = new Set((cl.data || []).map(x => String(x.grade_id)));
         const n = rows.filter(x => x.status === "changes" && g.has(String(x.grade_id))).length; if (n) note(place, "📘", `${n} unit plan${n === 1 ? " needs" : "s need"} changes from your grade team.`, "units.html", "Open Units and lessons"); }
     })());
+    // trips: waiting for SLT approval (leaders) or sent back to the organiser
+    jobs.push((async () => {
+      const r = await sb.from("trips").select("status,created_by,history").in("status", ["pending", "draft"]); if (r.error) return;
+      const rows = r.data || [];
+      if (lead && (C.trips || {}).approval) { const n = rows.filter(x => x.status === "pending").length; if (n) note(place, "🚌", `${n} trip${n === 1 ? "" : "s"} waiting for your approval.`, "trips.html", "Open Trips and forms"); }
+      const b = rows.filter(x => x.status === "draft" && x.created_by === p.id && ((x.history || []).slice(-1)[0] || {}).action === "return").length;
+      if (b) note(place, "🚌", `${b} trip${b === 1 ? " was" : "s were"} sent back to you with notes.`, "trips.html", "See the notes");
+    })());
     // Nestlings: students' posts waiting for approval in my classes
     jobs.push((async () => {
       const r = await sb.from("nestling_posts").select("class_id").eq("status", "pending"); if (r.error) return;
