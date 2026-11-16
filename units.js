@@ -144,8 +144,7 @@ function drawUnit(){
 
   <div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Curriculum objectives</h2><span class="note">${objs.length} chosen · <b>${fully}</b> taught in every class</span></div>
     <div class="bar" style="margin:8px 0 12px"><i class="a" style="width:${objs.length ? fully / objs.length * 100 : 0}%"></i></div>
-    <div class="row" style="margin-bottom:8px"><input type="search" id="oq" placeholder="Search objectives…" style="max-width:320px"><label class="checks"><label><input type="checkbox" id="onlyC"> Show chosen only</label></label></div>
-    <div id="olist" class="olist"></div></div>
+    <div id="olist"></div></div>
 
   <div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Lessons</h2>${lead || teachesGrade(u.grade_id) ? `<button class="btn" id="newL">+ Add lesson</button>` : ""}</div>
     ${lessons.length ? `<div style="margin-top:10px">${lessons.map(l => { const tc = LT.filter(x => x.lesson_id === l.id).map(x => (classes.find(c => String(c.id) === String(x.class_id)) || {}).name).filter(Boolean);
@@ -160,8 +159,9 @@ function drawUnit(){
   app.querySelectorAll("[data-u]").forEach(x => x.addEventListener("input", () => saveU({ __all: 1, [x.dataset.u]: x.value || null })));
   app.querySelectorAll("[data-sec]").forEach(x => x.addEventListener("input", () => { u.sections = Object.assign({}, u.sections, { [x.dataset.sec]: x.value }); saveU({ __all: 1 }); }));
   app.querySelectorAll("[data-subj]").forEach(x => x.addEventListener("change", () => { const set = new Set(u.subjects || []); x.checked ? set.add(x.dataset.subj) : set.delete(x.dataset.subj); u.subjects = [...set]; saveU({ __all: 1 }); drawObjectives(); }));
-  document.getElementById("oq").oninput = drawObjectives; document.getElementById("onlyC").onchange = drawObjectives;
-  document.getElementById("olist").addEventListener("change", e => { const id = e.target.dataset.obj; if (!id) return; const set = new Set(u.objectives || []); e.target.checked ? set.add(id) : set.delete(id); u.objectives = [...set]; saveU({ __all: 1 }); });
+  const ol = document.getElementById("olist");
+  ol.addEventListener("change", e => { if (e.target.id !== "addObj" || !e.target.value) return; const set = new Set(u.objectives || []); set.add(e.target.value); u.objectives = [...set]; saveU({ __all: 1 }); drawObjectives(); });
+  ol.addEventListener("click", e => { const b = e.target.closest("[data-rmobj]"); if (!b) return; u.objectives = (u.objectives || []).filter(x => x !== b.dataset.rmobj); saveU({ __all: 1 }); drawObjectives(); });
   document.getElementById("prt").onclick = () => printUnit(u);
   const db = document.getElementById("delU"); if (db) db.onclick = async () => { if (!confirm(`Delete “${u.title}” and its ${lessons.length} lesson${lessons.length === 1 ? "" : "s"}? Objectives already ticked as taught stay ticked.`)) return;
     const { error } = await sb.from("unit_plans").delete().eq("id", u.id); if (error) return alert(error.message); units = units.filter(x => x.id !== u.id); location.hash = ""; };
@@ -169,14 +169,20 @@ function drawUnit(){
   app.querySelectorAll("[data-les]").forEach(b => b.onclick = () => lessonDialog(lessons.find(l => l.id === b.dataset.les)));
   app.querySelectorAll("[data-rv]").forEach(b => b.onclick = () => review(b.dataset.rv));
 }
-function drawObjectives(){
-  const u = ui.unit, ed = canEdit(u), q = (document.getElementById("oq").value || "").toLowerCase(), only = document.getElementById("onlyC").checked, chosen = new Set(u.objectives || []);
-  const list = objectivesFor(u.grade_id, (u.subjects || []).length ? u.subjects : null).filter(o => (!only || chosen.has(o.id)) && (!q || o.text.toLowerCase().includes(q)));
+// one drop-down of objectives, grouped by subject and strand
+function objSelect(id, list, placeholder){
   const groups = {}; list.forEach(o => (groups[o.subject + " · " + o.strand] = groups[o.subject + " · " + o.strand] || []).push(o));
-  document.getElementById("olist").innerHTML = Object.keys(groups).length ? Object.entries(groups).map(([g, os]) => `<h3 class="strand">${esc(g)}</h3>${os.map(o => { const [a, b] = taughtCount(o.id, u.grade_id);
-      return `<label class="orow"><input type="checkbox" data-obj="${esc(o.id)}" ${chosen.has(o.id) ? "checked" : ""}${ed ? "" : " disabled"}><span>${esc(o.text)}<small>${esc(o.term)}</small></span>
-        <span class="cnt ${b && a === b ? "ok" : a ? "part" : "none"}" title="Taught in ${a} of ${b} classes">${a}/${b} taught</span></label>`; }).join("")}`).join("")
-    : `<p class="note">${(u.subjects || []).length ? "No objectives match." : "Tick the subjects in this unit above to see their objectives."} Objectives come from TwigNest setup → Curriculum objectives.</p>`;
+  return `<select id="${id}" class="objsel" aria-label="${esc(placeholder)}"><option value="">${esc(placeholder)}</option>${Object.entries(groups).map(([g, os]) =>
+    `<optgroup label="${esc(g)}">${os.map(o => `<option value="${esc(o.id)}" title="${esc(o.text)}">${esc(o.text.length > 110 ? o.text.slice(0, 107) + "…" : o.text)}${o.term ? " (" + esc(o.term) + ")" : ""}</option>`).join("")}</optgroup>`).join("")}</select>`;
+}
+function drawObjectives(){
+  const u = ui.unit, ed = canEdit(u), idx = objIndex(u.grade_id), chosen = (u.objectives || []).filter(x => idx[x]);
+  const avail = objectivesFor(u.grade_id, (u.subjects || []).length ? u.subjects : null).filter(o => !chosen.includes(o.id));
+  document.getElementById("olist").innerHTML = `${ed ? ((u.subjects || []).length ? (avail.length ? `<div class="row" style="margin-bottom:10px">${objSelect("addObj", avail, `Add an objective (${avail.length} available)…`)}</div>` : `<p class="note">Every objective for these subjects is in the unit.</p>`)
+      : `<p class="note">Tick the subjects in this unit above, then add objectives from the list.</p>`) : ""}
+    ${chosen.length ? `<div class="chosen">${chosen.map(id => { const o = idx[id], [a, b] = taughtCount(id, u.grade_id);
+      return `<div class="crow"><span class="tag sod">${esc(o.subject)}</span><span style="flex:1">${esc(o.text)}</span><span class="cnt ${b && a === b ? "ok" : a ? "part" : "none"}" title="Taught in ${a} of ${b} classes">${a}/${b} taught</span>${ed ? `<button type="button" class="mini" data-rmobj="${esc(id)}" aria-label="Remove">✕</button>` : ""}</div>`; }).join("")}</div>`
+      : `<p class="note" style="margin:0">No objectives in this unit yet.</p>`}`;
 }
 
 /* ---------- checking (optional, set in Planner settings) ---------- */
@@ -208,18 +214,24 @@ function lessonDialog(l){
     <div class="f3"><label class="f" style="grid-column:span 2">Title<input type="text" name="title" value="${esc(l.title)}" required placeholder="e.g. What makes a community?"${can ? "" : " disabled"}></label>
       <label class="f">Date<input type="date" name="date" value="${esc(l.lesson_date || "")}"${can ? "" : " disabled"}></label></div>
     <div><p class="note" style="margin:0 0 4px"><b>Objectives for this lesson</b> (from the unit)</p>
-      ${uo.length ? `<div class="olist" style="max-height:220px">${uo.map(id => `<label class="orow"><input type="checkbox" name="obj" value="${esc(id)}" ${(l.objectives || []).includes(id) ? "checked" : ""}${can ? "" : " disabled"}><span>${esc(idx[id].text)}<small>${esc(idx[id].subject)} · ${esc(idx[id].strand)}</small></span></label>`).join("")}</div>`
-        : `<p class="note">Choose objectives for the unit first.</p>`}</div>
+      ${uo.length ? `<div id="lobj"></div>` : `<p class="note">Add objectives to the unit first.</p>`}</div>
     <div class="secs">${LESSON_FIELDS.map(([k, lab]) => `<label class="f">${lab}<textarea rows="2" dir="auto" name="f_${k}"${can ? "" : " disabled"}>${esc((l.fields || {})[k] || "")}</textarea></label>`).join("")}</div>
     ${isNew ? "" : `<div class="box"><h3>✔ Taught</h3><p class="note" style="margin:0 0 6px">Tick each class once it has had this lesson. Its objectives are then ticked as taught for that class in TwigNest and on Curriculum coverage.</p>
       <div class="checks">${gc.map(c => `<label><input type="checkbox" name="tc" value="${esc(c.id)}" ${done.has(String(c.id)) ? "checked" : ""}${canTeach(c.id) ? "" : " disabled"}> ${esc(c.name)}</label>`).join("") || '<span class="note">No classes in this grade yet.</span>'}</div></div>`}
     <div class="row" style="justify-content:space-between">${!isNew && can ? `<button type="button" class="btn ghost" id="delL">Delete lesson</button>` : "<span></span>"}<button class="btn">${isNew ? "Add lesson" : "Save"}</button></div></form>`;
   const f = dlg.querySelector("#lf");
+  let lo = (l.objectives || []).filter(x => uo.includes(x));
+  const drawLo = () => { const box = dlg.querySelector("#lobj"); if (!box) return; const rest = uo.filter(x => !lo.includes(x)).map(x => idx[x]);
+    box.innerHTML = `${can && rest.length ? `<div class="row" style="margin-bottom:8px">${objSelect("addLo", rest, "Add an objective from the unit…")}</div>` : ""}
+      ${lo.length ? `<div class="chosen">${lo.map(id => `<div class="crow"><span class="tag sod">${esc(idx[id].subject)}</span><span style="flex:1">${esc(idx[id].text)}</span>${can ? `<button type="button" class="mini" data-rmlo="${esc(id)}" aria-label="Remove">✕</button>` : ""}</div>`).join("")}</div>` : `<p class="note" style="margin:0">No objectives chosen for this lesson yet.</p>`}`; };
+  drawLo();
+  dlg.onchange = e => { if (e.target.id === "addLo" && e.target.value) { lo.push(e.target.value); drawLo(); } };
+  dlg.onclick = e => { const b = e.target.closest("[data-rmlo]"); if (b) { lo = lo.filter(x => x !== b.dataset.rmlo); drawLo(); } };
   dlg.querySelector("[data-x]").onclick = () => dlg.close();
   f.onsubmit = async e => { e.preventDefault(); const btn = f.querySelector("button.btn:not(.ghost)"); btn.disabled = true;
     try {
       if (can) {
-        const row = { title: f.title.value.trim() || "Lesson", lesson_date: f.date.value || null, objectives: [...f.querySelectorAll('[name="obj"]:checked')].map(x => x.value),
+        const row = { title: f.title.value.trim() || "Lesson", lesson_date: f.date.value || null, objectives: lo.slice(),
           fields: Object.fromEntries(LESSON_FIELDS.map(([k]) => [k, f["f_" + k].value.trim()]).filter(([, v]) => v)) };
         const q = isNew ? sb.from("lesson_plans").insert(Object.assign({ unit_id: u.id, sort: lessons.length + 1 }, row)).select().single() : sb.from("lesson_plans").update(row).eq("id", l.id).select().single();
         const { data, error } = await q; if (error) throw error; Object.assign(l, data);
