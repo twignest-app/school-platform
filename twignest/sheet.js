@@ -27,6 +27,9 @@
   const cycle = v => { const order = [defCode(), ...OS().map(x => x.code).filter(c => c !== defCode())], i = order.indexOf(v); return v === "" || i < 0 ? order[0] : (order[i + 1] ?? ""); };
   const strands = () => { const o = []; C.subjects.forEach(sb => sb.strands.forEach(st => o.push([sb, st]))); return o; };
   const findStrand = id => strands().find(p => p[1].id === id) || [null, null];
+  // A/B pathway subjects (e.g. Arabic A for Arab students, Arabic B for non-Arab students)
+  const takesSb = (s, sb) => !window.NestSubjects || !sb || NestSubjects.takes(sb, s, cls && cls.grade_id);
+  const takesSt = (s, st) => takesSb(s, (C.subjects || []).find(sb => (sb.strands || []).some(x => x.id === (st && st.id))));
   const findCol = id => { for (const [, st] of strands()) for (const c of st.cols) if (c.id === id) return c; return null; };
   const objs = (c, t) => ((c.objectives || {})[cls.grade_id] || [])[t] || [];
   const val = (sid, cid, k) => ((R[sid] || {})[cid] || {})[k];
@@ -150,7 +153,7 @@
     visible().forEach(s => {
       const ov = avgEval(s.id, all, k), pr = avgProgress(s.id, all, t), tr = trackCount(s.id, all, t), gp = gapList(s.id, t).open.length;
       h += `<tr><td class="namecol"><button class="name" data-prof="${s.id}">${esc(s.full_name)}</button>${s.student_number ? `<span class="sid">${esc(s.student_number)}</span>` : ""}<div class="tags">${(s.groups || []).map(g => `<span class="tag">${esc(g)}</span>`).join("")}</div></td>`;
-      C.subjects.forEach(sb => { const e = avgEval(s.id, sb.strands, k); h += `<td>${e ? (lvBadge(e.lv) || badge(e.band, esc(lab(e.lv)))) : badge("none", "–")}</td>`; });
+      C.subjects.forEach(sb => { if (!takesSb(s, sb)) { h += `<td><span class="note">n/a</span></td>`; return; } const e = avgEval(s.id, sb.strands, k); h += `<td>${e ? (lvBadge(e.lv) || badge(e.band, esc(lab(e.lv)))) : badge("none", "–")}</td>`; });
       h += `<td>${ov ? (lvBadge(ov.lv) || badge(ov.band, esc(lab(ov.lv)))) : "–"}</td><td>${pr ? badge(pr.band, signed(pr.steps) + " · " + PROGS[pr.band]) : "–"}</td>
         <td>${tr.n ? badge(tr.ok === tr.n ? "inline" : tr.ok >= tr.n / 2 ? "none" : "below", `${tr.ok} of ${tr.n}`) : "–"}</td><td style="white-space:nowrap"><button class="gapbtn" data-gaps="${s.id}" aria-label="Gaps and progress plan for ${esc(s.full_name)}">${gp ? badge(gp > 4 ? "below" : "none", gp) : badge("inline", "0")}</button>${planTag(s.id)}</td></tr>`;
     });
@@ -312,7 +315,7 @@
   }
   function renderReports(head) {
     const t = String(ui.term), list = strands(), vs = visible(); let tot = 0; const cnt = { none: 0, draft: 0, ready: 0, changes: 0, approved: 0 };
-    vs.forEach(s => list.forEach(([, st]) => { tot++; const c = cmt(t, s.id, st.id); cnt[c ? c.status : "none"]++; }));
+    vs.forEach(s => list.forEach(([sb, st]) => { if (!takesSb(s, sb)) return; tot++; const c = cmt(t, s.id, st.id); cnt[c ? c.status : "none"]++; }));
     const chk = role() === "checker";
     if (!ui.rview) ui.rview = "subject"; if (!list.find(p => p[1].id === ui.rstrand)) ui.rstrand = list[0] && list[0][1].id; if (!vs.find(x => x.id === ui.rstud)) ui.rstud = vs[0] && vs[0].id;
     const seg = ["approved", "ready", "changes", "draft", "none"].map(k => cnt[k] ? `<i class="bg-${RP_COL[k]}" style="width:${cnt[k] / tot * 100}%" title="${RP_LABEL[k]}: ${cnt[k]}"></i>` : "").join("");
@@ -328,16 +331,16 @@
       const [sb, st] = findStrand(ui.rstrand);
       h += `<div class="fbar"><label class="fl" for="rvStrand">Subject</label><select id="rvStrand" class="fsel">${list.map(([a, b]) => `<option value="${b.id}" ${b.id === ui.rstrand ? "selected" : ""}>${esc(sname(a, b))}</option>`).join("")}</select>
         <span class="note">Tap a student to write or check their comment.</span></div>`;
-      h += vs.map(x => rpRow(x.id, st, `${esc(x.full_name)}${isArSt(st) && x.arabic_name ? ` <span dir="rtl" lang="ar" class="arname">${esc(x.arabic_name)}</span>` : ""}`)).join("");
+      h += vs.filter(x => takesSb(x, sb)).map(x => rpRow(x.id, st, `${esc(x.full_name)}${isArSt(st) && x.arabic_name ? ` <span dir="rtl" lang="ar" class="arname">${esc(x.arabic_name)}</span>` : ""}`)).join("");
     } else if (ui.rview === "student") {
       const i = vs.findIndex(x => x.id === ui.rstud), x = vs[i];
       h += `<div class="fbar"><button class="btn ghost small" data-rstep="-1" ${i <= 0 ? "disabled" : ""}>← Previous</button><label class="fl" for="rvStud">Student</label><select id="rvStud" class="fsel">${vs.map(y => `<option value="${y.id}" ${y.id === ui.rstud ? "selected" : ""}>${esc(y.full_name)}</option>`).join("")}</select><button class="btn ghost small" data-rstep="1" ${i >= vs.length - 1 ? "disabled" : ""}>Next →</button><button class="btn ghost small" data-print="${x.id}">Print this report</button></div>`;
       h += `<div class="card" style="margin-bottom:12px"><h2 style="margin:0">${esc(x.full_name)}${x.arabic_name ? ` <span dir="rtl" lang="ar" class="arname">${esc(x.arabic_name)}</span>` : ""} ${x.student_number ? `<span class="sid">${esc(x.student_number)}</span>` : ""}</h2><div class="tags">${(x.groups || []).map(g => `<span class="tag">${esc(g)}</span>`).join("")}</div></div>`;
-      h += list.map(([a, b]) => rpRow(x.id, b, esc(sname(a, b)))).join("");
+      h += list.filter(([a]) => takesSb(x, a)).map(([a, b]) => rpRow(x.id, b, esc(sname(a, b)))).join("");
     } else {
       let tb = `<thead><tr><th class="namecol">Student</th>${list.map(([a, b]) => `<th class="colh"><b>${esc(sname(a, b))}</b></th>`).join("")}</tr></thead><tbody>`;
       vs.forEach(x => { tb += `<tr><td class="namecol"><button class="name" data-rgo="student|${x.id}">${esc(x.full_name)}</button></td>`;
-        list.forEach(([a, b]) => { const c = cmt(t, x.id, b.id), stt = c ? c.status : "none";
+        list.forEach(([a, b]) => { if (!takesSb(x, a)) { tb += `<td><span class="note">n/a</span></td>`; return; } const c = cmt(t, x.id, b.id), stt = c ? c.status : "none";
           tb += `<td><button class="rp-pill rp-${RP_COL[stt]}" style="border:0;cursor:pointer" data-rgo="subject|${b.id}|${x.id}">${RP_LABEL[stt]}</button></td>`; }); tb += `</tr>`; });
       h += `<div class="sheetwrap"><table class="sheet">${tb}</tbody></table></div><p class="note">Tap a status to open that comment, or a name to see all of that student’s comments.</p>`;
     }
@@ -360,7 +363,7 @@
   async function reportAction(a) {
     if (a === "export") return exportCSV();
     if (a === "printall") return printReports(visible());
-    if (a === "draftall") { const rows = []; visible().forEach(s => strands().forEach(([, st]) => { const c = cmt(String(ui.term), s.id, st.id); if (!c || !c.text) { const d = draft(s.id, st, ui.term); if (d.text) rows.push({ student_id: s.id, strand_id: st.id, term: String(ui.term), text: d.text, level: d.lv, band: d.band, status: "draft", note: "", progress: c ? c.progress || null : null }); } }));
+    if (a === "draftall") { const rows = []; visible().forEach(s => strands().forEach(([sb0, st]) => { if (!takesSb(s, sb0)) return; const c = cmt(String(ui.term), s.id, st.id); if (!c || !c.text) { const d = draft(s.id, st, ui.term); if (d.text) rows.push({ student_id: s.id, strand_id: st.id, term: String(ui.term), text: d.text, level: d.lv, band: d.band, status: "draft", note: "", progress: c ? c.progress || null : null }); } }));
       rows.forEach(r => (((CM[r.term] = CM[r.term] || {})[r.student_id] = (CM[r.term] || {})[r.student_id] || {}))[r.strand_id] = r); render(); if (rows.length) run(ctx.sb.from("report_comments").upsert(rows)); return; }
     if (a === "next") { for (const [, st] of strands()) for (const s of visible()) { const c = cmt(String(ui.term), s.id, st.id); if (c && c.status === "ready") { ui.rview = "subject"; ui.rstrand = st.id; ui.ropen = `${s.id}|${st.id}`; render(); return focusCard(s.id, st.id); } } return alert("There are no comments waiting to be checked."); }
   }
@@ -386,7 +389,7 @@
     const pbs = all.map(st => progFinal(s.id, st, t)).filter(Boolean).map(p => ({ below: -1, inline: 0, above: 1 })[p.band]), pav = pbs.length ? pbs.reduce((x, y) => x + y, 0) / pbs.length : null;
     const pr = pav == null ? null : { band: pav < -.33 ? "below" : pav > .33 ? "above" : "inline" };
     let rows = "", graphs = "";
-    C.subjects.forEach(sb => sb.strands.forEach(st => { const e = strandEval(s.id, st, k), lv = level(s.id, st, k), p = progFinal(s.id, st, t), ot = onTrack(s.id, st, t), cm = cmt(k, s.id, st.id);
+    C.subjects.filter(sb => takesSb(s, sb)).forEach(sb => sb.strands.forEach(st => { const e = strandEval(s.id, st, k), lv = level(s.id, st, k), p = progFinal(s.id, st, t), ot = onTrack(s.id, st, t), cm = cmt(k, s.id, st.id);
       const posB = lv != null ? (C.gradePos[lv] || (e && e.band)) : null;
       rows += `<tr><td><b>${esc(sb.name)}</b>${sb.name !== st.name ? `<br>${esc(st.name)}` : ""}</td><td>${esc(lab(level(s.id, st, "b")))}</td><td>${esc(lab(lv))}</td><td>${posB ? POS[posB] : "–"}</td><td>${p ? PROG[p.band] : "–"}</td><td>${ot == null ? "–" : ot.ok ? "On track" : "Needs support"}</td></tr>
         ${cm && cm.status === "approved" && cm.text ? (isArSt(st) ? `<tr class="cm"><td colspan="6" dir="rtl" lang="ar" style="text-align:right">${esc(cm.text)}</td></tr>` : `<tr class="cm"><td colspan="6">${esc(cm.text)}<br><b>Next step:</b> ${esc(nsFor(s.id, st, t))}</td></tr>`) : ""}`;
@@ -414,6 +417,7 @@
     if (s.error || st.error) throw (s.error || st.error);
     if (!s.data.length) throw new Error("This school’s setup for " + cls.year + " couldn’t be found.");
     C = s.data[0].config; lvCols(C); applyLabels(C); if (ctx.subjects) C = Object.assign({}, C, { subjects: C.subjects.filter(x => ctx.subjects.includes(x.id)) }); studs = st.data;
+    if (window.NestSubjects) C = Object.assign({}, C, { subjects: NestSubjects.forGrade(C.subjects, cls.grade_id) });   // only subjects this grade takes
     const ids = studs.map(x => x.id);
     R = {}; ST = {}; LV = {}; TAUGHT = new Set();
     const tg = await sb.from("taught").select("obj_id").eq("class_id", cls.id);
@@ -439,7 +443,7 @@
   }
   async function run(q) { saving(1); const { error } = await q; saving(-1, error && error.message); return !error; }
 
-  const visible = () => studs.filter(s => ui.group === "All" || (s.groups || []).includes(ui.group));
+  const visible = () => studs.filter(s => (ui.group === "All" || (s.groups || []).includes(ui.group)) && (ui.mode !== "strand" || takesSb(s, (C.subjects || []).find(x => x.id === ui.sub))));
   function hint(c) { return { score: `out of ${c.max}`, rubric: `out of ${c.max}`, standardised: "standardised", readingAge: "years", list: "choose", comment: "notes" }[c.type] || ""; }
   function cell(s, c, k) {
     const v = val(s.id, c.id, k) ?? "", ev = colEval(s.id, c, k), cl = ev ? ["tb", "ti", "ta"][ev.band + 1] : "";

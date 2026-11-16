@@ -65,6 +65,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px so
 <main id="app"><p class="muted">Loading…</p></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="/reportcard.js?v=2"></script>
+<script src="/subjects.js?v=1"></script>
 <script>
 const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
 const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
@@ -410,7 +411,8 @@ async function reports(){
   if (!vis.length) { p.innerHTML = '<div class="card"><p class="muted" style="margin:0">No report card has been shared yet this year.<span class="ar" dir="rtl" lang="ar">لم تتم مشاركة أي تقرير بعد.</span></p></div>'; return; }
   if (term == null || !vis.includes(term)) term = vis[vis.length - 1];
   const sn = snaps[term];   // a sent report card: exactly what the school checked and sent
-  const html = ReportCard.render({ card: R.card, scale: R.scale || [], subjects: R.subjects || [], termName: (R.terms || [])[term], termIndex: term, year: R.year, school: R.school,
+  const subs = window.NestSubjects ? NestSubjects.forStudent(R.subjects || [], R.student || {}, (R.student || {}).grade) : (R.subjects || []);
+  const html = ReportCard.render({ card: R.card, scale: R.scale || [], subjects: subs, termName: (R.terms || [])[term], termIndex: term, year: R.year, school: R.school,
     student: R.student || {}, teachers: sn ? sn.teachers || R.teachers || [] : R.teachers || [], att: sn && sn.att ? sn.att : R.att, stars: sn && sn.stars != null ? sn.stars : R.stars, ack: (R.acks || {})[term],
     cm: stid => sn ? (sn.comments || []).find(c => c.strand === stid) || null : (R.comments || []).find(c => c.strand === stid && String(c.term) === String(term)) || null });
   const seen = (R.acks || {})[term];

@@ -112,6 +112,7 @@ dialog::backdrop{background:rgba(30,20,45,.45)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="hub.js?v=19"></script>
+<script src="subjects.js?v=1"></script>
 <script src="twcalc.js?v=2"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script>
@@ -149,7 +150,7 @@ const safe = async (fn, d) => { try { return await fn(); } catch (_) { return d;
   classes = ((await cq).data || []).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
   const { data: ct } = await sb.from("class_teachers").select("class_id").eq("teacher_id", me.id);
   myClassIds = [...new Set((ct || []).map(x => String(x.class_id)))];
-  const cols = "id,full_name,arabic_name,student_number,class_id,groups,archived,gender,nationality,emirati,dob";
+  const cols = "id,full_name,arabic_name,student_number,class_id,groups,archived,gender,nationality,emirati,dob,pathway";
   const loadS = c => lead ? fetchAll(() => sb.from("students").select(c).eq("school_id", school.id).eq("archived", false).order("full_name"))
     : myClassIds.length ? fetchAll(() => sb.from("students").select(c).in("class_id", myClassIds).eq("archived", false).order("full_name")) : Promise.resolve([]);
   try { studs = await loadS(cols); } catch (_) { studs = await loadS("id,full_name,arabic_name,student_number,class_id,groups,archived"); }
@@ -206,7 +207,7 @@ async function profile(id){
     <div class="card"><div class="ph"><div class="av" aria-hidden="true">${esc(initials(s.full_name))}</div><div><h1 class="ptitle" style="margin:0">${esc(s.full_name)}</h1>
       ${s.arabic_name ? `<p class="note" dir="rtl" lang="ar" style="margin:2px 0 0;font-size:17px">${esc(s.arabic_name)}</p>` : ""}
       <p class="note" style="margin:4px 0 0">${esc([c.name, gName(c.grade_id), s.student_number ? "No. " + s.student_number : ""].filter(Boolean).join(" · "))}</p>
-      <p class="note" style="margin:4px 0 0">${esc([s.gender === "boy" ? "Boy" : s.gender === "girl" ? "Girl" : "", s.dob ? "Age " + age(s.dob) + " (born " + fmt(s.dob) + ")" : "", s.nationality || "", s.emirati === true ? "Emirati" : s.emirati === false ? "Non-Emirati" : ""].filter(Boolean).join(" · ")) || (lead ? "Add gender, date of birth and nationality with ✏️ Edit details." : "")}</p>
+      <p class="note" style="margin:4px 0 0">${esc([s.gender === "boy" ? "Boy" : s.gender === "girl" ? "Girl" : "", s.dob ? "Age " + age(s.dob) + " (born " + fmt(s.dob) + ")" : "", s.nationality || "", window.NestSubjects && NestSubjects.pathOf(s) ? NestSubjects.pathOf(s) + " pathway" : "", s.emirati === true ? "Emirati" : s.emirati === false ? "Non-Emirati" : ""].filter(Boolean).join(" · ")) || (lead ? "Add gender, date of birth and nationality with ✏️ Edit details." : "")}</p>
       <p style="margin:6px 0 0">${r ? (r.categories || []).map(k => CAT[k] ? `<span class="tag ${CAT[k][1]}">${CAT[k][0]}</span>` : "").join("") : ""}${(s.groups || []).filter(g => !["SEN", "G&T", "EAL"].includes(g)).map(g => `<span class="tag other">${esc(g)}</span>`).join("")}</p></div></div><p class="note" id="tch" style="margin:10px 0 0"></p></div>
     <div class="prof"><div class="cols">
       ${on.includes("twignest") ? `<section class="card"><div class="row" style="justify-content:space-between"><h2>Attainment and progress</h2><a class="btn ghost small" href="twignest/">TwigNest →</a></div><div id="tw"><p class="note">Loading…</p></div></section>` : ""}
@@ -301,7 +302,8 @@ function editDetails(s, part){
   const em = (md.emergency || [])[0] || {};
   dl.innerHTML = `<form class="dlg"><h2>✏️ ${esc(s.full_name)}</h2>
     ${part === "det" ? `<div class="two"><label class="f">Gender <select name="g"><option value="">–</option><option value="boy" ${s.gender === "boy" ? "selected" : ""}>Boy</option><option value="girl" ${s.gender === "girl" ? "selected" : ""}>Girl</option></select></label><label class="f">Date of birth <input type="date" name="dob" value="${esc(s.dob || "")}"></label></div>
-      <div class="two"><label class="f">Nationality <input name="nat" value="${esc(s.nationality || "")}" placeholder="For example: Emirati, Egyptian, Indian"></label><label class="f">Emirati <select name="em"><option value="">–</option><option value="yes" ${s.emirati === true ? "selected" : ""}>Yes</option><option value="no" ${s.emirati === false ? "selected" : ""}>No</option></select></label></div>` : ""}
+      <div class="two"><label class="f">Nationality <input name="nat" value="${esc(s.nationality || "")}" placeholder="For example: Emirati, Egyptian, Indian"></label><label class="f">Emirati <select name="em"><option value="">–</option><option value="yes" ${s.emirati === true ? "selected" : ""}>Yes</option><option value="no" ${s.emirati === false ? "selected" : ""}>No</option></select></label></div>
+      <label class="f">Subject pathway (Arabic, Islamic Education, Social Studies) <select name="pw"><option value="">Automatic from nationality${window.NestSubjects && NestSubjects.pathOf(Object.assign({}, s, { pathway: null })) ? " (now " + NestSubjects.pathOf(Object.assign({}, s, { pathway: null })) + ")" : ""}</option><option value="A" ${s.pathway === "A" ? "selected" : ""}>A: Arab student</option><option value="B" ${s.pathway === "B" ? "selected" : ""}>B: non-Arab student</option></select></label>` : ""}
     ${part === "fam" ? `<div><b>Family contacts</b><div id="cts">${[...(ct.contacts || []), {}, {}].slice(0, Math.max(2, (ct.contacts || []).length + 1)).map(ctRow).join("")}</div></div><label class="f">Address (optional) <input name="addr" value="${esc(ct.address || "")}"></label>` : ""}
     ${part === "med" ? `<label class="f">⚠️ Allergies <input name="al" value="${esc(md.allergies || "")}" placeholder="For example: peanuts (EpiPen in the office)"></label><label class="f">Medical conditions <input name="co" value="${esc(md.conditions || "")}" placeholder="For example: asthma"></label>
       <div class="two"><label class="f">Medication <input name="me" value="${esc(md.medication || "")}"></label><label class="f">Dietary needs <input name="di" value="${esc(md.dietary || "")}"></label></div>
@@ -311,7 +313,7 @@ function editDetails(s, part){
     <div class="row" style="justify-content:flex-end"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn">Save</button></div></form>`;
   const f = dl.querySelector("form"); dl.querySelector("[data-x]").onclick = () => dl.close();
   f.onsubmit = async e => { e.preventDefault(); let error;
-    if (part === "det") { const row = { gender: f.g.value || null, dob: f.dob.value || null, nationality: f.nat.value.trim() || null, emirati: f.em.value === "yes" ? true : f.em.value === "no" ? false : null };
+    if (part === "det") { const row = { gender: f.g.value || null, dob: f.dob.value || null, nationality: f.nat.value.trim() || null, emirati: f.em.value === "yes" ? true : f.em.value === "no" ? false : null, pathway: f.pw.value || null };
       ({ error } = await sb.from("students").update(row).eq("id", s.id)); if (!error) Object.assign(s, row); }
     if (part === "fam") { const contacts = [...f.querySelectorAll("[data-c]")].map(r => Object.fromEntries([...r.querySelectorAll("[data-k]")].map(i => [i.dataset.k, i.value.trim()]))).filter(x => x.name || x.phone || x.email);
       ({ error } = await sb.from("student_contacts").upsert({ student_id: String(s.id), school_id: String(school.id), contacts, address: f.addr.value.trim() || null, updated_at: new Date().toISOString() })); }
@@ -366,7 +368,7 @@ async function groupsView(){
   const y0 = (() => { const d = new Date(), y = d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1; return y + "-08-01"; })();
   const att = await safe(() => fetchAll(() => sb.from("attendance_marks").select("student_id,status").eq("school_id", school.id).gte("day", y0)), []);
   const nats = Object.entries(studs.reduce((a, s) => { if (s.nationality) a[s.nationality] = (a[s.nationality] || 0) + 1; return a; }, {})).filter(([, n]) => n >= 5).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([n]) => n);
-  const G = [["All students", s => true], ["Boys", s => s.gender === "boy"], ["Girls", s => s.gender === "girl"], ["Emirati", s => s.emirati === true], ["Non-Emirati", s => s.emirati === false], ...nats.map(n => [n, s => s.nationality === n])];
+  const G = [["All students", s => true], ["Boys", s => s.gender === "boy"], ["Girls", s => s.gender === "girl"], ["Emirati", s => s.emirati === true], ["Non-Emirati", s => s.emirati === false], ["A pathway (Arab)", s => window.NestSubjects && NestSubjects.pathOf(s) === "A"], ["B pathway (non-Arab)", s => window.NestSubjects && NestSubjects.pathOf(s) === "B"], ...nats.map(n => [n, s => s.nationality === n])];
   const terms = T ? T.C.terms : [], lastT = T ? Math.max(0, ...T.C.terms.map((t, k) => T.studs.some(st => T.avgBand(st, T.strands().map(p => p[1]), String(k))) ? k : 0)) : 0;
   const subjects = T ? T.C.subjects : [];
   const pct = (a, b) => b ? Math.round(a / b * 100) : null, col = v => v == null ? "var(--muted)" : v >= 75 ? "var(--sage)" : v >= 50 ? "var(--amber)" : "var(--red)";

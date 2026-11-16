@@ -352,10 +352,17 @@
       h += `<div class="card"><h2>Subjects and strands</h2><p class="note">Split a subject into strands to track them separately, such as English into reading, writing, spelling, and speaking and listening. A subject with no split needs one strand with the same name.</p>`;
       C.subjects.forEach(sb => {
         h += `<div class="colcard"><div class="row"><input type="text" dir="auto" aria-label="Subject name" data-sub="${sb.id}" value="${esc(sb.name)}" style="flex:1;font-weight:700"><select aria-label="Report language" data-sublang="${sb.id}" style="width:auto"><option value="en" ${sb.lang !== "ar" ? "selected" : ""}>Reports in English</option><option value="ar" ${sb.lang === "ar" ? "selected" : ""}>Reports in Arabic (right to left)</option></select><button class="btn ghost small" data-act="del-sub" data-id="${sb.id}" ${sb.strands.some(strandLocked) ? 'disabled title="Data has been recorded"' : ""}>Remove subject</button></div>`;
+        h += `<div class="row" style="margin:8px 0 0 18px;gap:6px 14px;align-items:center"><span class="note"><b>Grades:</b></span>${C.grades.map(g => `<label class="check" style="margin:0"><input type="checkbox" data-subgrade="${sb.id}|${g.id}" ${!(sb.grades || []).length || sb.grades.includes(g.id) ? "checked" : ""}> ${esc(g.name)}</label>`).join("")}</div>
+          <div class="row" style="margin:6px 0 0 18px;align-items:center"><label class="note" for="sp-${sb.id}"><b>Students:</b></label><select id="sp-${sb.id}" data-subpath="${sb.id}" style="width:auto">${[["", "All students"], ["A", "A pathway: Arab students"], ["B", "B pathway: non-Arab students"]].map(([v, l]) => `<option value="${v}" ${(sb.pathway || "") === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>`;
         sb.strands.forEach(st => h += `<div class="row" style="margin:6px 0 0 18px"><input type="text" dir="auto" aria-label="Strand name" data-strand="${st.id}" value="${esc(st.name)}" style="flex:1"><span class="note">${st.cols.length} columns</span><button class="btn ghost small" data-act="del-str" data-id="${st.id}" ${strandLocked(st) ? 'disabled title="Data has been recorded"' : ""}>Remove</button></div>`);
         h += `<p style="margin:8px 0 0 18px"><button class="btn ghost small" data-act="add-str" data-id="${sb.id}">Add strand</button></p></div>`;
       });
-      h += `<button class="btn ghost" data-act="add-sub">Add subject</button></div>`;
+      const have = new Set(C.subjects.map(x => x.name.trim().toLowerCase())), lib = window.NestSubjects ? NestSubjects.LIBRARY : [];
+      h += `<div class="row"><button class="btn" data-act="sublib-open">${ui.lib ? "Close the list" : "Add from the subject list"}</button><button class="btn ghost" data-act="add-sub">Add your own subject</button></div>`;
+      if (ui.lib) h += `<div class="colcard" style="margin-top:10px"><p class="note" style="margin-top:0">Tick the subjects your school teaches. A subjects are for Arab students and B subjects for non-Arab students: each student only sees the one that fits them. You can rename subjects, change strands and choose grades afterwards, then add their columns and objectives in the next steps.</p>
+        <div class="row" style="flex-wrap:wrap;gap:6px 18px">${lib.map((x, i) => `<label class="check" style="margin:0"><input type="checkbox" data-sublib="${i}" ${have.has(x.name.toLowerCase()) ? "disabled checked" : ""}> ${esc(x.name)}${have.has(x.name.toLowerCase()) ? ' <span class="note">(added)</span>' : ""}</label>`).join("")}</div>
+        <p style="margin:10px 0 0"><button class="btn" data-act="sublib-add">Add the ticked subjects</button></p></div>`;
+      h += `<p class="note" style="margin-top:10px">Students’ A or B pathway comes from their nationality in Students, and can be changed for each student there.</p></div>`;
     }
     if (ui.step === 4) {
       const ss = all(); if (!ss.find(p => p[1].id === ui.strand)) ui.strand = ss[0]?.[1].id || null;
@@ -432,6 +439,13 @@
     if (a === "os-del") { if (!confirm("Remove this mark? Objectives already given this mark will show as not assessed.")) return; os().splice(+t.dataset.i, 1); }
     if (a === "lv-add") { C.scale.push("New level"); C.gradeMin.push(Math.min(100, (C.gradeMin[C.gradeMin.length - 1] || 0) + 5)); C.gradePos.push("above"); C.reports.bank.push(["", "", ""]); }
     if (a === "lv-del") { const i = +t.dataset.i; [C.scale, C.gradeMin, C.gradePos, C.reports.bank].forEach(arr => arr.splice(i, 1)); }
+    if (a === "sublib-open") { ui.lib = !ui.lib; render(); return; }
+    if (a === "sublib-add") { const lib = window.NestSubjects ? NestSubjects.LIBRARY : [];
+      ctx.el.querySelectorAll("[data-sublib]:checked:not(:disabled)").forEach(x => { const L = lib[+x.dataset.sublib]; if (!L) return;
+        const sbx = { id: uid("sb"), name: L.name, strands: L.strands.map(n => ({ id: uid("st"), name: n, cols: [] })) };
+        if (L.lang === "ar") { sbx.lang = "ar"; if (!C.reports.bankAr) C.reports.bankAr = BANK_AR.map(r => r.slice()); }
+        if (L.pathway) sbx.pathway = L.pathway; C.subjects.push(sbx); });
+      ui.lib = false; }
     if (a === "add-sub") C.subjects.push({ id: uid("sb"), name: "New subject", strands: [{ id: uid("st"), name: "New subject", cols: [] }] });
     if (a === "del-sub" && confirm("Remove this subject and all its strands and columns?")) C.subjects = C.subjects.filter(s => s.id !== id);
     if (a === "add-str") C.subjects.find(s => s.id === id).strands.push({ id: uid("st"), name: "New strand", cols: [] });
@@ -456,6 +470,11 @@
       if (f === "steps") C.steps = Math.max(0, +t.value || 0);
       if (f === "limit") C.reports.limit = Math.max(100, +t.value || 600);
     }
+    if (t.dataset.subgrade) { const [sid, gid] = t.dataset.subgrade.split("|"), sb = C.subjects.find(x => x.id === sid);
+      let g = (sb.grades && sb.grades.length) ? sb.grades.slice() : C.grades.map(x => x.id); g = t.checked ? [...new Set(g.concat(gid))] : g.filter(x => x !== gid);
+      if (!g.length) { t.checked = true; alert("A subject needs at least one grade. To stop using it, remove the subject."); return; }
+      if (g.length === C.grades.length) delete sb.grades; else sb.grades = g; }
+    if (t.dataset.subpath) { const sb = C.subjects.find(x => x.id === t.dataset.subpath); if (t.value) sb.pathway = t.value; else delete sb.pathway; }
     if (t.dataset.sublang) { const sb = C.subjects.find(x => x.id === t.dataset.sublang); sb.lang = t.value; if (t.value === "ar" && !C.reports.bankAr) C.reports.bankAr = BANK_AR.map(r => r.slice()); }
     if (t.dataset.bankar) { const [i, j] = t.dataset.bankar.split("|").map(Number); C.reports.bankAr = C.reports.bankAr || BANK_AR.map(r => r.slice()); while (C.reports.bankAr.length <= i) C.reports.bankAr.push(["", "", ""]); C.reports.bankAr[i][j] = t.value.trim(); }
     if (t.dataset.lab) { const [g, k] = t.dataset.lab.split("|"); C.labels = C.labels || JSON.parse(JSON.stringify(DEF_LAB)); C.labels[g][k] = t.value.trim() || DEF_LAB[g][k]; }

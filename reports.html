@@ -118,6 +118,7 @@ input[type=color]{width:48px;height:36px;border:1px solid var(--line);border-rad
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="hub.js?v=19"></script>
+<script src="subjects.js?v=1"></script>
 <script src="reportcard.js?v=2"></script>
 <script>
 /* Keep this the same as in index.html */
@@ -128,12 +129,14 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const app = document.getElementById("app"), who = document.getElementById("who"), dlg = document.getElementById("dlg");
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const toast = m => { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2800); };
-let setupId = null, checker = false, rcs = {}, staff = [], starsBy = {}, me, school, lead = false, C = null, year = null, classes = [], myClassIds = [], studs = [], cms = [], teachers = {}, ui = { tab: "cards", term: 0, cls: null, incl: "approved" };
+let setupId = null, checker = false, rcs = {}, staff = [], starsBy = {}, me, school, lead = false, C = null, year = null, classes = [], myClassIds = [], mySpec = {}, studs = [], cms = [], teachers = {}, ui = { tab: "cards", term: 0, cls: null, incl: "approved" };
 const cls = id => classes.find(c => String(c.id) === String(id)) || {};
 function fail(t){ app.innerHTML = `<div class="card"><div class="msg">${esc(t)}</div></div>`; }
 async function fetchAll(q){ const out = []; for (let f = 0; ; f += 1000) { const { data, error } = await q().range(f, f + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; } return out; }
 // the comments each student needs: every strand, or one per subject (Template settings → Comments)
-const strandsFor = c => (C.subjects || []).filter(sb => ((ReportCard.settings(C.card).subjects || {})[sb.id] || "table") !== "hide").flatMap(sb => ReportCard.units(C.card, sb).map(st => [sb, st]));
+// subjects this student takes (their grade, and A or B pathway)
+const subsFor = s => window.NestSubjects ? NestSubjects.forStudent(C.subjects, s, s ? cls(s.class_id).grade_id : null) : (C.subjects || []);
+const strandsFor = s => subsFor(s).filter(sb => ((ReportCard.settings(C.card).subjects || {})[sb.id] || "table") !== "hide").flatMap(sb => ReportCard.units(C.card, sb).map(st => [sb, st]));
 
 (async function start(){
   const { data: { session } } = await sb.auth.getSession(); if (!session) { location.href = "./"; return; }
@@ -150,16 +153,18 @@ const strandsFor = c => (C.subjects || []).filter(sb => ((ReportCard.settings(C.
   if (!C || !C.subjects) return fail("Finish the school setup in TwigNest first.");
   let cq = sb.from("classes").select("*").eq("school_id", school.id); if (year) cq = cq.eq("year", year);
   classes = ((await cq).data || []).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
-  const { data: ct } = await sb.from("class_teachers").select("class_id,teacher_id").in("class_id", classes.map(c => c.id));
-  myClassIds = [...new Set((ct || []).filter(x => x.teacher_id === me.id).map(x => String(x.class_id)))];
+  const { data: ct } = await sb.from("class_teachers").select("class_id,teacher_id,subject_id").in("class_id", classes.map(c => c.id));
+  // class teachers (all subjects) and specialist teachers (one subject, e.g. Art or Arabic)
+  myClassIds = [...new Set((ct || []).filter(x => x.teacher_id === me.id && !x.subject_id).map(x => String(x.class_id)))];
+  (ct || []).filter(x => x.teacher_id === me.id && x.subject_id).forEach(x => (mySpec[String(x.class_id)] = mySpec[String(x.class_id)] || new Set()).add(String(x.subject_id)));
   const tids = [...new Set((ct || []).map(x => x.teacher_id))];
   const { data: tp } = tids.length ? await sb.from("profiles").select("id,full_name").in("id", tids) : { data: [] };
-  (ct || []).forEach(x => { const n = ((tp || []).find(y => y.id === x.teacher_id) || {}).full_name; if (n) (teachers[x.class_id] = teachers[x.class_id] || new Set()).add(n); });
+  (ct || []).filter(x => !x.subject_id).forEach(x => { const n = ((tp || []).find(y => y.id === x.teacher_id) || {}).full_name; if (n) (teachers[x.class_id] = teachers[x.class_id] || new Set()).add(n); });
   checker = ((C.card || {}).steps || []).some(x => (x.people || []).includes(String(me.id)));
-  const mine = classes.filter(c => lead || checker || myClassIds.includes(String(c.id)));
+  const mine = classes.filter(c => lead || checker || myClassIds.includes(String(c.id)) || mySpec[String(c.id)]);
   ui.cls = mine[0] ? String(mine[0].id) : null;
   const ids = mine.map(c => c.id);
-  studs = ids.length ? await fetchAll(() => sb.from("students").select("id,full_name,arabic_name,student_number,class_id,archived").in("class_id", ids).eq("archived", false).order("full_name")) : [];
+  studs = ids.length ? await fetchAll(() => sb.from("students").select("id,full_name,arabic_name,student_number,class_id,archived,nationality,emirati,pathway").in("class_id", ids).eq("archived", false).order("full_name")) : [];
   const sIds = studs.map(s => s.id);
   cms = [];
   for (let k = 0; k < sIds.length; k += 200) { const part = await fetchAll(() => sb.from("report_comments").select("student_id,strand_id,term,text,level,status").in("student_id", sIds.slice(k, k + 200))); cms.push(...part); }
@@ -177,8 +182,8 @@ function draw(){
   app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; draw(); });
   ui.tab === "cards" ? cardsPane() : ui.tab === "template" ? templatePane() : progressPane();
 }
-const statusCount = (list, t) => { const sts = strandsFor(), out = { total: 0, approved: 0, ready: 0, draft: 0, none: 0 };
-  list.forEach(s => sts.forEach(([, st]) => { out.total++; const c = cmOf(s.id, st.id, t); if (!c || !c.text) out.none++; else if (c.status === "approved") out.approved++; else if (c.status === "ready") out.ready++; else out.draft++; })); return out; };
+const statusCount = (list, t) => { const out = { total: 0, approved: 0, ready: 0, draft: 0, none: 0 };
+  list.forEach(s => strandsFor(s).forEach(([, st]) => { out.total++; const c = cmOf(s.id, st.id, t); if (!c || !c.text) out.none++; else if (c.status === "approved") out.approved++; else if (c.status === "ready") out.ready++; else out.draft++; })); return out; };
 
 /* ---------- Report card workflow: Draft → Ready for checking → each check → Sent to parents ---------- */
 const steps = () => ((cardSet().steps) || []).filter(x => x && x.name);
@@ -188,10 +193,10 @@ function stageName(st){ const S = steps();
   if (st === "draft") return ["Draft · with the teacher", "none"]; if (st === "ready") return [S.length ? `Waiting for ${S[0].name}` : "Ready to send", "part"];
   if (st === "sent") return ["Sent to parents", "ok"]; const d = done(st);
   return [d >= S.length ? "Checked · ready to send" : `Checked by ${S[d - 1] ? S[d - 1].name : "checker"} · waiting for ${S[d].name}`, d >= S.length ? "ok" : "part"]; }
-function myRoles(s){ const r = new Set(); if (lead) r.add("lead"); if (myClassIds.includes(String(s.class_id))) r.add("teacher");
+function myRoles(s){ const r = new Set(); if (lead) r.add("lead"); if (myClassIds.includes(String(s.class_id))) r.add("teacher"); if (mySpec[String(s.class_id)]) r.add("spec");
   steps().forEach((x, k) => { if ((x.people || []).includes(String(me.id))) r.add(String(k + 1)); }); return r; }
 function canEdit(s, t){ const st = rcOf(s.id, t).stage, r = myRoles(s); if (st === "sent") return false; if (r.has("lead")) return true;
-  if (st === "draft") return r.has("teacher"); if (st === "ready") return r.has("1"); return r.has(String(done(st) + 1)); }
+  if (st === "draft") return r.has("teacher") || r.has("spec"); if (st === "ready") return r.has("1"); return r.has(String(done(st) + 1)); }
 function nextActions(s, t){ const st = rcOf(s.id, t).stage, r = myRoles(s), S = steps(), d = done(st), out = [];
   if (st === "draft" && (r.has("teacher") || r.has("lead"))) out.push(["ready", S.length ? "✅ Ready for checking" : "✅ Finished"]);
   if (st !== "draft" && st !== "sent" && d < S.length && (r.has(String(d + 1)) || r.has("lead"))) { out.push(["check", `✔ Checked by ${S[d].name}`]); out.push(["back", "↩ Send back to teacher"]); }
@@ -208,7 +213,7 @@ async function reloadComments(list){
   cms = cms.filter(c => !ids.some(id => String(id) === String(c.student_id))).concat(fresh);
 }
 async function cardsPane(){
-  const pane = document.getElementById("pane"), choices = classes.filter(c => lead || checker || myClassIds.includes(String(c.id)));
+  const pane = document.getElementById("pane"), choices = classes.filter(c => lead || checker || myClassIds.includes(String(c.id)) || mySpec[String(c.id)]);
   if (!choices.length) { pane.innerHTML = '<div class="card"><p class="note" style="margin:0">You don’t have a class linked in TwigNest yet.</p></div>'; return; }
   const kids = studs.filter(s => String(s.class_id) === String(ui.cls)), t = ui.term;
   await loadCards(kids);
@@ -264,7 +269,8 @@ async function openCard(sid, order){
   const edit = canEdit(s, t), info = rcOf(s.id, t), S = steps(), d = done(info.stage), scale = C.scale || [], pos = order.indexOf(String(sid));
   const ACT = { ready: "marked it ready for checking", check: "checked it", back: "sent it back to the teacher", send: "sent it to parents", reopen: "took it back from parents" };
   const stepper = [["Teacher", info.stage !== "draft"]].concat(S.map((x, k) => [x.name, d >= k + 1 && info.stage !== "draft"])).concat([["Parents", info.stage === "sent"]]);
-  const editor = () => (C.subjects || []).map(sub => { const ar = sub.lang === "ar" ? ' dir="rtl" lang="ar"' : "";
+  const onlySpec = (() => { const r = myRoles(s); return r.has("spec") && !r.has("lead") && !r.has("teacher") && ![...r].some(x => /^\d+$/.test(x)); })(), mine = mySpec[String(s.class_id)] || new Set();
+  const editor = () => subsFor(s).map(sub => { const lock = onlySpec && !mine.has(String(sub.id)) ? " disabled" : ""; const ar = sub.lang === "ar" ? ' dir="rtl" lang="ar"' : "";
     if ((cardSet().subjects || {})[sub.id] === "hide") return "";
     const whole = ReportCard.modeOf(cardSet(), sub) === "subject", olds = whole ? (sub.strands || []).map(st => cmOf(s.id, st.id, t)).filter(c => c && c.text) : [];
     return `<h3 class="strand" style="margin-top:14px;color:var(--plum)">${esc(sub.name)}${whole ? ' <span class="note" style="font-weight:600">· one comment for the subject</span>' : ""}</h3>`
@@ -272,8 +278,8 @@ async function openCard(sid, order){
       + ReportCard.units(C.card, sub).map(st => { const c = cmOf(s.id, st.id, t) || {};
       return `<div style="display:grid;grid-template-columns:minmax(120px,170px) 130px 1fr;gap:10px;align-items:start;padding:8px 0;border-bottom:1px solid var(--line)">
         <b style="font-size:14px"${ar}>${esc(st.name)}</b>
-        <select data-lv="${esc(st.id)}" aria-label="${esc(st.name)} level"><option value="">No level</option>${scale.map((x, i) => `<option value="${i}" ${String(c.level) === String(i) && c.level != null && c.level !== "" ? "selected" : ""}>${esc(x)}${(cardSet().levelNames || [])[i] ? " · " + esc(cardSet().levelNames[i]) : ""}</option>`).join("")}</select>
-        <textarea data-tx="${esc(st.id)}"${ar} rows="3" aria-label="${esc(st.name)} comment" maxlength="${(C.reports && C.reports.limit) || 2000}" placeholder="Write the comment…">${esc(c.text || "")}</textarea></div>`; }).join(""); }).join("");
+        <select data-lv="${esc(st.id)}"${lock} aria-label="${esc(st.name)} level"><option value="">No level</option>${scale.map((x, i) => `<option value="${i}" ${String(c.level) === String(i) && c.level != null && c.level !== "" ? "selected" : ""}>${esc(x)}${(cardSet().levelNames || [])[i] ? " · " + esc(cardSet().levelNames[i]) : ""}</option>`).join("")}</select>
+        <textarea data-tx="${esc(st.id)}"${ar}${lock} rows="3" aria-label="${esc(st.name)} comment" maxlength="${(C.reports && C.reports.limit) || 2000}" placeholder="Write the comment…">${esc(c.text || "")}</textarea></div>`; }).join(""); }).join("");
   dlg.className = "wide";
   dlg.innerHTML = `<div class="dlg">
     <div class="row" style="justify-content:space-between"><h2>${esc(s.full_name)} · ${esc(C.terms[t])}</h2>
@@ -337,7 +343,7 @@ async function attendance(list){
 const keep = c => c && (c.text || (c.level != null && c.level !== ""));
 function cardData(s, att){
   const t = ui.term, c = cls(s.class_id);
-  return { card: C.card, scale: C.scale || [], subjects: C.subjects || [], termName: C.terms[t], termIndex: t, year, school: school.name,
+  return { card: C.card, scale: C.scale || [], subjects: subsFor(s), termName: C.terms[t], termIndex: t, year, school: school.name,
     student: { name: s.full_name, arabic: s.arabic_name, number: s.student_number, cls: c.name || "" }, teachers: [...(teachers[s.class_id] || [])],
     att: att || null, stars: starsBy[s.id] ?? 0, cm: stid => { const x = cmOf(s.id, stid, t); return keep(x) ? x : null; } };
 }
