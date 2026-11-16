@@ -803,6 +803,7 @@ function landingView(){
       const v = id => document.getElementById(id).value.trim();
       const { error } = await sb.rpc("submit_demo_request", { p_full_name: v("d_name"), p_role: v("d_role"), p_school: v("d_school"), p_emirate: v("d_emirate"), p_email: v("d_email"), p_phone: v("d_phone"), p_message: v("d_msg") });
       if (error) return show(msg, "Your request couldn’t be sent: " + friendly(error), "err");
+      sb.functions.invoke("nestopia-mail", { body: { action: "demo", email: v("d_email") } }).catch(() => {});   // tell the Nestopia team
       f.reset(); show(msg, "Thank you. Your request has been sent, and we’ll be in touch soon.", "ok");
     }); };
   // plans from the admin's plan list

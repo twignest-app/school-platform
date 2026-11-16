@@ -256,6 +256,7 @@ function snapshot(s, att){ const t = ui.term;
 async function move(s, action, note, snap, quiet){
   const { data, error } = await sb.rpc("rc_move", { p_student: String(s.id), p_term: +ui.term, p_action: action, p_note: note || null, p_snapshot: snap || null });
   if (error) { if (!quiet) alert(error.message); return error.message; }
+  if (action !== "reopen") sb.functions.invoke("nestopia-mail", { body: { action: "rcard", student: String(s.id), term: +ui.term } }).catch(() => {});   // tell the next person
   const k = s.id + "|" + ui.term, cur = rcs[k] || { history: [] };
   rcs[k] = Object.assign({}, cur, { stage: data, history: (cur.history || []).concat([{ action, by: me.full_name, at: new Date().toISOString(), note }]) });
   if (action === "send") cms.forEach(c => { if (String(c.student_id) === String(s.id) && String(c.term) === String(ui.term) && c.text) c.status = "approved"; });

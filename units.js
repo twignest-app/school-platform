@@ -252,6 +252,7 @@ async function review(a){
   const history = (u.history || []).concat([{ action: a, by: me.full_name, at: new Date().toISOString(), note }]);
   const { error } = await sb.from("unit_plans").update({ status: next, history }).eq("id", u.id);
   if (error) return alert(error.message);
+  sb.functions.invoke("nestopia-mail", { body: { action: "unit", id: u.id } }).catch(() => {});   // email the leaders or the grade team
   Object.assign(u, { status: next, history }); toast({ submit: "Sent for review.", approve: "Unit approved.", changes: "Sent back with your note.", reopen: "Unit reopened." }[a]); drawUnit();
 }
 
