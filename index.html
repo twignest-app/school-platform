@@ -408,6 +408,11 @@ section.band.fam{padding:clamp(28px,4vw,48px) 0}
 .fdesc{color:var(--muted);font-size:15px;line-height:1.5}
 .fgo{font-weight:700;color:var(--ink);font-size:15px;margin-top:4px}
 @media (max-width:760px){.famgrid{grid-template-columns:1fr}}
+.sltgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:10px}
+.slt{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:14px;padding:12px 14px;text-decoration:none;color:inherit;background:var(--card,#fff)}
+.slt:hover{border-color:var(--sky,#7BB3E6)}.slt small{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.slt span{font-weight:700}.slt b{font-size:26px;line-height:1.2}.slt em{font-style:normal;font-size:13px;color:var(--muted)}
+.slt.amber{border-color:#F2B544}.slt.red{border-color:#C25A48}
 </style>
 </head>
 <body>
@@ -733,6 +738,7 @@ section.band.fam{padding:clamp(28px,4vw,48px) 0}
 <script src="hub.js?v=19"></script>
 <script src="twcalc.js?v=3"></script>
 <script src="getstarted.js?v=1"></script>
+<script src="waiting.js?v=1"></script>
 <script>
 document.documentElement.classList.add("js");
 const PLATFORM = "Nestopia";
@@ -920,19 +926,22 @@ function homeView(p, school){
       ${card("Attendance today", "ovAtt", "Loading…", "muted")}
       ${card("Active students", "ovStu", "Across your school")}
       ${card(lead ? "Observations this year" : "My observations", "ovObs", on.includes("grownest") ? "In GrowNest" : "GrowNest is off", "lav")}
-      ${card("Needs your attention", "ovTask", "From Inclusion, Wellbeing and Behaviour", "amber")}
+      ${card("Waiting for you", "ovTask", "Across Nestopia", "amber")}
     </div>
+    <section class="ovpanel" id="sltBox" hidden style="margin-bottom:18px"></section>
     <div class="ovgrid">
       <section class="ovpanel"><div class="ovph"><h2>Student progress</h2><span class="note" id="ovProgNote">From TwigNest</span></div><div id="ovChart"><p class="note">Loading…</p></div></section>
       <div class="ovcol">
         <section class="ovpanel"><h2>Coming up</h2><div id="ovEvents"><p class="note" style="margin:0">Loading…</p></div></section>
-        <section class="ovpanel"><h2>Recent notifications</h2><div id="hubnotes"></div><p class="note" id="ovNoNotes" style="margin:0">Nothing needs you right now. 🎉</p></section>
+        <section class="ovpanel"><h2>Waiting for you</h2><div id="hubnotes"></div><p class="note" id="ovNoNotes" style="margin:0">Nothing needs you right now. 🎉</p></section>
       </div>
     </div>`;
   if (window.hubInit) hubInit("overview");
   overviewData(p, school, lead);
   if (["school_lead", "admin"].includes(p.role) && typeof gsSteps === "function") gsSteps(sb, school).then(steps => { const b = document.getElementById("gsBox"); if (b && steps.some(s => !s[2])) { b.innerHTML = gsHtml(steps, true); b.hidden = false; } }).catch(() => {});
-  Promise.all([inclusionReminder(p, school), wellbeingReminder(p, school), behaviourReminder(p, school), messagesReminder(p, school), surveyReminder(p, school), absenceNoteReminder(p, school), meetingReminder(p, school)]).then(() => {
+  if (window.NestWaiting) NestWaiting.sltPanel(sb, p, school, document.getElementById("sltBox")).catch(() => {});
+  Promise.all([inclusionReminder(p, school), wellbeingReminder(p, school), behaviourReminder(p, school), messagesReminder(p, school), surveyReminder(p, school), absenceNoteReminder(p, school), meetingReminder(p, school),
+    window.NestWaiting ? NestWaiting.waitingReminders(sb, p, school, placeNote).catch(() => {}) : null]).then(() => {
     const n = document.querySelectorAll("#hubnotes > div").length;
     const t = document.getElementById("ovTask"); if (t) t.textContent = n;
     const e = document.getElementById("ovNoNotes"); if (e) e.hidden = n > 0;
