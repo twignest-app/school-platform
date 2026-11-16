@@ -58,6 +58,11 @@
       const m = await sb.from("staff_cover").select("id").eq("day", t).eq("cover_id", p.id); if (!m.error && (m.data || []).length) note(place, "🧑‍🏫", `You are covering ${m.data.length} lesson${m.data.length === 1 ? "" : "s"} today.`, "leave.html#mine", "See the cover work");
       const w = await sb.from("staff_cover").select("id").eq("absent_id", p.id).gte("day", t).is("work", null); if (!w.error && (w.data || []).length) note(place, "📋", `Add cover work for ${w.data.length} lesson${w.data.length === 1 ? "" : "s"} while you’re away.`, "leave.html#mine", "Add cover work");
     })());
+    // admissions: new applications and accepted offers to enrol (the admissions team)
+    jobs.push((async () => { if (!window.NestAccess) return; const lv = (await NestAccess.mine(sb)).admissions; if (lv !== "E") return;
+      const r = await sb.from("admissions").select("status").in("status", ["new", "accepted"]); if (r.error) return; const d = r.data || [], n = d.filter(x => x.status === "new").length, e = d.filter(x => x.status === "accepted").length;
+      if (n) note(place, "🏫", `${n} new application${n === 1 ? "" : "s"} to look at.`, "admissions.html", "Open Admissions");
+      if (e) note(place, "🎒", `${e} famil${e === 1 ? "y has" : "ies have"} accepted a place and ${e === 1 ? "is" : "are"} ready to enrol.`, "admissions.html", "Enrol"); })());
     // access requests (leaders)
     if (p.role === "school_lead") jobs.push((async () => { const r = await sb.from("access_requests").select("id", { count: "exact", head: true }).eq("status", "pending"); if (!r.error && r.count) note(place, "🔑", `${r.count} request${r.count === 1 ? "" : "s"} for access waiting for you.`, "access.html#requests", "Answer"); })());
     // Nestlings: students' posts waiting for approval in my classes

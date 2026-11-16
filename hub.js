@@ -14,6 +14,7 @@
     calendar: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
     timetable: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11M15 9v11M3 14.5h18"/>',
     pickup: '<circle cx="8" cy="7" r="3"/><circle cx="16.5" cy="9" r="2.3"/><path d="M2.5 20a5.5 5.5 0 0 1 11 0M13 20a3.6 3.6 0 0 1 7.5 0"/>',
+    admissions: '<path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/><path d="M12 9.5v.01"/>',
     access: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0"/><rect x="15" y="11" width="6" height="5" rx="1"/><path d="M16.5 11V9.5a1.5 1.5 0 0 1 3 0V11"/>',
     leave: '<circle cx="12" cy="7" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/><path d="M17 4l4 4M21 4l-4 4"/>',
     trips: '<path d="M4 16V8a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v8"/><path d="M3 16h18v2H3zM4 11h16"/><circle cx="7.5" cy="19.5" r="1.5"/><circle cx="16.5" cy="19.5" r="1.5"/>',
@@ -31,6 +32,7 @@
   const NAV = [
     ["overview", "Overview", "index.html", null],
     ["students", "Students", "students.html", "twignest"],
+    ["admissions", "Admissions", "admissions.html", null],
     ["attendance", "Attendance", "attendance.html", null],
     ["behaviour", "Behaviour", "behaviour.html", "behaviour"],
     ["planning", "Planning", "planning.html", "planning"],
@@ -148,7 +150,7 @@
       // job-based access: hide what this person's job has no access to (see access.js and Staff and access)
       let LV = null, viewAs = null;
       try {
-        if (!window.NestAccess) await new Promise(ok => { const sc = document.createElement("script"); sc.src = "/access.js?v=1"; sc.onload = ok; sc.onerror = ok; document.head.appendChild(sc); });
+        if (!window.NestAccess) await new Promise(ok => { const sc = document.createElement("script"); sc.src = "/access.js?v=2"; sc.onload = ok; sc.onerror = ok; document.head.appendChild(sc); });
         if (window.NestAccess) { LV = await NestAccess.mine(sbc); try { viewAs = lead ? JSON.parse(sessionStorage.getItem("nest_viewas") || "null") : null; } catch (_) {} }
       } catch (_) { LV = null; }
       const menuLV = viewAs && viewAs.levels ? viewAs.levels : LV;

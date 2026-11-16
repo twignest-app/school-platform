@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Apply · Nestopia</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--plum:#462D5B;--plum-2:#6A4B85;--soft:#EDE6F5;--bg:#F7F4FB;--card:#fff;--ink:#2E2140;--muted:#6F6680;--line:#E4DDEE;--sage:#5E8455;--sage-soft:#E6EFE2;--red:#B4473A;--red-soft:#F8E4E1;--amber:#A86C12;--amber-soft:#FBF0DC}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:Nunito,system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55}
+h1,h2,.btn{font-family:Poppins,Nunito,sans-serif}
+main{max-width:760px;margin:0 auto;padding:24px 18px 60px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+.brand{font-family:Poppins;font-weight:600;color:var(--plum);font-size:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-bottom:16px}
+.card h2{margin:0 0 10px;font-size:19px;color:var(--plum)}
+label{display:grid;gap:4px;font-weight:700;font-size:14.5px}
+input,select,textarea{font:inherit;color:inherit;border:1px solid var(--line);border-radius:12px;padding:10px 12px;width:100%;background:#fff}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:600px){.two{grid-template-columns:1fr}}
+.grid{display:grid;gap:12px}
+.btn{border:0;background:var(--plum);color:#fff;border-radius:999px;padding:12px 22px;font-weight:600;cursor:pointer;font-size:16px}
+.btn.ghost{background:var(--soft);color:var(--plum)}
+.ar{display:block;font-weight:600;color:var(--muted);font-size:13px}
+.msg{border-radius:12px;padding:10px 14px;font-weight:700;background:var(--red-soft);color:var(--red)}
+.ok{border-radius:12px;padding:10px 14px;font-weight:700;background:var(--sage-soft);color:var(--sage)}
+.note{color:var(--muted);font-size:14px}
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.steps span{border-radius:999px;padding:5px 12px;font-size:13px;font-weight:800;background:var(--soft);color:var(--muted)}
+.steps span.on{background:var(--plum);color:#fff}.steps span.done{background:var(--sage-soft);color:var(--sage)}
+.hp{position:absolute;left:-5000px}
+</style>
+</head>
+<body>
+<main id="app"><p class="note">Loading…</p></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+/* ===== Nestopia · online admissions for families (no account needed) =====
+   apply.html?s=<school>  the application form
+   apply.html?t=<token>   the family's private tracking link: status, documents, answer an offer */
+const sb = supabase.createClient("https://gvhzbxpgebgjnegdiijp.supabase.co", "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM");
+const app = document.getElementById("app"), Q = new URLSearchParams(location.search);
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const bi = (en, ar) => `${en}<span class="ar" dir="rtl" lang="ar">${ar}</span>`;
+const fmt = d => d ? new Date(d).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "";
+
+async function form(){
+  const sid = Q.get("s"); if (!sid) { app.innerHTML = `<div class="card"><p class="msg">This link is missing the school. Please use the link the school gave you.</p></div>`; return; }
+  const { data: f } = await sb.rpc("admissions_form", { p_school: sid });
+  if (!f) { app.innerHTML = `<div class="card"><p class="msg">We couldn’t find this school.</p></div>`; return; }
+  document.title = "Apply to " + f.name;
+  if (!f.open) { app.innerHTML = `<div class="top"><span class="brand">${esc(f.name)}</span></div><div class="card"><h2>${bi("Applications are closed at the moment", "التسجيل مغلق حاليًا")}</h2><p>Please contact the school office for more information.</p></div>`; return; }
+  const t = (n, l, req, ph, type) => `<label>${l}<input name="${n}" type="${type || "text"}" ${req ? "required" : ""} placeholder="${ph || ""}" maxlength="200"></label>`;
+  app.innerHTML = `<div class="top"><span class="brand">${esc(f.name)}</span><span class="note">Online application · طلب التسجيل</span></div>
+    ${f.intro ? `<div class="card"><p style="margin:0;white-space:pre-line">${esc(f.intro)}</p></div>` : ""}
+    <form id="af" class="grid">
+      <div class="card grid"><h2>${bi("👧 About your child", "عن طفلك")}</h2>
+        <div class="two">${t("cn", bi("Full name (English)", "الاسم الكامل بالإنجليزية"), 1)}<label>${bi("Full name (Arabic)", "الاسم الكامل بالعربية")}<input name="ca" dir="rtl" maxlength="200"></label></div>
+        <div class="two">${t("dob", bi("Date of birth", "تاريخ الميلاد"), 1, "", "date")}<label>${bi("Gender", "الجنس")}<select name="g" required><option value="">–</option><option value="boy">Boy · ولد</option><option value="girl">Girl · بنت</option></select></label></div>
+        <div class="two">${t("nat", bi("Nationality", "الجنسية"), 1)}<label>${bi("Emirati", "إماراتي")}<select name="em"><option value="">–</option><option value="yes">Yes · نعم</option><option value="no">No · لا</option></select></label></div>
+        <div class="two"><label>${bi("Applying for", "الصف المطلوب")}<select name="gr" required><option value="">–</option>${(f.grades || []).map(g => `<option value="${esc(g.id)}">${esc(g.name)}</option>`).join("")}</select></label>${t("sd", bi("Hoped start date", "تاريخ البدء المتوقع"), 0, "", "date")}</div>
+        ${t("cs", bi("Current school (if any)", "المدرسة الحالية (إن وجدت)"))}
+      </div>
+      <div class="card grid"><h2>${bi("🩺 Health and support", "الصحة والدعم")}</h2>
+        <div class="two">${t("al", bi("Allergies", "الحساسية"), 0, "None")}${t("co", bi("Medical conditions", "الحالات الطبية"), 0, "None")}</div>
+        ${t("me", bi("Medication", "الأدوية"), 0, "None")}
+        <label>${bi("Any learning support needs we should know about?", "هل هناك احتياجات دعم تعليمي يجب أن نعرفها؟")}<textarea name="sn" rows="2" maxlength="1000"></textarea></label>
+      </div>
+      <div class="card grid"><h2>${bi("👪 Parent or guardian", "وليّ الأمر")}</h2>
+        <div class="two">${t("pn", bi("Full name", "الاسم الكامل"), 1)}${t("pr", bi("Relation to the child", "صلة القرابة"), 1, "Mother, father…")}</div>
+        <div class="two">${t("pe", bi("Email", "البريد الإلكتروني"), 1, "", "email")}${t("pp", bi("Mobile", "الهاتف المتحرك"), 1, "05…", "tel")}</div>
+        <details><summary style="cursor:pointer;font-weight:700;color:var(--plum)">+ ${bi("Second parent or guardian", "وليّ أمر ثانٍ")}</summary><div class="grid" style="margin-top:10px">
+          <div class="two">${t("pn2", "Full name · الاسم")}${t("pr2", "Relation · صلة القرابة")}</div><div class="two">${t("pe2", "Email · البريد", 0, "", "email")}${t("pp2", "Mobile · الهاتف", 0, "", "tel")}</div></div></details>
+        ${t("ad", bi("Home address (area, city)", "العنوان (المنطقة، المدينة)"))}
+        ${t("sib", bi("Brothers or sisters at this school (names)", "إخوة في هذه المدرسة (الأسماء)"))}
+        ${t("hh", bi("How did you hear about us?", "كيف سمعت عنا؟"))}
+        <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      </div>
+      <div class="card grid"><label style="display:flex;gap:10px;align-items:flex-start;font-weight:600"><input type="checkbox" name="ok" required style="width:auto;margin-top:5px">
+        <span>${bi("The information is correct, and I agree that the school may use it to process this application.", "أؤكد صحة المعلومات وأوافق على استخدام المدرسة لها لمعالجة هذا الطلب.")}</span></label>
+        <div id="err"></div><button class="btn" id="go">${"Send the application · إرسال الطلب"}</button>
+        <p class="note" style="margin:0">After sending, you can add documents (passport, birth certificate, last report) from your private link.</p></div>
+    </form>`;
+  document.getElementById("af").onsubmit = async e => { e.preventDefault(); const F = e.target, v = n => (F[n] ? F[n].value.trim() : ""), err = document.getElementById("err"), go = document.getElementById("go");
+    if (v("website")) return;   // a robot filled the hidden box
+    go.disabled = true; err.innerHTML = "";
+    const child = { name: v("cn"), arabic_name: v("ca"), dob: v("dob"), gender: v("g"), nationality: v("nat"), emirati: v("em"), current_school: v("cs"), allergies: v("al"), conditions: v("co"), medication: v("me"), support: v("sn") };
+    const parent = { name: v("pn"), relation: v("pr"), email: v("pe"), phone: v("pp"), name2: v("pn2"), relation2: v("pr2"), email2: v("pe2"), phone2: v("pp2"), address: v("ad") };
+    const { data, error } = await sb.rpc("admissions_apply", { p_school: sid, p_grade: v("gr"), p_start: v("sd") || null, p_child: child, p_parent: parent, p_extra: { siblings: v("sib"), heard: v("hh") } });
+    if (error) { go.disabled = false; err.innerHTML = `<p class="msg">${esc(error.message)}</p>`; return; }
+    sb.functions.invoke("nestopia-mail", { body: { action: "admission_new", id: data.id } }).catch(() => {});
+    location.href = "apply.html?t=" + data.token + "&new=1"; };
+}
+
+const STAGES = [["new", "Received", "تم الاستلام"], ["reviewing", "Being reviewed", "قيد المراجعة"], ["assessment", "Assessment", "التقييم"], ["offered", "Offer", "العرض"], ["accepted", "Accepted", "تم القبول"], ["enrolled", "Enrolled", "تم التسجيل"]];
+async function track(){
+  const tok = Q.get("t"), { data: a } = await sb.rpc("admissions_track", { p_token: tok });
+  if (!a) { app.innerHTML = `<div class="card"><p class="msg">We couldn’t find this application. Please use the link from your email.</p></div>`; return; }
+  const idx = STAGES.findIndex(s => s[0] === a.status), first = String(a.child || "").split(" ")[0];
+  const other = { waitlist: ["⏳ On the waiting list", "على قائمة الانتظار", "There isn’t a place right now. We will contact you when one becomes available."], declined: ["Not offered a place this time", "لم يُعرض مقعد هذه المرة", "Thank you for applying. Please contact the school if you have any questions."], withdrawn: ["Withdrawn", "تم السحب", "This application is no longer active."] }[a.status];
+  app.innerHTML = `<div class="top"><span class="brand">${esc(a.school)}</span><span class="note">Your application · طلبك</span></div>
+    ${Q.get("new") ? `<p class="ok">✅ Thank you! We’ve received your application and sent you an email with this link. · شكرًا، تم استلام طلبك.</p>` : ""}
+    <div class="card"><h2>${esc(a.child)}${a.grade ? " · " + esc(a.grade) : ""}</h2>
+      ${other ? `<p style="font-size:18px;margin:0"><b>${other[0]}</b> <span class="ar" dir="rtl" lang="ar" style="display:inline">${other[1]}</span></p><p>${other[2]}</p>`
+        : `<div class="steps">${STAGES.map((s, i) => `<span class="${i < idx ? "done" : i === idx ? "on" : ""}">${i < idx ? "✓ " : ""}${s[1]}</span>`).join("")}</div>`}
+      ${a.status === "assessment" && a.assessment_at ? `<p>📅 ${bi(`We’d like to meet ${esc(first)} on <b>${esc(new Date(a.assessment_at).toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }))}</b>.`, "موعد التقييم")}</p>` : ""}
+      ${a.status === "offered" ? `<div style="background:var(--sage-soft);border-radius:14px;padding:14px 16px;margin-top:8px"><p style="margin:0 0 8px;font-size:18px">🎉 <b>${esc(first)} has been offered a place${a.offer && a.offer.start ? " from " + esc(fmt(a.offer.start)) : ""}.</b></p>${a.offer && a.offer.note ? `<p style="white-space:pre-line">${esc(a.offer.note)}</p>` : ""}
+        <p style="margin:8px 0 0"><button class="btn" data-ans="accepted">✅ Accept the place · قبول المقعد</button> <button class="btn ghost" data-ans="withdrawn">No thank you · لا، شكرًا</button></p></div>` : ""}
+      ${a.status === "accepted" ? `<p class="ok">Thank you for accepting. The school will finish ${esc(first)}’s enrolment and email you the parent portal invitation.</p>` : ""}
+      ${a.status === "enrolled" ? `<p class="ok">🎒 ${esc(first)} is enrolled. Welcome! Check your email for the parent portal invitation.</p>` : ""}</div>
+    ${["enrolled", "declined", "withdrawn"].includes(a.status) ? "" : `<div class="card"><h2>${bi("📎 Documents", "المستندات")}</h2><p class="note" style="margin-top:0">Passport or Emirates ID, birth certificate, vaccination record and the last school report. Photos or PDFs, up to 10 MB each.</p>
+      ${(a.docs || []).length ? `<ul>${a.docs.map(d => `<li>${esc(d)}</li>`).join("")}</ul>` : ""}
+      <div class="two"><input type="file" id="df" accept="image/*,.pdf" multiple><button class="btn ghost" id="du">Upload · رفع</button></div><div id="dm"></div></div>`}`;
+  app.querySelectorAll("[data-ans]").forEach(b => b.onclick = async () => { if (!confirm(b.dataset.ans === "accepted" ? "Accept the place?" : "Turn down the place?")) return;
+    const { error } = await sb.rpc("admissions_answer", { p_token: tok, p_answer: b.dataset.ans }); if (error) return alert(error.message); track(); });
+  const du = document.getElementById("du"); if (du) du.onclick = async () => { const files = [...document.getElementById("df").files], dm = document.getElementById("dm"); if (!files.length) return;
+    du.disabled = true; dm.innerHTML = '<p class="note">Uploading…</p>';
+    try { for (const f of files) { if (f.size > 10 * 1024 * 1024) throw new Error(f.name + " is bigger than 10 MB.");
+        const path = `${a.folder}/${Date.now().toString(36)}-${f.name.replace(/[^\w.\-]+/g, "_")}`;
+        const up = await sb.storage.from("admissions").upload(path, f); if (up.error) throw up.error;
+        const { error } = await sb.rpc("admissions_add_doc", { p_token: tok, p_path: path, p_name: f.name }); if (error) throw error; }
+      track(); } catch (x) { du.disabled = false; dm.innerHTML = `<p class="msg">${esc(x.message || x)}</p>`; } };
+}
+(Q.get("t") ? track : form)();
+</script>
+</body>
+</html>
