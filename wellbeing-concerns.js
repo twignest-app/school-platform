@@ -35,7 +35,20 @@ function openConcern(preStudent){
     const { data: nc, error } = await sb.from("wellbeing_concerns").insert({ school_id: school.id, student_id: f.s.value, category: f.c.value, safeguarding: sg, urgent: f.u.checked, happened_on: f.d.value, details: f.w.value.trim(), child_words: f.q.value.trim() || null, actions_taken: f.a.value.trim() || null, logged_by: me.id, status: "new" }).select("id").single();
     if (!error && nc && window.nestMail) nestMail("concern", nc.id);
     if (error) return toast(/wellbeing_concerns/.test(error.message) ? "Please run the Wellbeing Part 2 database step first." : error.message);
-    dlg.close(); await concernsLoad(); render(); toast(sg ? "Sent to the safeguarding lead" : "Sent to the wellbeing team");
+    await concernsLoad(); render();
+    // show exactly who it went to (the same people the email goes to)
+    const pick = sg ? (x => x.safeguarding_lead) : (x => x.wellbeing_team), others = staff.filter(x => x.id !== me.id);
+    let to = others.filter(pick); if (!to.length) to = others.filter(x => x.role === "school_lead");
+    const kid = stud(f.s.value) || {}, names = to.map(x => esc(x.full_name || "A colleague"));
+    dlg.innerHTML = `<div class="dlg"><h2>✅ Your concern has been sent</h2>
+      <p style="margin:0">About <b>${esc(kid.full_name || "the student")}</b>${f.u.checked ? " · marked <b>urgent</b>" : ""}.</p>
+      ${names.length ? `<p style="margin:12px 0 4px">${sg ? "🔒 Sent only to the safeguarding lead" + (names.length > 1 ? "s" : "") : "Sent to the wellbeing team"}:</p>
+        <ul style="margin:0 0 8px;padding-left:20px">${names.map(n => `<li><b>${n}</b></li>`).join("")}</ul>
+        <p class="note" style="margin:0">They have been emailed and can see it on their Wellbeing page now. You can follow it under “Concerns I’ve logged” on this page.</p>`
+      : `<p class="lock" style="margin:12px 0 0">No one is set up as ${sg ? "safeguarding lead" : "the wellbeing team"} yet, so school leaders will see it. Please also tell a school leader in person.</p>`}
+      ${sg ? `<p class="note" style="margin:8px 0 0">If a child is in immediate danger, also tell the safeguarding lead in person now.</p>` : ""}
+      <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" data-x>Done</button></div></div>`;
+    dlg.querySelector("[data-x]").onclick = () => dlg.close();
   };
   dlg.showModal();
 }

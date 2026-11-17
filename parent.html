@@ -18,7 +18,7 @@ h2{font-size:19px;margin:0 0 10px;color:var(--plum)}
 .btn{font:inherit;font-weight:800;border:0;border-radius:14px;padding:11px 18px;background:var(--plum);color:#fff;cursor:pointer;text-decoration:none;display:inline-block}
 .btn.ghost{background:var(--card);color:var(--plum);border:2px solid var(--line)}.btn.small{padding:7px 12px;font-size:14px}
 input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:12px;padding:10px 12px;width:100%;background:#fff}
-label{display:grid;gap:4px;font-weight:700;margin-bottom:10px}
+label{display:grid;gap:4px;font-weight:700;margin-bottom:10px}.fld{display:grid;gap:4px;margin-bottom:10px}.fld label{margin:0}
 .muted{color:var(--muted)}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .ok{background:var(--mint);color:var(--mint-ink);border-radius:14px;padding:10px 14px;font-weight:700}.err{background:#F8E1DE;color:var(--red);border-radius:14px;padding:10px 14px;font-weight:700}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 14px}.tab{font:inherit;font-weight:800;border:2px solid var(--line);background:var(--card);border-radius:99px;padding:8px 14px;cursor:pointer;color:var(--ink)}.tab[aria-selected="true"]{background:var(--plum);color:#fff;border-color:var(--plum)}
@@ -127,8 +127,8 @@ function authView(mode, m, ok){
   app.innerHTML = `<h1>${up ? "Create a parent account" : "Parent portal"}<span class="ar" dir="rtl" lang="ar">${up ? "إنشاء حساب وليّ أمر" : "بوابة أولياء الأمور"}</span></h1>
     ${inv ? `<div class="card" style="border-left:5px solid var(--plum)"><b>👋 ${esc(inv.school)} has invited you to follow ${esc(inv.child)}’s learning.</b><span class="ar" dir="rtl" lang="ar">دعتك المدرسة لمتابعة تعلّم ${esc(inv.child)}.</span><p class="muted" style="margin:6px 0 0">${up ? "Create your account below. " + esc(inv.child) + " will be added automatically." : "Sign in, or create an account if you don’t have one yet. " + esc(inv.child) + " will be added automatically."}</p></div>` : ""}
     <div class="card"><p class="muted" style="margin-top:0">News from school, messages with teachers, report cards, attendance and merits.<span class="ar" dir="rtl" lang="ar">أخبار المدرسة، والرسائل مع المعلمين، والتقارير، والحضور، والنقاط.</span></p>${msg(m, ok)}
-      <form id="f">${up ? `<label>Your name · الاسم <input id="nm" required></label>` : ""}<label>Email · البريد الإلكتروني <input id="em" type="email" required autocomplete="email"></label>
-        <label>Password · كلمة المرور <input id="pw" type="password" required minlength="8" autocomplete="${up ? "new-password" : "current-password"}"></label>
+      <form id="f">${up ? `<div class="fld"><label for="nm">Your name · الاسم</label><input id="nm" name="name" required autocomplete="name"></div>` : ""}<div class="fld"><label for="em">Email · البريد الإلكتروني</label><input id="em" name="email" type="email" required autocomplete="username" autocapitalize="off" spellcheck="false"></div>
+        <div class="fld"><label for="pw">Password · كلمة المرور</label><input id="pw" name="password" type="password" required minlength="8" autocomplete="${up ? "new-password" : "current-password"}"></div>
         <button class="btn">${up ? "Create account · إنشاء الحساب" : "Sign in · تسجيل الدخول"}</button></form>
       <p class="row" style="margin:14px 0 0">${up ? `<a href="#" id="sw">I already have an account · لديّ حساب</a>` : `<a href="#" id="sw">Create a parent account · إنشاء حساب</a> · <a href="#" id="fg">Forgot password? · نسيت كلمة المرور؟</a>`}</p></div>
     <p class="muted">School staff: please use <a href="./">nestopia.school</a>. · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p>`;
@@ -168,7 +168,7 @@ function applyLang(root){
   root.querySelectorAll("[placeholder]").forEach(el => { const v = el._ph || el.getAttribute("placeholder"); if (!v.includes(" · ")) return; el._ph = v; const [a, ...b] = v.split(" · "); if (AR.test(b.join(" · ")) && !AR.test(a)) el.setAttribute("placeholder", LANG === "ar" ? b.join(" · ") : a); });
   list.forEach(t => { const v = t._orig || t.nodeValue; if (!v.includes(" · ")) return; const parts = v.split(" · ");
     for (let k = 1; k < parts.length; k++) { const a = parts.slice(0, k).join(" · "), b = parts.slice(k).join(" · ");
-      if (LAT.test(a) && !AR.test(a) && AR.test(b)) { t._orig = v; t.nodeValue = LANG === "ar" ? b : a; return; } } });
+      if (LAT.test(a) && !AR.test(a) && AR.test(b)) { t._orig = v; const nv = LANG === "ar" ? b : a; if (t.nodeValue !== nv) t.nodeValue = nv; return; } } });
 }
 const L = (en, ar) => LANG === "ar" ? ar : en;
 // ---------- Sections ----------
