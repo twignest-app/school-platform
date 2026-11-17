@@ -60,7 +60,8 @@ async function start(){
   const ct = (await sb.from("class_teachers").select("class_id,teacher_id").eq("teacher_id", me.id)).data || [];
   myClassIds = new Set(ct.map(x => String(x.class_id)));
   const mine = classes.find(c => myClassIds.has(String(c.id)));
-  ui.grade = mine ? String(mine.grade_id) : grades()[0] ? String(grades()[0].id) : null;
+  const withCls = grades().find(g => classes.some(c => String(c.grade_id) === String(g.id))) || grades()[0];   // leaders start on the first grade that has classes
+  ui.grade = mine ? String(mine.grade_id) : withCls ? String(withCls.id) : null;
   await loadUnits();
   window.addEventListener("hashchange", route); route();
 }
