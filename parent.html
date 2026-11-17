@@ -148,8 +148,11 @@ function linkView(m, ok){
     <p class="muted" style="margin-top:0">Type the parent code your child’s school gave you (it starts with P). Add each child with their own code.<span class="ar" dir="rtl" lang="ar">اكتب رمز وليّ الأمر الذي أعطتك إياه المدرسة. لكل طفل رمز خاص.</span></p>
     <form id="f"><label>Parent code · رمز وليّ الأمر <input id="cd" required maxlength="8" style="text-transform:uppercase;letter-spacing:.15em;font-weight:800;max-width:240px"></label>
       <label>I am the child’s… · صلتي بالطفل <select id="rl"><option>Mother · الأم</option><option>Father · الأب</option><option>Guardian · وليّ الأمر</option><option>Other · أخرى</option></select></label>
-      <button class="btn">Add my child · أضف طفلي</button> ${kids.length ? '<button type="button" class="btn ghost" id="bk">Back · رجوع</button>' : ""}</form></div>`;
+      <button class="btn">Add my child · أضف طفلي</button> ${kids.length ? '<button type="button" class="btn ghost" id="bk">Back · رجوع</button>' : ""}</form></div>
+    <p class="muted">Signed in as <b id="who"></b>. Not you? <a href="#" id="lo">Sign out · تسجيل الخروج</a></p>`;
   const bk = document.getElementById("bk"); if (bk) bk.onclick = () => show(cur);
+  sb.auth.getUser().then(({ data }) => { const w = document.getElementById("who"); if (w && data && data.user) w.textContent = data.user.email; });
+  document.getElementById("lo").onclick = async e => { e.preventDefault(); await sb.auth.signOut(); location.reload(); };
   document.getElementById("f").onsubmit = async e => { e.preventDefault(); const { data: { user } } = await sb.auth.getUser();
     const { data, error } = await sb.rpc("parent_link_child", { p_code: document.getElementById("cd").value, p_name: (user.user_metadata || {}).full_name || "", p_rel: document.getElementById("rl").value.split(" · ")[0] });
     if (error) return linkView(error.message); await loadKids(); const k = kids.find(x => x.name.split(" ")[0] === data) || kids[kids.length - 1]; show(k ? k.id : null, data + " has been added. · تمت إضافة " + data); };
