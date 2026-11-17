@@ -111,7 +111,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--n-sky)}
 <script>
 const SUPABASE_URL = "https://gvhzbxpgebgjnegdiijp.supabase.co";
 const SUPABASE_KEY = "sb_publishable_aEQ4MVt00kNu8PaVtrNnqQ_9guhxPYM";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+/* Parents keep their own sign-in, separate from staff, so a teacher who opens the parent portal in the same browser
+   (or a parent who works at the school) is never signed out of Nestopia. Staff previews still use the staff sign-in. */
+const PARENT_KEY = "nest-parent-auth", STAFF_KEY = "sb-gvhzbxpgebgjnegdiijp-auth-token";
+const IS_PREVIEW = new URLSearchParams(location.search).has("preview");
+try { if (!IS_PREVIEW && !localStorage.getItem(PARENT_KEY)) { const old = localStorage.getItem(STAFF_KEY), j = old ? JSON.parse(old) : null;
+  if (j && j.user && (j.user.user_metadata || {}).account === "parent") { localStorage.setItem(PARENT_KEY, old); localStorage.removeItem(STAFF_KEY); } } } catch (_) {}
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, IS_PREVIEW ? {} : { auth: { storageKey: PARENT_KEY } });
 const app = document.getElementById("app"), hr = document.getElementById("hr");
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const dshort = d => new Date(d + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
@@ -152,7 +158,7 @@ function linkView(m, ok){
     <p class="muted">Signed in as <b id="who"></b>. Not you? <a href="#" id="lo">Sign out · تسجيل الخروج</a></p>`;
   const bk = document.getElementById("bk"); if (bk) bk.onclick = () => show(cur);
   sb.auth.getUser().then(({ data }) => { const w = document.getElementById("who"); if (w && data && data.user) w.textContent = data.user.email; });
-  document.getElementById("lo").onclick = async e => { e.preventDefault(); await sb.auth.signOut(); location.reload(); };
+  document.getElementById("lo").onclick = async e => { e.preventDefault(); await sb.auth.signOut({ scope: "local" }); location.reload(); };
   document.getElementById("f").onsubmit = async e => { e.preventDefault(); const { data: { user } } = await sb.auth.getUser();
     const { data, error } = await sb.rpc("parent_link_child", { p_code: document.getElementById("cd").value, p_name: (user.user_metadata || {}).full_name || "", p_rel: document.getElementById("rl").value.split(" · ")[0] });
     if (error) return linkView(error.message); await loadKids(); const k = kids.find(x => x.name.split(" ")[0] === data) || kids[kids.length - 1]; show(k ? k.id : null, data + " has been added. · تمت إضافة " + data); };
@@ -573,7 +579,7 @@ function account(){
   document.getElementById("inst").onclick = installApp; document.getElementById("tourB").onclick = tour;
   p.querySelectorAll("[data-l]").forEach(b => b.onclick = () => { LANG = b.dataset.l; try { localStorage.setItem("nest_lang", LANG); } catch (_) {} show(cur); });
   document.getElementById("pwf").onsubmit = async e => { e.preventDefault(); const { error } = await sb.auth.updateUser({ password: document.getElementById("npw").value }); alert(error ? error.message : L("Password changed.", "تم تغيير كلمة المرور.")); };
-  document.getElementById("out2").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+  document.getElementById("out2").onclick = async () => { await sb.auth.signOut({ scope: "local" }); location.reload(); };
 }
 async function news(){
   const p = document.getElementById("pane"); p.innerHTML = '<div class="card"><p class="muted">Loading…</p></div>';
