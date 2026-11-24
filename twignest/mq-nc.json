@@ -1,0 +1,517 @@
+{
+"0-NI-1": {
+"y": "Year 1",
+"s": "Number – place value",
+"o": "Count to and across 100, forwards and backwards, from any number"
+},
+"0-NI-2": {
+"y": "Year 1",
+"s": "Number – place value",
+"o": "Identify and represent numbers using objects and pictures; compare numbers using more than, less than and equal to; read and write numbers to 20 in words"
+},
+"0-NI-3": {
+"y": "Year 1",
+"s": "Number – addition and subtraction",
+"o": "Represent and use number bonds and related subtraction facts within 20; add and subtract one-digit and two-digit numbers to 20"
+},
+"0-TT-1": {
+"y": "Year 1",
+"s": "Number – place value",
+"o": "Count in multiples of twos, fives and tens"
+},
+"0-TT-2": {
+"y": "Year 1",
+"s": "Number – multiplication and division",
+"o": "Solve one-step multiplication and division problems using objects, pictures and arrays"
+},
+"0-FF-1": {
+"y": "Year 1",
+"s": "Number – fractions",
+"o": "Recognise, find and name a half as one of two equal parts of an object, shape or quantity"
+},
+"0-FF-2": {
+"y": "Year 1",
+"s": "Number – fractions",
+"o": "Recognise, find and name a quarter as one of four equal parts of an object, shape or quantity"
+},
+"0-MM-1": {
+"y": "Year 1",
+"s": "Measurement",
+"o": "Compare, describe and measure lengths and heights"
+},
+"0-MM-2": {
+"y": "Year 1",
+"s": "Measurement",
+"o": "Compare, describe and measure mass/weight and capacity/volume"
+},
+"0-MM-3": {
+"y": "Year 1",
+"s": "Measurement",
+"o": "Recognise and know the value of different coins and notes"
+},
+"0-MM-4": {
+"y": "Year 1",
+"s": "Measurement",
+"o": "Tell the time to the hour and half past the hour"
+},
+"0-SF-1": {
+"y": "Year 1",
+"s": "Geometry – properties of shapes",
+"o": "Recognise and name common 2-D shapes"
+},
+"0-SF-2": {
+"y": "Year 1",
+"s": "Geometry – properties of shapes",
+"o": "Recognise and name common 3-D shapes"
+},
+"0-SF-3": {
+"y": "Year 1",
+"s": "Geometry – position and direction",
+"o": "Describe position, direction and movement, including half, quarter and three-quarter turns"
+},
+"0-DD-1": {
+"y": "Year 1",
+"s": "Statistics",
+"o": "Sort and count objects, and compare groups (early data: not statutory until Year 2)"
+},
+"1-NI-1": {
+"y": "Year 2",
+"s": "Number – place value",
+"o": "Recognise the place value of each digit in a two-digit number; compare and order numbers from 0 up to 100"
+},
+"1-NI-2": {
+"y": "Year 2",
+"s": "Number – addition and subtraction",
+"o": "Add and subtract numbers using concrete objects, pictures and mentally, including two-digit numbers and ones/tens"
+},
+"1-NI-3": {
+"y": "Year 2",
+"s": "Number – addition and subtraction",
+"o": "Recognise and use the inverse relationship between addition and subtraction to check calculations and solve missing number problems"
+},
+"1-TT-1": {
+"y": "Year 2",
+"s": "Number – multiplication and division",
+"o": "Recall and use multiplication and division facts for the 2, 5 and 10 multiplication tables"
+},
+"1-TT-2": {
+"y": "Year 2",
+"s": "Number – multiplication and division",
+"o": "Recognise odd and even numbers; show that multiplication of two numbers can be done in any order (commutative)"
+},
+"1-TT-3": {
+"y": "Year 2",
+"s": "Number – multiplication and division",
+"o": "Solve problems involving multiplication and division, using materials, arrays, repeated addition and mental methods"
+},
+"1-FF-1": {
+"y": "Year 2",
+"s": "Number – fractions",
+"o": "Recognise, find, name and write fractions 1/3, 1/4, 2/4 and 3/4 of a length, shape, set of objects or quantity"
+},
+"1-FF-2": {
+"y": "Year 2",
+"s": "Number – fractions",
+"o": "Find fractions of amounts; write simple fractions, e.g. 1/2 of 6 = 3"
+},
+"1-MM-1": {
+"y": "Year 2",
+"s": "Measurement",
+"o": "Choose and use appropriate standard units to estimate and measure length/height (m/cm); compare and order lengths"
+},
+"1-MM-2": {
+"y": "Year 2",
+"s": "Measurement",
+"o": "Measure mass (kg/g), temperature (°C) and capacity (litres/ml); compare and order"
+},
+"1-MM-3": {
+"y": "Year 2",
+"s": "Measurement",
+"o": "Recognise and use symbols for pounds/pence (here: dirhams/fils); find combinations of coins; solve problems including giving change"
+},
+"1-MM-4": {
+"y": "Year 2",
+"s": "Measurement",
+"o": "Tell and write the time to five minutes, including quarter past/to the hour"
+},
+"1-SF-1": {
+"y": "Year 2",
+"s": "Geometry – properties of shapes",
+"o": "Identify and describe the properties of 2-D shapes, including the number of sides and line symmetry"
+},
+"1-SF-2": {
+"y": "Year 2",
+"s": "Geometry – properties of shapes",
+"o": "Identify and describe the properties of 3-D shapes, including the number of edges, vertices and faces"
+},
+"1-SF-3": {
+"y": "Year 2",
+"s": "Geometry – position and direction",
+"o": "Use mathematical vocabulary to describe position, direction and movement, including turns"
+},
+"1-DD-1": {
+"y": "Year 2",
+"s": "Statistics",
+"o": "Interpret and construct simple tally charts and tables; ask and answer questions by totalling and comparing"
+},
+"1-DD-2": {
+"y": "Year 2",
+"s": "Statistics",
+"o": "Interpret and construct simple pictograms and block diagrams"
+},
+"2-NI-1": {
+"y": "Year 3",
+"s": "Number – place value",
+"o": "Recognise the place value of each digit in a three-digit number; compare, order, read and write numbers up to 1000; find 10 or 100 more or less"
+},
+"2-NI-2": {
+"y": "Year 3",
+"s": "Number – addition and subtraction",
+"o": "Add and subtract numbers mentally, including a three-digit number and ones, tens or hundreds"
+},
+"2-NI-3": {
+"y": "Year 3",
+"s": "Number – addition and subtraction",
+"o": "Add and subtract numbers with up to three digits using formal written methods; estimate the answer and use inverse operations to check"
+},
+"2-TT-1": {
+"y": "Year 3",
+"s": "Number – multiplication and division",
+"o": "Recall and use multiplication and division facts for the 3, 4 and 8 multiplication tables"
+},
+"2-TT-2": {
+"y": "Year 3",
+"s": "Number – multiplication and division",
+"o": "Write and calculate multiplication and division using known facts, including two-digit × one-digit, mentally and with written methods"
+},
+"2-TT-3": {
+"y": "Year 3",
+"s": "Number – multiplication and division",
+"o": "Solve problems, including missing number problems, scaling problems and correspondence problems"
+},
+"2-FF-1": {
+"y": "Year 3",
+"s": "Number – fractions",
+"o": "Count up and down in tenths; recognise, find and write fractions of a discrete set of objects"
+},
+"2-FF-2": {
+"y": "Year 3",
+"s": "Number – fractions",
+"o": "Recognise and show, using diagrams, equivalent fractions with small denominators"
+},
+"2-FF-3": {
+"y": "Year 3",
+"s": "Number – fractions",
+"o": "Compare and order unit fractions and fractions with the same denominators; add and subtract fractions with the same denominator within one whole"
+},
+"2-MM-1": {
+"y": "Year 3",
+"s": "Measurement",
+"o": "Measure, compare, add and subtract lengths (m/cm/mm); measure the perimeter of simple 2-D shapes"
+},
+"2-MM-2": {
+"y": "Year 3",
+"s": "Measurement",
+"o": "Measure, compare, add and subtract mass (kg/g) and volume/capacity (l/ml)"
+},
+"2-MM-3": {
+"y": "Year 3",
+"s": "Measurement",
+"o": "Add and subtract amounts of money to give change"
+},
+"2-MM-4": {
+"y": "Year 3",
+"s": "Measurement",
+"o": "Tell and write the time from an analogue clock, including 12-hour and 24-hour clocks; estimate and compare time"
+},
+"2-SF-1": {
+"y": "Year 3",
+"s": "Geometry – properties of shapes",
+"o": "Recognise angles as a property of shape or a description of a turn; identify right angles and whether angles are greater or less than a right angle"
+},
+"2-SF-2": {
+"y": "Year 3",
+"s": "Geometry – properties of shapes",
+"o": "Identify horizontal and vertical lines and pairs of perpendicular and parallel lines; draw 2-D shapes and make 3-D shapes"
+},
+"2-DD-1": {
+"y": "Year 3",
+"s": "Statistics",
+"o": "Interpret and present data using bar charts, pictograms and tables; solve one-step and two-step questions"
+},
+"3-NI-1": {
+"y": "Year 4",
+"s": "Number – place value",
+"o": "Recognise the place value of each digit in a four-digit number; order and compare numbers beyond 1000; round any number to the nearest 10, 100 or 1000"
+},
+"3-NI-2": {
+"y": "Year 4",
+"s": "Number – addition and subtraction",
+"o": "Add and subtract numbers with up to 4 digits using the formal written methods of columnar addition and subtraction"
+},
+"3-TT-1": {
+"y": "Year 4",
+"s": "Number – multiplication and division",
+"o": "Recall multiplication and division facts for multiplication tables up to 12 × 12"
+},
+"3-TT-2": {
+"y": "Year 4",
+"s": "Number – multiplication and division",
+"o": "Use place value, known and derived facts to multiply and divide mentally; recognise and use factor pairs and commutativity"
+},
+"3-TT-3": {
+"y": "Year 4",
+"s": "Number – multiplication and division",
+"o": "Multiply two-digit and three-digit numbers by a one-digit number using formal written layout; solve problems"
+},
+"3-FF-1": {
+"y": "Year 4",
+"s": "Number – fractions (including decimals)",
+"o": "Recognise and show families of common equivalent fractions; solve problems to calculate quantities and fractions to divide quantities"
+},
+"3-FF-2": {
+"y": "Year 4",
+"s": "Number – fractions (including decimals)",
+"o": "Recognise and write decimal equivalents of any number of tenths or hundredths; round decimals with one decimal place to the nearest whole number"
+},
+"3-FF-3": {
+"y": "Year 4",
+"s": "Number – fractions (including decimals)",
+"o": "Recognise and write decimal equivalents to 1/4, 1/2, 3/4; compare numbers with the same number of decimal places; solve simple money problems"
+},
+"3-MM-1": {
+"y": "Year 4",
+"s": "Measurement",
+"o": "Measure and calculate the perimeter of a rectilinear figure; find the area of rectilinear shapes by counting squares"
+},
+"3-MM-2": {
+"y": "Year 4",
+"s": "Measurement",
+"o": "Convert between different units of measure, e.g. kilometre to metre, hour to minute"
+},
+"3-MM-3": {
+"y": "Year 4",
+"s": "Measurement",
+"o": "Estimate, compare and calculate different measures, including money in pounds and pence (here: dirhams and fils)"
+},
+"3-MM-4": {
+"y": "Year 4",
+"s": "Measurement",
+"o": "Read, write and convert time between analogue and digital 12- and 24-hour clocks"
+},
+"3-SF-1": {
+"y": "Year 4",
+"s": "Geometry – properties of shapes",
+"o": "Identify acute and obtuse angles and compare and order angles up to two right angles; compare and classify geometric shapes"
+},
+"3-SF-2": {
+"y": "Year 4",
+"s": "Geometry – properties of shapes",
+"o": "Identify lines of symmetry in 2-D shapes presented in different orientations"
+},
+"3-SF-3": {
+"y": "Year 4",
+"s": "Geometry – position and direction",
+"o": "Describe positions on a 2-D grid as coordinates in the first quadrant; describe movements between positions as translations"
+},
+"3-DD-1": {
+"y": "Year 4",
+"s": "Statistics",
+"o": "Interpret and present discrete and continuous data using bar charts and time graphs; solve comparison, sum and difference problems"
+},
+"4-NI-1": {
+"y": "Year 5",
+"s": "Number – place value",
+"o": "Read, write, order and compare numbers to at least 1 000 000; interpret negative numbers in context; round any number up to 1 000 000"
+},
+"4-NI-2": {
+"y": "Year 5",
+"s": "Number – addition and subtraction",
+"o": "Add and subtract whole numbers with more than 4 digits, including using formal written methods, and mentally with increasingly large numbers"
+},
+"4-TT-1": {
+"y": "Year 5",
+"s": "Number – multiplication and division",
+"o": "Identify multiples and factors, including all factor pairs and common factors; know and use prime numbers"
+},
+"4-TT-2": {
+"y": "Year 5",
+"s": "Number – multiplication and division",
+"o": "Recognise and use square numbers and cube numbers, and the notation for squared (²) and cubed (³)"
+},
+"4-TT-3": {
+"y": "Year 5",
+"s": "Number – multiplication and division",
+"o": "Multiply and divide whole numbers and those involving decimals by 10, 100 and 1000"
+},
+"4-TT-4": {
+"y": "Year 5",
+"s": "Number – multiplication and division",
+"o": "Multiply numbers up to 4 digits by a one- or two-digit number using a formal written method; divide numbers up to 4 digits by a one-digit number"
+},
+"4-FF-1": {
+"y": "Year 5",
+"s": "Number – fractions (including decimals and percentages)",
+"o": "Identify, name and write equivalent fractions; recognise mixed numbers and improper fractions and convert from one form to the other"
+},
+"4-FF-2": {
+"y": "Year 5",
+"s": "Number – fractions (including decimals and percentages)",
+"o": "Add and subtract fractions with the same denominator and denominators that are multiples of the same number; multiply proper fractions and mixed numbers by whole numbers"
+},
+"4-FF-3": {
+"y": "Year 5",
+"s": "Number – fractions (including decimals and percentages)",
+"o": "Read, write, order and compare numbers with up to three decimal places; round decimals with two decimal places"
+},
+"4-FF-4": {
+"y": "Year 5",
+"s": "Number – fractions (including decimals and percentages)",
+"o": "Recognise the per cent symbol and understand per cent as parts per hundred; write percentages as a fraction and a decimal"
+},
+"4-MM-1": {
+"y": "Year 5",
+"s": "Measurement",
+"o": "Convert between different units of metric measure"
+},
+"4-MM-2": {
+"y": "Year 5",
+"s": "Measurement",
+"o": "Measure and calculate the perimeter of composite rectilinear shapes; calculate and compare the area of rectangles"
+},
+"4-MM-3": {
+"y": "Year 5",
+"s": "Measurement",
+"o": "Estimate volume (e.g. using 1 cm³ blocks) and capacity"
+},
+"4-MM-4": {
+"y": "Year 5",
+"s": "Measurement",
+"o": "Solve problems involving converting between units of time"
+},
+"4-SF-1": {
+"y": "Year 5",
+"s": "Geometry – properties of shapes",
+"o": "Know angles are measured in degrees; estimate and compare acute, obtuse and reflex angles; angles at a point and on a straight line"
+},
+"4-SF-2": {
+"y": "Year 5",
+"s": "Geometry – properties of shapes",
+"o": "Use the properties of rectangles to deduce related facts and find missing lengths and angles; distinguish regular and irregular polygons"
+},
+"4-SF-3": {
+"y": "Year 5",
+"s": "Geometry – position and direction",
+"o": "Identify, describe and represent the position of a shape following a reflection or translation"
+},
+"4-DD-1": {
+"y": "Year 5",
+"s": "Statistics",
+"o": "Solve comparison, sum and difference problems using information presented in a line graph; complete, read and interpret information in tables, including timetables"
+},
+"5-NI-1": {
+"y": "Year 6",
+"s": "Number – place value",
+"o": "Read, write, order and compare numbers up to 10 000 000; round any whole number; use negative numbers in context and calculate intervals across zero"
+},
+"5-NI-2": {
+"y": "Year 6",
+"s": "Number – addition and subtraction",
+"o": "Perform mental calculations, including with mixed operations and large numbers; use estimation to check answers"
+},
+"5-TT-1": {
+"y": "Year 6",
+"s": "Number – multiplication and division",
+"o": "Multiply multi-digit numbers up to 4 digits by a two-digit number using long multiplication; divide using long division"
+},
+"5-TT-2": {
+"y": "Year 6",
+"s": "Number – multiplication and division",
+"o": "Identify common factors, common multiples and prime numbers"
+},
+"5-TT-3": {
+"y": "Year 6",
+"s": "Number – multiplication and division",
+"o": "Use their knowledge of the order of operations to carry out calculations involving the four operations"
+},
+"5-FF-1": {
+"y": "Year 6",
+"s": "Number – fractions (including decimals and percentages)",
+"o": "Use common factors to simplify fractions; compare and order fractions, including fractions > 1"
+},
+"5-FF-2": {
+"y": "Year 6",
+"s": "Number – fractions (including decimals and percentages)",
+"o": "Add and subtract fractions with different denominators and mixed numbers; multiply simple pairs of proper fractions; divide proper fractions by whole numbers"
+},
+"5-FF-3": {
+"y": "Year 6",
+"s": "Number – fractions (including decimals and percentages)",
+"o": "Identify the value of each digit in numbers given to three decimal places; multiply and divide by 10, 100 and 1000; use written division methods with decimal answers"
+},
+"5-FF-4": {
+"y": "Year 6",
+"s": "Number – fractions (including decimals and percentages)",
+"o": "Recall and use equivalences between simple fractions, decimals and percentages, including in different contexts"
+},
+"5-MM-1": {
+"y": "Year 6",
+"s": "Measurement",
+"o": "Use, read, write and convert between standard units; convert between miles and kilometres"
+},
+"5-MM-2": {
+"y": "Year 6",
+"s": "Measurement",
+"o": "Calculate the area of parallelograms and triangles; recognise when it is possible to use formulae for area"
+},
+"5-MM-3": {
+"y": "Year 6",
+"s": "Measurement",
+"o": "Calculate, estimate and compare volume of cubes and cuboids using standard units"
+},
+"5-SF-1": {
+"y": "Year 6",
+"s": "Geometry – properties of shapes",
+"o": "Find unknown angles in any triangles, quadrilaterals and regular polygons; recognise vertically opposite angles"
+},
+"5-SF-2": {
+"y": "Year 6",
+"s": "Geometry – properties of shapes",
+"o": "Illustrate and name parts of circles, including radius, diameter and circumference; recognise, describe and build simple 3-D shapes, including making nets"
+},
+"5-SF-3": {
+"y": "Year 6",
+"s": "Geometry – position and direction",
+"o": "Describe positions on the full coordinate grid (all four quadrants); draw and translate simple shapes and reflect them in the axes"
+},
+"5-DD-1": {
+"y": "Year 6",
+"s": "Statistics",
+"o": "Interpret and construct pie charts and line graphs and use these to solve problems"
+},
+"5-DD-2": {
+"y": "Year 6",
+"s": "Statistics",
+"o": "Calculate and interpret the mean as an average"
+},
+"5-PP-1": {
+"y": "Year 6",
+"s": "Ratio and proportion",
+"o": "Solve problems involving the relative sizes of two quantities, ratio and proportion, and scale factors"
+},
+"5-PP-2": {
+"y": "Year 6",
+"s": "Ratio and proportion",
+"o": "Solve problems involving the calculation of percentages and the use of percentages for comparison"
+},
+"5-PP-3": {
+"y": "Year 6",
+"s": "Algebra",
+"o": "Use simple formulae; generate and describe linear number sequences"
+},
+"5-PP-4": {
+"y": "Year 6",
+"s": "Algebra",
+"o": "Express missing number problems algebraically; find pairs of numbers that satisfy an equation with two unknowns"
+}
+}

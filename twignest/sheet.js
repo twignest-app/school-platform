@@ -8,7 +8,7 @@
   const POSS = { below: "Below", inline: "In line", above: "Above", none: "Not yet assessed" }, PROGS = { below: "Below expected", inline: "Expected", above: "Better than expected" };
   function applyLabels(cfg) { const L = (cfg && cfg.labels) || {}; ["below", "inline", "above"].forEach(k => { if (L.att && L.att[k]) POS[k] = L.att[k]; if (L.prog && L.prog[k]) PROG[k] = L.prog[k]; }); }
   const badge = (c, t) => `<span class="badge b-${c}">${t}</span>`;
-  let ctx, C, cls, studs = [], R = {}, ST = {}, TAUGHT = new Set(), LV = {}, CM = {}, NS = {}, PLANS = {}, planErr = false, ED = null, ui = { sub: null, strand: null, term: 0, group: "All", mode: "strand", view: "grid", more: false, oi: 0, pStrand: null, pid: null }, bound = false, pending = 0;
+  let BR = null, ctx, C, cls, studs = [], R = {}, ST = {}, TAUGHT = new Set(), LV = {}, CM = {}, NS = {}, PLANS = {}, planErr = false, ED = null, ui = { sub: null, strand: null, term: 0, group: "All", mode: "strand", view: "grid", more: false, oi: 0, pStrand: null, pid: null }, bound = false, pending = 0;
 
   const DEF_OS = [{ code: "s", label: "Secure", short: "✓", kind: "secure" }, { code: "n", label: "Not yet secure", short: "!", kind: "notyet" }, { code: "e", label: "Exceeding", short: "+", kind: "exceed" }];
   const gradeLevels = () => { const sc = (C && C.scale) || [], gm = (C && C.gradeMin) || [], gp = (C && C.gradePos) || [];
@@ -434,6 +434,43 @@
       if (!pp.error) pp.data.forEach(x => { if (!PLANS[x.student_id] || String(x.updated_at) > String(PLANS[x.student_id].updated_at)) PLANS[x.student_id] = x; });
       const ns = await sb.from("next_steps").select("*").in("student_id", ids); NS = {}; if (!ns.error) ns.data.forEach(x => { ((NS[x.term] = NS[x.term] || {})[x.student_id] = (NS[x.term] || {})[x.student_id] || {})[x.strand_id] = x.text; });
     }
+    // Whole Nest: Maths Quest results for this class (shown as suggestions only)
+    BR = null; if (window.NestBridge && studs.length && C.subjects.some(isMathsSb)) { try { BR = await NestBridge.load(sb, cls, studs); } catch (e) { BR = null; } }
+  }
+
+  // ----- ThinkNest platforms (Whole Nest): Maths Quest evidence -----
+  function isMathsSb(x) { return !!x && /math|numeracy/i.test([x.name, ...(x.aliases || [])].join(" ")); }
+  const strandObjList = () => C.subjects.filter(isMathsSb).flatMap(x => x.strands.flatMap(st => st.cols.filter(c => c.type === "objectives").flatMap(c => C.terms.flatMap((_, ti) => objs(c, ti)))));   // all Maths objectives, so each topic lands on its best match
+  function mqSug(e) {
+    if (!e || e.n < 8) return null;
+    if (useLv()) { const i = levelFromPct(e.pct); return "L" + (i + 1); }
+    const f = k => (OS().find(x => x.kind === k) || {}).code;
+    return e.pct >= 80 ? f("secure") : e.pct < 50 ? f("notyet") : null;
+  }
+  function mqTag(sid, o, list) {
+    const e = BR && BR.ev ? NestBridge.forObj(BR, sid, o.id, list) : null; if (!e) return "";
+    const sg = mqSug(e), cls2 = e.n < 8 ? "" : e.pct >= 80 ? "hi" : e.pct < 50 ? "lo" : "";
+    return `<span class="mqtag ${cls2}" title="Maths Quest: ${e.c} of ${e.n} answers right${sg ? ". Suggests: " + esc(osOf(sg).label) : e.n < 8 ? ". Not enough answers yet to suggest a mark" : ""}">🧮 ${e.pct}%</span>`;
+  }
+  function mqPending(st, tc, t) {
+    if (!BR || !BR.ev) return [];
+    const list = strandObjList(st), out = [];
+    termObjs(tc, t).forEach(o => visible().forEach(s => { if (stat(s.id, o.id)) return; const sg = mqSug(NestBridge.forObj(BR, s.id, o.id, list)); if (sg) out.push({ student_id: s.id, obj_id: o.id, status: sg }); }));
+    return out;
+  }
+  function mqBar(sbj, st, tc, t) {
+    if (!BR || !isMathsSb(sbj)) return "";
+    if (BR.error) return `<div class="mqbar"><b>🧮 Maths Quest</b> <span class="note">${esc(BR.error)}</span></div>`;
+    const p = mqPending(st, tc, t);
+    return `<div class="mqbar"><div><b>🧮 Maths Quest results</b> <span class="note">${BR.linked} of ${BR.inClass} student${BR.inClass === 1 ? "" : "s"} linked by student number. The % under a circle is how many Maths Quest answers were right for that objective.</span></div>
+      ${p.length ? `<button class="btn small" data-mqapply="1">Fill ${p.length} empty circle${p.length === 1 ? "" : "s"} from Maths Quest</button>` : `<span class="note">No suggestions for empty circles right now.</span>`}</div>`;
+  }
+  async function mqApply() {
+    const [, st] = findStrand(ui.strand), tc = st.cols.filter(c => !c.baseline), rows = mqPending(st, tc, ui.term);
+    if (!rows.length) return;
+    if (!confirm(`Fill ${rows.length} empty circle${rows.length === 1 ? "" : "s"} using Maths Quest results?\n\nOnly empty circles change, and you can change any of them afterwards.`)) return;
+    rows.forEach(r => { (ST[r.student_id] = ST[r.student_id] || {})[r.obj_id] = r.status; markTaught(r.obj_id); });
+    render(); for (let i = 0; i < rows.length; i += 500) await run(ctx.sb.from("objective_status").upsert(rows.slice(i, i + 500)));
   }
 
   function saving(delta, err) {
@@ -562,7 +599,9 @@ dialog#tnGaps{border:0;border-radius:18px;padding:0;width:min(860px,95vw);max-he
 .gapbtn{border:0;background:none;padding:0;cursor:pointer}.gapbtn .badge{text-decoration:underline;text-underline-offset:2px}
 .gaprow{padding:10px 0;border-bottom:1px solid var(--line)}.gapchk{display:flex;gap:10px;align-items:flex-start;cursor:pointer}.gapchk input{width:20px;height:20px;margin-top:2px;flex:none}
 .gpfoot{position:sticky;bottom:0;box-shadow:0 -6px 18px rgba(0,0,0,.08)}
-.dot.pick.l1,.dot.pick.l2,.dot.pick.l3,.dot.pick.l4,.dot.pick.l5,.dot.pick.l6,.dot.pick.l7{color:#fff}`;
+.dot.pick.l1,.dot.pick.l2,.dot.pick.l3,.dot.pick.l4,.dot.pick.l5,.dot.pick.l6,.dot.pick.l7{color:#fff}
+.mqtag{display:block;margin-top:3px;font-size:10.5px;font-weight:700;color:var(--muted);white-space:nowrap;line-height:1.1}.mqtag.hi{color:#1f7a4d}.mqtag.lo{color:#b4532a}.marks .mqtag{display:inline-block;margin:0 0 0 6px;align-self:center}
+.mqbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0 0 10px;padding:10px 14px;border:1px solid var(--line);border-radius:14px;background:#f2f8f4}.mqbar .note{margin:0 0 0 4px}`;
     document.head.appendChild(st);
   }
   function closePick() { const d = document.getElementById("tnPick"); if (d) d.remove(); }
@@ -622,8 +661,9 @@ dialog#tnGaps{border:0;border-radius:18px;padding:0;width:min(860px,95vw);max-he
     if (ui.mode === "overview") return renderOverview(h.replace(/<div class="legend">[\s\S]*$/, ""));
     if (ui.mode === "reports") return renderReports(h.replace(/<div class="legend">[\s\S]*$/, ""));
     if (ui.mode === "gaps") return renderClassGaps(h.replace(/<div class="legend">[\s\S]*$/, ""));
-    if (ui.view === "one") return renderOne(h, tc, t);
-    const more = !!ui.more;
+    if (ui.view === "one") return renderOne(h + mqBar(sb, st, tc, t), tc, t, isMathsSb(sb) && BR && BR.ev ? strandObjList(st) : null);
+    const more = !!ui.more, mqOn = !!(BR && BR.ev && isMathsSb(sb)), mqList = mqOn ? strandObjList(st) : [];
+    h += mqBar(sb, st, tc, t);
     let th = `<thead><tr><th class="namecol"></th>${more ? `<th class="grp" colspan="${bc.length + 1}">Baseline</th>` : ""}<th class="grp" colspan="${n || 1}">${esc(C.terms[t])}</th><th class="grp" colspan="${more ? 3 : 1}">${more ? "Summary" : "Level"}</th></tr><tr><th class="namecol">Student</th>`;
     if (more) { bc.forEach(c => th += `<th class="colh"><b>${esc(c.name)}</b>${hint(c)}</th>`); th += `<th class="colh"><b>Baseline level</b>${baseIsLv(st) ? "from the assessment" : "scale"}</th>`; }
     tc.forEach(c => { if (c.type === "objectives") objs(c, t).forEach(o => { const tg = TAUGHT.has(o.id);
@@ -636,7 +676,7 @@ dialog#tnGaps{border:0;border-radius:18px;padding:0;width:min(860px,95vw);max-he
       if (more) { bc.forEach(c => th += `<td>${cell(s, c, "b")}</td>`);
         th += baseIsLv(st) ? `<td id="bl-${s.id}">${lvBadge(level(s.id, st, "b")) || badge("none", "–")}</td>` : `<td><select class="lv" data-lv="${s.id}|${st.id}|b" aria-label="Baseline level for ${esc(s.full_name)}">${lvOpts(s, st, "b")}</select></td>`; }
       tc.forEach(c => { if (c.type === "objectives") objs(c, t).forEach(o => { const v = stat(s.id, o.id);
-        th += `<td><button class="dot ${dotCls(v)}" data-cell="${s.id}|${o.id}" title="${esc(v ? osOf(v).label : "Not assessed")}" aria-label="${esc(s.full_name)}, ${esc(o.text)}: ${esc(v ? osOf(v).label.toLowerCase() : "not assessed")}">${dotTxt(v)}</button></td>`; });
+        th += `<td><button class="dot ${dotCls(v)}" data-cell="${s.id}|${o.id}" title="${esc(v ? osOf(v).label : "Not assessed")}" aria-label="${esc(s.full_name)}, ${esc(o.text)}: ${esc(v ? osOf(v).label.toLowerCase() : "not assessed")}">${dotTxt(v)}</button>${mqOn ? mqTag(s.id, o, mqList) : ""}</td>`; });
         else th += `<td>${cell(s, c, k)}</td>`; });
       if (!n) th += `<td></td>`;
       th += `<td id="pos-${s.id}">${sm.pos}</td>${more ? `<td><select class="lv" data-lv="${s.id}|${st.id}|${k}" aria-label="Teacher level for ${esc(s.full_name)}">${lvOpts(s, st, k)}</select></td><td id="prog-${s.id}">${sm.prog}</td>` : ""}</tr>`; });
@@ -644,7 +684,7 @@ dialog#tnGaps{border:0;border-radius:18px;padding:0;width:min(860px,95vw);max-he
     ctx.el.innerHTML = h + `<div class="sheetwrap"><table class="sheet">${th}</tbody></table></div>
       <p class="note">Tap a circle to record. The objective is ticked as taught for you, and everything saves as you go.${!n ? ` This strand has no objectives or tests for ${esc(C.terms[t])} yet, so there is nothing to record here. The school lead adds objectives in Setup, step 6 (Curriculum objectives).` : noObj ? ` Some objective columns have no objectives for ${esc(C.terms[t])} yet. The school lead adds them in Setup, step 6 (Curriculum objectives).` : ""}</p>`;
   }
-  function renderOne(h, tc, t) {
+  function renderOne(h, tc, t, mqList) {
     const list = termObjs(tc, t); if (!(ui.oi >= 0 && ui.oi < list.length)) ui.oi = 0;
     if (!list.length) { ctx.el.innerHTML = h + `<div class="card"><p class="note">There are no objectives for this strand and term yet. The school lead adds them in School setup, step 6. Scores and tests are entered in the whole class grid.</p></div>`; return; }
     const o = list[ui.oi], tg = TAUGHT.has(o.id);
@@ -657,7 +697,7 @@ dialog#tnGaps{border:0;border-radius:18px;padding:0;width:min(860px,95vw);max-he
       <div class="card"><table class="onelist">`;
     visible().forEach(s => { const v = stat(s.id, o.id);
       b += `<tr><td class="namecol"><button class="name" data-prof="${s.id}">${esc(s.full_name)}</button><div class="tags">${(s.groups || []).map(g => `<span class="tag">${esc(g)}</span>`).join("")}</div></td>
-        <td><div class="marks" role="group" aria-label="${esc(s.full_name)}">${OS().map(x => `<button class="dot pick ${v === x.code ? dotCls(x.code) : ""}" data-set="${s.id}|${o.id}|${x.code}" aria-pressed="${v === x.code}" title="${esc(x.label)}" aria-label="${esc(x.label)}">${esc(x.short)}</button>`).join("")}<button class="mini" data-set="${s.id}|${o.id}|" ${v ? "" : "disabled"}>Clear</button></div></td></tr>`; });
+        <td><div class="marks" role="group" aria-label="${esc(s.full_name)}">${OS().map(x => `<button class="dot pick ${v === x.code ? dotCls(x.code) : ""}" data-set="${s.id}|${o.id}|${x.code}" aria-pressed="${v === x.code}" title="${esc(x.label)}" aria-label="${esc(x.label)}">${esc(x.short)}</button>`).join("")}<button class="mini" data-set="${s.id}|${o.id}|" ${v ? "" : "disabled"}>Clear</button>${mqList ? mqTag(s.id, o, mqList) : ""}</div></td></tr>`; });
     ctx.el.innerHTML = h + b + `</table></div><p class="note">Scores and tests are entered in the whole class grid.</p>`;
   }
   function refreshRow(sid) {
@@ -712,6 +752,7 @@ dialog#tnGaps{border:0;border-radius:18px;padding:0;width:min(860px,95vw);max-he
       const [sid, oid] = t.dataset.cell.split("|"); return setMark(sid, oid, cycle(stat(sid, oid)));
     }
     if (t.dataset.all) return markAll(t.dataset.all);
+    if (t.dataset.mqapply) { t.disabled = true; try { await mqApply(); } finally { t.disabled = false; } return; }
   }
   async function onChange(e) {
     const t = e.target; if (!ctx || !(ctx.el.contains(t) || (t.closest && (t.closest("#tnProfile") || t.closest("#tnGaps"))))) return;
