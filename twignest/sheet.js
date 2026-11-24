@@ -434,12 +434,12 @@
       if (!pp.error) pp.data.forEach(x => { if (!PLANS[x.student_id] || String(x.updated_at) > String(PLANS[x.student_id].updated_at)) PLANS[x.student_id] = x; });
       const ns = await sb.from("next_steps").select("*").in("student_id", ids); NS = {}; if (!ns.error) ns.data.forEach(x => { ((NS[x.term] = NS[x.term] || {})[x.student_id] = (NS[x.term] || {})[x.student_id] || {})[x.strand_id] = x.text; });
     }
-    // Whole Nest: results from Maths Quest and Science Quest for this class (shown as suggestions only)
+    // Whole Nest: results from Maths Quest, Science Quest and Spelling Bee for this class (shown as suggestions only)
     BR = null; if (window.NestBridge && studs.length && C.subjects.some(x => NestBridge.wanted(x))) { try { BR = await NestBridge.load(sb, cls, studs); } catch (e) { BR = null; } }
   }
 
   // ----- ThinkNest platforms (Whole Nest): Maths Quest → Maths, Science Quest → Science -----
-  const platFor = sbj => window.NestBridge && BR ? NestBridge.forSubject(BR, sbj) : null;
+  const platFor = (sbj, st) => window.NestBridge && BR ? NestBridge.forSubject(BR, sbj, st) : null;
   const subjObjs = R => C.subjects.filter(x => NestBridge.subjectMatches(R.id, x)).flatMap(x => x.strands.flatMap(st => st.cols.filter(c => c.type === "objectives").flatMap(c => C.terms.flatMap((_, ti) => objs(c, ti)))));   // the whole subject, so each topic lands on its best match
   function mqSug(e) {
     if (!e || e.n < 8) return null;
@@ -466,7 +466,7 @@
       ${p.length ? `<button class="btn small" data-mqapply="1">Fill ${p.length} empty circle${p.length === 1 ? "" : "s"} from ${esc(R.p.label)}</button>` : `<span class="note">No suggestions for empty circles right now.</span>`}</div>`;
   }
   async function mqApply() {
-    const [, st] = findStrand(ui.strand), R = platFor(C.subjects.find(x => x.id === ui.sub)), tc = st.cols.filter(c => !c.baseline), rows = mqPending(R, tc, ui.term);
+    const [, st] = findStrand(ui.strand), R = platFor(C.subjects.find(x => x.id === ui.sub), st), tc = st.cols.filter(c => !c.baseline), rows = mqPending(R, tc, ui.term);
     if (!rows.length) return;
     if (!confirm(`Fill ${rows.length} empty circle${rows.length === 1 ? "" : "s"} using ${R.p.label} results?\n\nOnly empty circles change, and you can change any of them afterwards.`)) return;
     rows.forEach(r => { (ST[r.student_id] = ST[r.student_id] || {})[r.obj_id] = r.status; markTaught(r.obj_id); });
@@ -661,8 +661,8 @@ dialog#tnGaps{border:0;border-radius:18px;padding:0;width:min(860px,95vw);max-he
     if (ui.mode === "overview") return renderOverview(h.replace(/<div class="legend">[\s\S]*$/, ""));
     if (ui.mode === "reports") return renderReports(h.replace(/<div class="legend">[\s\S]*$/, ""));
     if (ui.mode === "gaps") return renderClassGaps(h.replace(/<div class="legend">[\s\S]*$/, ""));
-    if (ui.view === "one") return renderOne(h + mqBar(platFor(sb), tc, t), tc, t, platFor(sb));
-    const more = !!ui.more, mqR = platFor(sb), mqOn = !!(mqR && mqR.ev), mqList = mqOn ? subjObjs(mqR) : [];
+    if (ui.view === "one") return renderOne(h + mqBar(platFor(sb, st), tc, t), tc, t, platFor(sb, st));
+    const more = !!ui.more, mqR = platFor(sb, st), mqOn = !!(mqR && mqR.ev), mqList = mqOn ? subjObjs(mqR) : [];
     h += mqBar(mqR, tc, t);
     let th = `<thead><tr><th class="namecol"></th>${more ? `<th class="grp" colspan="${bc.length + 1}">Baseline</th>` : ""}<th class="grp" colspan="${n || 1}">${esc(C.terms[t])}</th><th class="grp" colspan="${more ? 3 : 1}">${more ? "Summary" : "Level"}</th></tr><tr><th class="namecol">Student</th>`;
     if (more) { bc.forEach(c => th += `<th class="colh"><b>${esc(c.name)}</b>${hint(c)}</th>`); th += `<th class="colh"><b>Baseline level</b>${baseIsLv(st) ? "from the assessment" : "scale"}</th>`; }

@@ -1,5 +1,5 @@
 /* ThinkNest platforms → Nestopia (Whole Nest schools)
-   Reads a summary from Maths Quest and Science Quest and matches it to the school's own curriculum objectives.
+   Reads a summary from Maths Quest, Science Quest and Spelling Bee and matches it to the school's own curriculum objectives.
    Nothing is saved here: teachers decide what to record. */
 (function () {
   const API = { url: "https://xpbkdnkfufkahaszfycd.supabase.co", key: "sb_publishable_QIAV_9tLUBbDCu7FHqaTEw_zYQ0teEG" };
@@ -8,14 +8,42 @@
     maths_quest: { label: "Maths Quest", icon: "🧮", rpc: "nest_bridge_mq", nc: "mq-nc.json", subj: /math|numeracy/i,
       own: (k, NC, g) => +k.split("-")[0] === +g },                      // keys look like 2-NI-1: grade first
     science_quest: { label: "Science Quest", icon: "🔬", rpc: "nest_bridge_sq", nc: "sq-nc.json", subj: /science/i,
-      own: (k, NC, g) => !!NC[k] && NC[k].g === String(g) }             // keys look like y3-pl-1, each tagged with its grade
+      own: (k, NC, g) => !!NC[k] && NC[k].g === String(g) },            // keys look like y3-pl-1, each tagged with its grade
+    spelling_bee: { label: "Spelling Bee", icon: "🐝", rpc: "nest_bridge_sb", nc: "sb-nc.json", subj: /english|literacy/i, strand: /spell|transcription/i,
+      own: () => true, prep: x => sbPrep(x) }                           // words are sorted into spelling objectives here
   };
+  // Spelling Bee: each word → the spelling objectives it practises, for the child's year (grade 0 = KG2 = Year 1)
+  const SUF = new Set(["dbl", "drope", "yi", "ful", "ies", "es", "tion", "sion", "cian", "ture", "sure", "ous", "able", "ance", "cious", "cial", "ly", "ment", "ed", "ing", "pre"]);
+  function sbCats(word) {
+    const S = window.SPELL; if (!S) return [];
+    const w = S.low(word), pats = S.patternRules(w).map(p => p.id), c = new Set();
+    if (S.TRICKY.has(w)) c.add("tricky");
+    if (S.HOMO.some(g => g.includes(w))) c.add("homo");
+    pats.forEach(id => c.add(SUF.has(id) ? (id === "pre" ? "pre" : id === "es" || id === "ies" ? "plural" : id === "ing" || id === "ed" ? "inged" : ["ment", "ful", "ly"].includes(id) ? "mfl" : "suf") : id === "kn" ? "kn" : "gpc"));
+    if (!c.size) c.add("none");
+    return [...c];
+  }
+  function sbIdx(g, cat) {
+    const y = +g + 1, suf = ["suf", "pre", "plural", "inged", "mfl"].includes(cat);
+    if (y === 1) return cat === "plural" ? 5 : cat === "pre" ? 6 : cat === "inged" ? 7 : (suf || cat === "homo") ? 8 : cat === "tricky" ? 1 : 0;
+    if (y === 2) return cat === "gpc" || cat === "kn" ? 1 : cat === "mfl" ? 6 : suf ? 7 : cat === "homo" ? 5 : cat === "tricky" ? 2 : 0;
+    if (y <= 4) return suf ? 0 : cat === "homo" ? 1 : cat === "none" ? null : 2;
+    return suf ? 0 : cat === "kn" ? 1 : cat === "homo" ? 2 : cat === "none" ? null : 3;
+  }
+  function sbPrep(x) {
+    const g = +x.grade, m = {}, add = (word, c, w) => { const ks = new Set(sbCats(word).map(cat => sbIdx(g, cat)).filter(i => i != null).map(i => g + "-" + i));
+      ks.forEach(k => { const v = m[k] = m[k] || [0, 0]; v[0] += c; v[1] += w; }); };
+    const R = x.right || {}, W = x.wrong || {}, all = new Set([...Object.keys(R), ...Object.keys(W)]);
+    all.forEach(word => { const c = Math.max(0, parseInt(R[word]) || 0), w = Math.max(0, parseInt(W[word]) || 0); if (c + w) add(word, c, w); });
+    return m;
+  }
+
   const STOP = new Set("the a an and or of to in on for with by from using use including their they them is are be as at that this any given numbers number e g eg".split(" "));
   const toks = t => new Set((String(t || "").toLowerCase().match(/[a-z0-9]+/g) || []).filter(w => !STOP.has(w)).map(w => w.length > 4 && w.endsWith("s") ? w.slice(0, -1) : w));
   const norm = v => String(v ?? "").trim().replace(/^0+(?=\d)/, "").toLowerCase();
   const NCS = {}, maps = new Map();
 
-  async function loadNC(id) { if (!NCS[id]) NCS[id] = await fetch(P[id].nc + "?v=20261124b").then(r => r.json()); return NCS[id]; }
+  async function loadNC(id) { if (!NCS[id]) NCS[id] = await fetch(P[id].nc + "?v=20261124c").then(r => r.json()); return NCS[id]; }
 
   // Each platform objective is split into its parts; each part goes to the school objective it matches best.
   function mapFor(id, list) {
@@ -41,7 +69,7 @@
     const ev = {}; let linked = 0;
     (j.students || []).forEach(x => {
       const sid = byNum[norm(x.ref)]; if (!sid) return; linked++;
-      const m = {}; Object.entries(x.nc || {}).forEach(([k, cw]) => { if (p.own(k, NC, x.grade)) m[k] = cw; });   // their own grade's objectives only
+      const m = {}; Object.entries(p.prep ? p.prep(x) : (x.nc || {})).forEach(([k, cw]) => { if (p.own(k, NC, x.grade)) m[k] = cw; });   // their own grade's objectives only
       ev[sid] = { nc: m, last: x.last_seen };
     });
     return { id, p, ev, linked, inClass: studs.length };
@@ -56,10 +84,10 @@
     const out = {}; res.forEach(r => { if (r) out[r.id] = r; }); return out;
   }
 
-  // Which linked platform fits this subject (Maths → Maths Quest, Science → Science Quest)
-  function forSubject(B, sb) {
-    if (!B || !sb) return null; const nm = [sb.name, ...(sb.aliases || [])].join(" ");
-    return Object.values(B).find(r => r.p.subj.test(nm)) || null;
+  // Which linked platform fits this subject and strand (Maths → Maths Quest, Science → Science Quest, English spelling → Spelling Bee)
+  function forSubject(B, sb, st) {
+    if (!B || !sb) return null; const nm = [sb.name, ...(sb.aliases || [])].join(" "), sn = st ? [st.name, ...(st.aliases || [])].join(" ") : "";
+    return Object.values(B).find(r => r.p.subj.test(nm) && (!r.p.strand || !st || r.p.strand.test(sn))) || null;
   }
   const subjectMatches = (id, sb) => !!P[id] && P[id].subj.test([sb.name, ...(sb.aliases || [])].join(" "));
 
